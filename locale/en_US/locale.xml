@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE locale SYSTEM "../../../../../lib/pkp/dtd/locale.dtd">
+
+<locale name="en_US" full_name="U.S. English">
+
+  <!-- General lang -->
+  <message key="plugins.generic.ojtPlugin.displayName">OJT Control Panel</message>
+  <message key="plugins.generic.ojtPlugin.description">Services Plugin From OpenJournalTheme.com</message>
+  <message key="plugins.generic.ojtPlugin.panel">Control Panel</message>
+  <message key="plugins.generic.ojtPlugin.promptRemovePlugin">Are you sure you wish to delete this plugin from the system?</message>
+  <message key="plugins.generic.ojtPlugin.pluginCannotInstall">Plugin could not be installed to the system. This may be a permissions problem. Please make sure that the web server is able to write to the plugins directory (including subdirectories) but don't forget to secure it again later</message>
+
+</locale>

@@ -1,0 +1,30 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2019-11-19T11:05:13+00:00\n"
+"PO-Revision-Date: 2019-11-19T11:05:13+00:00\n"
+"Language: \n"
+
+msgid "plugins.generic.ojtPlugin.displayName"
+msgstr "OJT Control Panel"
+
+msgid "plugins.generic.ojtPlugin.description"
+msgstr "Control Panel Service Plugin From OpenJournalTheme.com"
+
+msgid "plugins.generic.ojtPlugin.panel"
+msgstr "Control Panel"
+
+msgid "plugins.generic.ojtPlugin.promptRemovePlugin"
+msgstr "Are you sure you wish to delete this plugin from the system?"
+
+msgid "plugins.generic.ojtPlugin.promptResetPluginSetting"
+msgstr "Are you sure you wish to reset this plugin setting?"
+
+msgid "plugins.generic.ojtPlugin.pluginCannotInstall"
+msgstr "Plugin could not be installed to the system. This may be a permissions problem. Please make sure that the web server is able to write to the plugins directory (including subdirectories) but don't forget to secure it again later"

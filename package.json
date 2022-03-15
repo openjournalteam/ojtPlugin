@@ -1,0 +1,37 @@
+{
+  "dependencies": {
+    "@tailwindcss/forms": "^0.3.3",
+    "watch": "^1.0.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/custom-forms": "^0.2.1",
+    "@tailwindcss/jit": "^0.1.7",
+    "autoprefixer": "^10.2.5",
+    "postcss": "^8.2.8",
+    "postcss-cli": "^8.3.1",
+    "tailwindcss": "^2.1.1"
+  },
+  "name": "ojtplugin",
+  "description": "ojt Control Panel Service",
+  "version": "1.0.0",
+  "main": "postcss.config.js",
+  "scripts": {
+    "build:css": "postcss assets/stylesheets/tw.css -o assets/stylesheets/tailwind.css",
+    "watch": "postcss assets/stylesheets/tw.css -o assets/stylesheets/tailwind.css -w",
+    "dev": "TAILWIND_MODE=watch postcss -i tailwind.css -o build.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thisnugroho/openjournal-plugin.git"
+  },
+  "keywords": [
+    "plugin",
+    "ojs"
+  ],
+  "author": "Open Journal Theme",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thisnugroho/openjournal-plugin/issues"
+  },
+  "homepage": "https://github.com/thisnugroho/openjournal-plugin#readme"
+}

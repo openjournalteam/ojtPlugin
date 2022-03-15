@@ -1,0 +1,352 @@
+<?php
+
+import('lib.pkp.classes.plugins.GenericPlugin');
+import('plugins.generic.ojtPlugin.helpers.OJTHelper');
+class OjtPlugin extends GenericPlugin
+{
+    public $_registeredModule;
+    public $_modulesPath;
+
+    public function register($category, $path, $mainContextId = null)
+    {
+        if (parent::register($category, $path, $mainContextId)) {
+            if ($this->getEnabled()) {
+                $this->setModulesPath();
+                $this->createModulesFolder();
+                $this->registerModules();
+                HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
+                HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public function setModulesPath()
+    {
+        $this->_modulesPath = $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules';
+    }
+
+    public function getModulesPath()
+    {
+        return $this->_modulesPath;
+    }
+
+    public function registerModules()
+    {
+        $pluginsFolder = getDirs($this->getModulesPath());
+
+        import('lib.pkp.classes.site.VersionCheck');
+
+        $plugins = [];
+
+        foreach ($pluginsFolder as $pluginFolder) {
+            $fileManager = new FileManager();
+            if (!$fileManager->fileExists($this->getModulesPath() . "/$pluginFolder/version.xml") || !$fileManager->fileExists($this->getModulesPath() . "/$pluginFolder/index.php")) {
+                continue;
+            }
+
+            $plugin         = include($this->getModulesPath() . "/$pluginFolder/index.php");
+            if (!$plugin && $plugin instanceof Plugin) {
+                continue;
+            }
+
+            $version        = VersionCheck::getValidPluginVersionInfo($this->getModulesPath() . "/$pluginFolder/version.xml");
+            $categoryPlugin = explode('.', $version->getData('productType'))[1];
+            $categoryDir    = $this->getModulesPath();
+            $pluginDir      = $categoryDir . '/' . $pluginFolder;
+            PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
+
+            $data                = $version->getAllData();
+            $data['name']        = $plugin->getDisplayName();
+            $data['description'] = $plugin->getDescription();
+            $data['enabled']     = $plugin->getEnabled();
+            if (method_exists($plugin, 'getPage')) {
+                $data['page']        = $plugin->getPage();
+            }
+
+            $plugins[] = $data;
+        }
+        // free memory i think
+        unset($plugin);
+
+        $this->_registeredModule = $plugins;
+
+        return $plugins;
+    }
+
+    public function createModulesFolder()
+    {
+        if (is_dir(getcwd() . '/' . $this->getModulesPath())) {
+            return;
+        }
+
+        mkdir(getcwd() . '/' . $this->getModulesPath());
+    }
+    // Show available update on Setting -> Website
+    function settingsWebsite($hookName, $args)
+    {
+        if (!$this->getSetting(CONTEXT_SITE, 'isNewVersionAvailable')) {
+            return false;
+        }
+
+        $templateMgr = $args[1];
+        $output = &$args[2];
+
+        $output .= $templateMgr->fetch($this->getTemplateResource('backend/notif.tpl'));
+
+        // Permit other plugins to continue interacting with this hook
+        return false;
+    }
+
+    public function update($url)
+    {
+        // Check ziparchive extension
+        if (!class_exists('ZipArchive')) {
+            throw new Exception('Please Install PHP Zip Extension');
+        }
+
+        // Download file
+        $file_name = basename($url);
+
+        // place file to root of ojs
+        if (!file_put_contents($file_name, file_get_contents($url))) {
+            throw new Exception('Failed to get Plugin');
+        }
+
+        $zip = new ZipArchive;
+        if (!$zip->open($file_name)) {
+            unlink($file_name);
+            throw new Exception('Failed to Open Files');
+        }
+
+        $path    = 'plugins/generic';
+        if (!$zip->extractTo($path)) {
+            unlink($file_name);
+            throw new Exception('Failed to Extract Plugin, because of folder permission.');
+        }
+        $zip->close();
+
+        unlink($file_name);
+    }
+
+    /**
+     * Install default settings on journal creation.
+     * @return string
+     */
+    public function getContextSpecificPluginSettingsFile()
+    {
+        return $this->getPluginPath() . '/settings.xml';
+    }
+
+    public function getPluginVersionFile()
+    {
+        return $this->getPluginPath() . '/version.xml';
+    }
+
+    /**
+     * Get the display name of this plugin.
+     * @return String
+     */
+    public function getDisplayName()
+    {
+        return 'OJT Control Panel';
+    }
+
+    /**
+     * @copydoc Plugin::getName()
+     */
+    function getName()
+    {
+        return 'ojtPlugin';
+    }
+
+    /**
+     * Get a description of the plugin.
+     */
+    public function getDescription()
+    {
+        return 'Control Panel Service Plugin From OpenJournalTheme.com';
+    }
+
+    public function getPluginType()
+    {
+        import('lib.pkp.classes.site.VersionCheck');
+        $info = VersionCheck::getValidPluginVersionInfo($this->getPluginVersionFile());
+
+        return $info[1];
+    }
+
+    public function getPluginVersion()
+    {
+        import('lib.pkp.classes.site.VersionCheck');
+        $version = VersionCheck::parseVersionXML($this->getPluginVersionFile());
+
+        return $version['release'];
+    }
+
+    public function getPluginName(): String
+    {
+        return strtolower(__CLASS__);
+    }
+
+    /**
+     * Get the URL for JQuery JS.
+     * @param $request PKPRequest
+     * @return string
+     */
+    public function _getJQueryUrl($request)
+    {
+        $min = Config::getVar('general', 'enable_minified') ? '.min' : '';
+        return $request->getBaseUrl() . '/lib/pkp/lib/vendor/components/jquery/jquery' . $min . '.js';
+    }
+
+    public function setPageHandler($hookName, $params)
+    {
+        $page = $params[0];
+
+        switch ($page) {
+            case 'ojt':
+                define('HANDLER_CLASS', 'OjtPageHandler');
+                $this->import('OjtPageHandler');
+                // Allow the static pages page handler to get the plugin object
+                OjtPageHandler::setPlugin($this);
+
+                return true;
+                break;
+        }
+
+        return false;
+    }
+
+    /**
+     * Add a settings action to the plugin's entry in the
+     * plugins list.
+     *
+     * @param Request $request
+     * @param array $actionArgs
+     * @return array
+     */
+    public function getActions($request, $actionArgs)
+    {
+        // Get the existing actions
+        $actions = parent::getActions($request, $actionArgs);
+
+        // Only add the settings action when the plugin is enabled
+        if (!$this->getEnabled()) {
+            return $actions;
+        }
+
+        import('lib.pkp.classes.linkAction.request.OpenWindowAction');
+        $linkAction = new LinkAction(
+            'ojt_control_panel',
+            new OpenWindowAction($request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()) . '/ojt'),
+            'Control Panel',
+            null
+        );
+
+        // Add the LinkAction to the existing actions.
+        // Make it the first action to be consistent with
+        // other plugins.
+        array_unshift($actions, $linkAction);
+
+        return $actions;
+    }
+
+    /**
+     * Check the folder this $folder is.
+     * @return bool - true if folder exist
+     */
+    public function isPluginExist($folder)
+    {
+        if (!$folder) {
+            return false;
+        }
+
+        return is_dir(getcwd() . '/' . $this->getModulesPath() . $folder);
+    }
+
+    /**
+     * Removing plugin folder
+     * @return bool - true if success.
+     */
+    public function uninstallPlugin($plugin)
+    {
+        $path    = $this->getModulesPath() . $plugin->folder;
+
+        if (!is_dir($path)) {
+            throw new InvalidArgumentException("$plugin->name not Found");
+            return;
+        }
+
+        return $this->recursiveDelete($path);
+    }
+
+    public function recursiveDelete($dirPath, $deleteParent = true)
+    {
+        if (empty($dirPath) && !is_dir($dirPath)) {
+            return false;
+        }
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
+            $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
+        }
+        if ($deleteParent) {
+            rmdir($dirPath);
+        }
+
+        return true;
+    }
+
+    /**
+     * Installing plugin to targeted folder.
+     * throw error if there is something wrong
+     * @return bool - true if success.
+     */
+    public function installPlugin($url)
+    {
+        // Download file
+        $file_name = basename($url);
+
+        // place file to root of ojs
+        if (!file_put_contents($file_name, file_get_contents($url))) {
+            throw new Exception('Failed to get Plugin');
+        }
+
+        // Extract file
+        if (!class_exists('ZipArchive')) {
+            unlink($file_name);
+            throw new Exception('Please Install PHP Zip Extension');
+        }
+
+        $zip = new ZipArchive;
+        if (!$zip->open($file_name)) {
+            unlink($file_name);
+            throw new Exception('Failed to Open Files');
+        }
+
+        $path    = $this->getModulesPath();
+        if (!$zip->extractTo($path)) {
+            unlink($file_name);
+            throw new Exception('Failed to Extract Plugin, because of folder permission.');
+        }
+        $zip->close();
+
+        unlink($file_name);
+    }
+
+    public function getJournalVersion()
+    {
+        $versionDao = DAORegistry::getDAO('VersionDAO');
+        $version    = $versionDao->getCurrentVersion();
+        $data       = $version->_data;
+        return $data['major'] . $data['minor'];
+    }
+
+    public function clearDataCache()
+    {
+        $pluginSettingsDAO = DAORegistry::getDAO('PluginSettingsDAO'); // As good as any
+        $pluginSettingsDAO->flushCache();
+
+        return true;
+    }
+}
