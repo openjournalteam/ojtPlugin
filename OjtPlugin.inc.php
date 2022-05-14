@@ -16,10 +16,35 @@ class OjtPlugin extends GenericPlugin
                 $this->registerModules();
                 HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
+                HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
             }
             return true;
         }
         return false;
+    }
+
+    public function setupBackendPage($hookName, $args)
+    {
+        $request = $this->getRequest();
+        $templateMgr = TemplateManager::getManager($this->getRequest());
+        $dispatcher = $request->getDispatcher();
+        $router = $request->getRouter();
+        $userRoles = (array) $router->getHandler()->getAuthorizedContextObject(ASSOC_TYPE_USER_ROLES);
+        // dd(count(array_intersect([ROLE_ID_MANAGER, ROLE_ID_SITE_ADMIN], $userRoles)));
+        if (!$request->getUser() || !count(array_intersect([ROLE_ID_MANAGER, ROLE_ID_SITE_ADMIN], $userRoles))) return;
+
+
+
+        $menu = $templateMgr->getState('menu');
+        $menu['ojtPlugin'] = [
+            'name' => 'OJT Control Panel',
+            'url' => $router->url($request, null, 'ojt'),
+            "isCurrent" => false
+        ];
+
+        $templateMgr->setState(['menu' => $menu]);
+
+        // dd($templateMgr->get_template_vars('userRoles'));
     }
 
     public function setModulesPath()

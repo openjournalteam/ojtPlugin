@@ -55,8 +55,6 @@ function checkUpdate() {
             .catch((error) => {
               Swal.showValidationMessage(`Request failed: ${error}`);
             });
-          // let updating = await $.post(baseUrl + '/updatePlugin');
-          // return console.log(updating)
         },
         allowOutsideClick: () => !Swal.isLoading(),
       }).then((result) => {

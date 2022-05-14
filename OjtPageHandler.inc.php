@@ -24,7 +24,6 @@ class OjtPageHandler extends Handler
         $this->baseUrl = $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext());
     }
 
-
     public function updatePanel($args, $request)
     {
         $plugin = $this->ojtPlugin;
