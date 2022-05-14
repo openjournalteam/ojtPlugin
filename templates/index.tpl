@@ -73,9 +73,9 @@
                         <template x-if="plugin.enabled && plugin?.page">
                           <a href="javascript:void(0);"
                             @click="alpineComponent('utama').menu = 'Plugin'; page = plugin.name" role="menuitem"
-                            :class="{ 'ojt-bg-blue-100 dark:ojt-bg-blue-600': page == plugin.name }"
-                            class="ojt-block ojt-p-2 ojt-text-sm ojt-text-gray-400 ojt-transition-colors ojt-duration-200 ojt-rounded-md dark:ojt-text-gray-400 dark:hover:ojt-text-light hover:ojt-text-gray-700 menu_item"
-                            :page="plugin.page" x-text="plugin.name">
+                            :class="{ 'ojt-bg-blue-100 dark:ojt-bg-blue-600': page == plugin.name }" :page="plugin.page"
+                            x-text="plugin.name"
+                            class="ojt-block ojt-p-2 ojt-text-sm ojt-text-gray-400 ojt-transition-colors ojt-duration-200 ojt-rounded-md dark:ojt-text-gray-400 dark:hover:ojt-text-light hover:ojt-text-gray-700 menu_item">
 
                           </a>
                         </template>

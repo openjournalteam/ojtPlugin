@@ -15,17 +15,16 @@ function checkUpdate() {
     updateAvailable: false,
     data: {},
     checkUpdate: async function () {
-      return;
-      // let res = await fetch("http://localhost/update.json", {
-      //   mode: "cors",
-      // });
-      // var ojtPlugin = await res.json();
+      let res = await fetch("http://localhost/update.json", {
+        mode: "cors",
+      });
+      let ojtPlugin = await res.json();
 
-      // this.data = ojtPlugin;
+      this.data = ojtPlugin;
 
-      // if (ojtPlugin.version > ojtPluginVersion) {
-      //   this.updateAvailable = true;
-      // }
+      if (ojtPlugin.version > ojtPluginVersion) {
+        this.updateAvailable = true;
+      }
     },
     doUpdate() {
       Swal.fire({
@@ -40,7 +39,7 @@ function checkUpdate() {
           const formData = new FormData();
           formData.append("ojtPlugin", JSON.stringify(this.data));
 
-          return fetch(currentUrl + "update", {
+          return fetch(currentUrl + "updatePanel", {
             method: "POST",
             body: formData,
           })
@@ -58,6 +57,9 @@ function checkUpdate() {
         if (result.isConfirmed) {
           // show success message then reload page
           Swal.fire(result.value.msg).then(() => {
+            if (result.value.error) {
+              return;
+            }
             location.reload();
           });
         }
