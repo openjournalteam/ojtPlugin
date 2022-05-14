@@ -29,7 +29,8 @@ class OjtPageHandler extends Handler
     {
         $plugin = $this->ojtPlugin;
 
-        // $ojtPlugin = json_decode($_POST['ojtPlugin']);
+        $ojtPlugin = json_decode($_POST['ojtPlugin']);
+        // dd($ojtPlugin);
         // $payload = [
         //     'token'        => $ojtPlugin->token,
         //     'journal_url'   => $this->baseUrl,
@@ -49,7 +50,7 @@ class OjtPageHandler extends Handler
         // }
 
         // $data = $response->data;
-        $url = 'http://localhost/ojtPlugin.zip';
+        $url = $ojtPlugin->link_download;
         // trying to install plugin
         try {
             $plugin->updatePanel($url);

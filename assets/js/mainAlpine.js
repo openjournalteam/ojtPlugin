@@ -15,14 +15,20 @@ function checkUpdate() {
     updateAvailable: false,
     data: {},
     checkUpdate: async function () {
-      let res = await fetch("http://localhost/update.json", {
-        mode: "cors",
-      });
+      let res = await fetch(
+        "https://demo.ini-sudah.online/index.php/wp-json/openjournalvalidation/v1/ojtpanel/check_update",
+        {
+          mode: "cors",
+        }
+      );
+      // let res = await fetch("http://localhost/update.json", {
+      //   mode: "cors",
+      // });
       let ojtPlugin = await res.json();
 
       this.data = ojtPlugin;
 
-      if (ojtPlugin.version > ojtPluginVersion) {
+      if (ojtPlugin.latest_version > ojtPluginVersion) {
         this.updateAvailable = true;
       }
     },

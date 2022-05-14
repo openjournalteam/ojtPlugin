@@ -193,7 +193,7 @@
                     <div class="ojt-font-medium ojt-leading-none">There is a new version of OJTPlugin available!</div>
                     <p class="ojt-text-sm ojt-text-gray-600 ojt-leading-none ojt-mt-1">
                       You are currently using <b>Version {$ojtPlugin->version}</b>, the most recent version is <b
-                        x-text="data?.version"></b>.
+                        x-text="data?.latest_version"></b>.
                       <a href="#" @click="doUpdate()"
                         class="ojt-font-bold ojt-text-blue-700 hover:ojt-text-blue-800">Click here</a> to update
                     </p>
