@@ -1,5 +1,4 @@
-# This is a basic workflow to help you get started with Actions
-name: SyncToS3
+name: SyncToS3-IDrive
 # Controls when the action will run. 
 on: [ push, pull_request ]
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -20,8 +19,8 @@ jobs:
       #     echo 
       #     echo ${{steps.json_properties.outputs.version}}
       #     echo 
-      - name: Set Upload folder var on S3 bucket
-        run: echo "UPLOAD_FOLDER=${{steps.json_properties.outputs.product_category}}/${{steps.json_properties.outputs.name}}/${{steps.json_properties.outputs.version}}" >> $GITHUB_ENV
+      - name: Set Upload folder var on S3 bucket based on platform
+        run: echo "UPLOAD_FOLDER=${{steps.json_properties.outputs.platform}}/${{steps.json_properties.outputs.product_category}}/${{steps.json_properties.outputs.name}}/${{steps.json_properties.outputs.version}}" >> $GITHUB_ENV
       - name: Zip the repo and Pack to S3_Upload folder before uploading
         uses: vimtor/action-zip@v1
         with:
