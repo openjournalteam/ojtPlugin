@@ -1,6 +1,6 @@
 # OpenJournalTheme Service Plugin
 
-## Installation.
+## Installation
 - Clone this git.
 - run `npm install`
 - run `npm run watch`
