@@ -14,6 +14,11 @@
   <link href="{$ojtPlugin->tailwindCss}" rel="stylesheet">
   <link href="{$ojtPlugin->fontAwesomeCss}" rel="stylesheet">
   <link href="{$ojtPlugin->sweetAlertCss}" rel="stylesheet">
+  <style>
+    [x-cloak] {
+      display: none;
+    }
+  </style>
 </head>
 <div id="moduleCss"></div>
 
@@ -73,9 +78,11 @@
                         <template x-if="plugin.enabled && plugin?.page">
                           <a href="javascript:void(0);"
                             @click="alpineComponent('utama').menu = 'Plugin'; page = plugin.name" role="menuitem"
-                            :class="{ 'ojt-bg-blue-100 dark:ojt-bg-blue-600': page == plugin.name }" :page="plugin.page"
-                            x-text="plugin.name"
-                            class="ojt-block ojt-p-2 ojt-text-sm ojt-text-gray-400 ojt-transition-colors ojt-duration-200 ojt-rounded-md dark:ojt-text-gray-400 dark:hover:ojt-text-light hover:ojt-text-gray-700 menu_item">
+                            :class="{ 
+                              'ojt-bg-blue-100 dark:ojt-bg-blue-600 ojt-text-gray-700': page == plugin.name,
+                              'ojt-text-gray-400 dark:ojt-text-gray-400 dark:hover:ojt-text-light hover:ojt-text-gray-700' : page != plugin.name
+                              }" :page="plugin.page" x-text="plugin.name"
+                            class="ojt-block ojt-p-2 ojt-text-sm ojt-transition-colors ojt-duration-200 ojt-rounded-md  menu_item">
 
                           </a>
                         </template>
@@ -86,7 +93,6 @@
               </template>
             </div>
           </nav>
-
           <div class="ojt-mt-auto ojt-p-4 ojt-mx-auto">
             <a href="https://openjournaltheme.com/about-open-journal-theme" target="_blank"
               class="focus:ojt-outline-none ojt-text-white ojt-text-sm ojt-py-2.5 ojt-px-5 ojt-rounded-md ojt-bg-purple-500 hover:ojt-bg-purple-600 hover:ojt-shadow-lg ojt-flex ojt-items-center">
@@ -114,22 +120,13 @@
                 </svg>
               </span>
             </button>
-
             <div class="ojt-flex journal-header">
-
               <a href="{$ojtPlugin->baseUrl}" rel="home" aria-current="home">
                 <img src="{$ojtPlugin->journalPublicFolder}{$logoImage['uploadName']}" class="ojt-max-h-16">
               </a>
-
             </div>
-
-
-
             <nav aria-label="Secondary" class="ojt-hidden ojt-space-x-2 md:ojt-flex md:ojt-items-center">
-
             </nav>
-
-
           </div>
           <div class="ojt-border-b md:ojt-hidden dark:ojt-border-blue-800" x-show="isMobileMainMenuOpen"
             @click.away="isMobileMainMenuOpen = false">
