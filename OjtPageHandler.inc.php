@@ -178,7 +178,7 @@ class OjtPageHandler extends Handler
         $pluginToInstall = json_decode($_POST['plugin']);
         $license         = $_POST['license'] ?? false;
 
-        if (isset($_POST['upgrade']) && $targetPlugin = @include($plugin->getModulesPath() . "/$pluginToInstall->folder/index.php")) {
+        if (isset($_POST['update']) && $targetPlugin = @include($plugin->getModulesPath() . "/$pluginToInstall->folder/index.php")) {
             $license = $targetPlugin->getSetting($this->contextId, 'license');
         }
 

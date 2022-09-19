@@ -115,7 +115,7 @@
                     </tr>
                     <tr x-show="plugin.installed && plugin?.update">
                       <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-blockojt-relative">
-                        <button x-text="loading ? 'Upgrading ...' : 'Upgrade'" :disabled="loading"
+                        <button x-text="loading ? 'Updating ...' : 'Update'" :disabled="loading"
                           @click="installPlugin(plugin, true)"
                           class="disabled:ojt-opacity-50 ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-w-full ojt-uppercase ojt-transition ojt-bg-blue-700 ojt-rounded ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-blue-800 focus:ojt-outline-none ojt-waves-effect">
                         </button>
@@ -224,8 +224,8 @@
         this.plugin = plugin;
         this.show = true;
       },
-      async installPlugin(plugin, upgrade = false) {
-        if (this.key == '' && !upgrade) {
+      async installPlugin(plugin, update = false) {
+        if (this.key == '' && !update) {
           Toast.fire({
             icon: 'info',
             title: 'Please insert license Key ..'
@@ -246,8 +246,8 @@
         const formData = new FormData();
         formData.append('plugin', JSON.stringify(plugin));
         formData.append('license', this.key);
-        if (upgrade) {
-          formData.append('upgrade', true);
+        if (update) {
+          formData.append('update', true);
         }
 
         let response = await fetch(currentUrl + 'installPlugin', {
