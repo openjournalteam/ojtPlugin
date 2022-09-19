@@ -15,22 +15,21 @@ function checkUpdate() {
     updateAvailable: false,
     data: {},
     checkUpdate: async function () {
-      let res = await fetch(
-        "https://demo.ini-sudah.online/index.php/wp-json/openjournalvalidation/v1/ojtpanel/check_update",
-        {
-          mode: "cors",
+      try {
+        let res = await fetch(
+          "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update",
+          {
+            mode: "cors",
+          }
+        );
+        let ojtPlugin = await res.json();
+
+        this.data = ojtPlugin;
+
+        if (ojtPlugin.latest_version > ojtPluginVersion) {
+          this.updateAvailable = true;
         }
-      );
-      // let res = await fetch("http://localhost/update.json", {
-      //   mode: "cors",
-      // });
-      let ojtPlugin = await res.json();
-
-      this.data = ojtPlugin;
-
-      if (ojtPlugin.latest_version > ojtPluginVersion) {
-        this.updateAvailable = true;
-      }
+      } catch (error) {}
     },
     doUpdate() {
       Swal.fire({

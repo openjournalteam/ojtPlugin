@@ -1,10 +1,6 @@
-[x-cloak] {
-  display: none;
-}
-
 .site-name {
   color: #222;
-  font-family: 'Allura', cursive;
+  font-family: "Allura", cursive;
   text-shadow: 0px 1px 1px #b65eb4;
 }
 
@@ -164,15 +160,15 @@
   transition: all 0.5s linear;
 }
 
-.cbx:checked+.toggle:before {
+.cbx:checked + .toggle:before {
   background: #52d66b;
 }
 
-.cbx:checked+.toggle span {
+.cbx:checked + .toggle span {
   transform: translateX(18px);
 }
 
-.cbx:checked+.toggle span path {
+.cbx:checked + .toggle span path {
   stroke: #52d66b;
   stroke-dasharray: 25;
   stroke-dashoffset: 25;

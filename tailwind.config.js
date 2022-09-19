@@ -1,36 +1,32 @@
-const colors = require('tailwindcss/colors')
+const colors = require("tailwindcss/colors");
 
 module.exports = {
-  mode: 'jit',
-  purge: {
-    content: ['./**/*.tpl', './assets/**/*.js'],
-  },
-  prefix: 'ojt-',
-  darkMode: 'class', // or 'media' or 'class'
+  content: ["./**/*.tpl", "./assets/**/*.js"],
+  prefix: "ojt-",
   theme: {
     extend: {
-      opacity: ['disabled'],
+      opacity: ["disabled"],
       height: {
-        min: 'min-content',
+        min: "min-content",
       },
       minHeight: {
-        '48': '12rem',
+        48: "12rem",
       },
       minWidth: {
-        '48': '12rem',
+        48: "12rem",
       },
       colors: {
-        light: 'var(--light)',
-        dark: 'var(--dark)',
-        darker: 'var(--darker)',
+        light: "var(--light)",
+        dark: "var(--dark)",
+        darker: "var(--darker)",
         primary: {
-          DEFAULT: 'var(--color-primary)',
-          50: 'var(--color-primary-50)',
-          100: 'var(--color-primary-100)',
-          light: 'var(--color-primary-light)',
-          lighter: 'var(--color-primary-lighter)',
-          dark: 'var(--color-primary-dark)',
-          darker: 'var(--color-primary-darker)',
+          DEFAULT: "var(--color-primary)",
+          50: "var(--color-primary-50)",
+          100: "var(--color-primary-100)",
+          light: "var(--color-primary-light)",
+          lighter: "var(--color-primary-lighter)",
+          dark: "var(--color-primary-dark)",
+          darker: "var(--color-primary-darker)",
         },
         secondary: {
           DEFAULT: colors.fuchsia[600],
@@ -77,17 +73,8 @@ module.exports = {
           dark: colors.cyan[700],
           darker: colors.cyan[800],
         },
-      }
+      },
     },
   },
-  variants: {
-    extend: {
-      backgroundColor: ['checked', 'disabled'],
-      opacity: ['dark'],
-      overflow: ['hover'],
-    },
-  },
-  plugins: [
-    require('@tailwindcss/forms'),
-  ],
-}
+  plugins: [require("@tailwindcss/forms")],
+};

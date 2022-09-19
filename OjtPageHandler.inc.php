@@ -28,32 +28,14 @@ class OjtPageHandler extends Handler
     {
         $plugin = $this->ojtPlugin;
 
-        $ojtPlugin = json_decode($_POST['ojtPlugin']);
-        // dd($ojtPlugin);
-        // $payload = [
-        //     'token'        => $ojtPlugin->token,
-        //     'journal_url'   => $this->baseUrl,
-        // ];
 
-        // $response = $this->curl($payload, API . 'get_download_link', true);
-        // if ($response == false) {
-        //     $json['error']  = 1;
-        //     $json['msg']    = "There's a problem on the server, please try again later.";
-        //     return showJson($json);
-        // }
 
-        // if ($response->error == 1) {
-        //     $json['error']  = 1;
-        //     $json['msg']    = $response->msg;
-        //     return showJson($json);
-        // }
+        $ojtPlugin = json_decode($request->getUserVar('ojtPlugin'));
 
-        // $data = $response->data;
         $url = $ojtPlugin->link_download;
         // trying to install plugin
         try {
             $plugin->updatePanel($url);
-            // $plugin->updatePanel($data->download_link);
         } catch (Exception $e) {
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
@@ -96,7 +78,7 @@ class OjtPageHandler extends Handler
         $ojtPlugin->pageName                        = 'ojt';
 
         $ojtPlugin->javascript  = [
-            $request->getBaseUrl() . '/lib/pkp/lib/vendor/components/jquery/jquery' . $min . '.js',
+            $request->getBaseUrl() . '/lib/pkp/lib/vendor/components/jquery/jquery.min.js',
             $pluginFullUrl . '/assets/vendors/sweetalert/sweetalert2.all.min.js',
             $pluginFullUrl . '/assets/js/theme.js',
             $pluginFullUrl . '/assets/js/jquery.form.min.js',
@@ -196,7 +178,7 @@ class OjtPageHandler extends Handler
         $pluginToInstall = json_decode($_POST['plugin']);
         $license         = $_POST['license'] ?? false;
 
-        if (isset($_POST['upgrade']) && $targetPlugin = @include($plugin->getModulesPath() . "/$pluginToInstall->folder/index.php")) {
+        if (isset($_POST['update']) && $targetPlugin = @include($plugin->getModulesPath() . "/$pluginToInstall->folder/index.php")) {
             $license = $targetPlugin->getSetting($this->contextId, 'license');
         }
 
