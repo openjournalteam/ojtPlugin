@@ -8,56 +8,52 @@ const API = 'https://openjournaltheme.com/index.php/wp-json/openjournalvalidatio
 class OjtPageHandler extends Handler
 {
     /** @var OjtPlugin  */
-    static $_plugin;
-
-    public $_contextId;
-    public $_baseUrl;
+    public $ojtPlugin;
+    public $contextId;
+    public $baseUrl;
 
     public function __construct($request)
     {
         if (!$request->getUser()) {
             $request->redirect(null, 'login', null, null);
         }
-        $this->_contextId = $request->getContext()->getId();
-        $this->_baseUrl = $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext());
+
+        $this->ojtPlugin = PluginRegistry::getPlugin('generic', 'ojtPlugin');
+
+        $this->contextId = $request->getContext()->getId();
+        $this->baseUrl = $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext());
     }
 
-
-    static function setPlugin($plugin)
+    public function updatePanel($args, $request)
     {
-        self::$_plugin = $plugin;
-    }
-
-    public function update($args, $request)
-    {
-        $plugin = self::$_plugin;
+        $plugin = $this->ojtPlugin;
 
         $ojtPlugin = json_decode($_POST['ojtPlugin']);
-        $payload = [
-            'token'        => $ojtPlugin->token,
-            'journal_url'   => $this->_baseUrl,
-        ];
+        // dd($ojtPlugin);
+        // $payload = [
+        //     'token'        => $ojtPlugin->token,
+        //     'journal_url'   => $this->baseUrl,
+        // ];
 
+        // $response = $this->curl($payload, API . 'get_download_link', true);
+        // if ($response == false) {
+        //     $json['error']  = 1;
+        //     $json['msg']    = "There's a problem on the server, please try again later.";
+        //     return showJson($json);
+        // }
 
+        // if ($response->error == 1) {
+        //     $json['error']  = 1;
+        //     $json['msg']    = $response->msg;
+        //     return showJson($json);
+        // }
 
-        $response = $this->curl($payload, API . 'get_download_link', true);
-        if ($response == false) {
-            $json['error']  = 1;
-            $json['msg']    = "There's a problem on the server, please try again later.";
-            return showJson($json);
-        }
-
-        if ($response->error == 1) {
-            $json['error']  = 1;
-            $json['msg']    = $response->msg;
-            return showJson($json);
-        }
-
-        $data = $response->data;
-
+        // $data = $response->data;
+        $url = $ojtPlugin->link_download;
         // trying to install plugin
         try {
-            $plugin->installPlugin($data->download_link);
+            $plugin->updatePanel($url);
+            // $plugin->updatePanel($data->download_link);
         } catch (Exception $e) {
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
@@ -72,7 +68,7 @@ class OjtPageHandler extends Handler
 
     public function index($args, $request)
     {
-        $plugin = self::$_plugin;
+        $plugin = $this->ojtPlugin;
 
         $baseUrl = $request->getBaseUrl() . '/';
         $pluginFullUrl          = $baseUrl . $plugin->getPluginPath();
@@ -81,15 +77,15 @@ class OjtPageHandler extends Handler
         $publicFileManager = new PublicFileManager();
 
         $publicFolder      = ($plugin->getJournalVersion() > '31')
-            ? $baseUrl . $publicFileManager->getContextFilesPath($this->_contextId) . '/'
-            : $baseUrl . $publicFileManager->getContextFilesPath(ASSOC_TYPE_JOURNAL, $this->_contextId) . '/';
+            ? $baseUrl . $publicFileManager->getContextFilesPath($this->contextId) . '/'
+            : $baseUrl . $publicFileManager->getContextFilesPath(ASSOC_TYPE_JOURNAL, $this->contextId) . '/';
 
         $ojtPlugin                                  = new \stdClass;
         $ojtPlugin->api                             = API;
-        $ojtPlugin->baseUrl                         = $this->_baseUrl;
+        $ojtPlugin->baseUrl                         = $this->baseUrl;
         $ojtPlugin->journalPublicFolder             = $publicFolder;
         $ojtPlugin->pluginFullUrl                   = $pluginFullUrl;
-        $ojtPlugin->version                         = self::$_plugin->getPluginVersion();
+        $ojtPlugin->version                         = $this->ojtPlugin->getPluginVersion();
         $ojtPlugin->logo                            = $pluginFullUrl . '/assets/img/ojt-logo.png';
         $ojtPlugin->favIcon                         = $pluginFullUrl . '/assets/img/ojt.ico';
         $ojtPlugin->placeholderImg                  = $pluginFullUrl . '/assets/img/placeholder.png';
@@ -100,7 +96,7 @@ class OjtPageHandler extends Handler
         $ojtPlugin->pageName                        = 'ojt';
 
         $ojtPlugin->javascript  = [
-            self::$_plugin->_getJQueryUrl($request),
+            $request->getBaseUrl() . '/lib/pkp/lib/vendor/components/jquery/jquery' . $min . '.js',
             $pluginFullUrl . '/assets/vendors/sweetalert/sweetalert2.all.min.js',
             $pluginFullUrl . '/assets/js/theme.js',
             $pluginFullUrl . '/assets/js/jquery.form.min.js',
@@ -113,7 +109,7 @@ class OjtPageHandler extends Handler
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
 
-        return $templateMgr->display(self::$_plugin->getTemplateResource('index.tpl'));
+        return $templateMgr->display($this->ojtPlugin->getTemplateResource('index.tpl'));
     }
 
     public function setting($args, $request)
@@ -121,27 +117,27 @@ class OjtPageHandler extends Handler
         $templateMgr            = TemplateManager::getManager($request);
 
         $json['css']  = [];
-        $json['html'] = $templateMgr->fetch(self::$_plugin->getTemplateResource('setting.tpl'));
+        $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('setting.tpl'));
         $json['js']   = [];
         return showJson($json);
     }
 
-    public function plugin_gallery($args, $request)
+    public function pluginGallery($args, $request)
     {
         $templateMgr            = TemplateManager::getManager($request);
 
         $json['css']  = [];
-        $json['html'] = $templateMgr->fetch(self::$_plugin->getTemplateResource('plugingallery.tpl'));
+        $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl'));
         $json['js']   = [];
         return showJson($json);
     }
 
-    public function plugin_installed($args, $request)
+    public function pluginInstalled($args, $request)
     {
         $templateMgr            = TemplateManager::getManager($request);
 
         $json['css']  = [];
-        $json['html'] = $templateMgr->fetch(self::$_plugin->getTemplateResource('plugininstalled.tpl'));
+        $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl'));
         $json['js']   = [];
         return showJson($json);
     }
@@ -150,10 +146,10 @@ class OjtPageHandler extends Handler
     {
         ajaxOrError();
 
-        $plugin = self::$_plugin;
+        $plugin = $this->ojtPlugin;
 
         foreach ($_POST as $settingName => $settingValue) {
-            $plugin->updateSetting($this->_contextId, $settingName, $settingValue);
+            $plugin->updateSetting($this->contextId, $settingName, $settingValue);
         }
 
         $json['error']  = 0;
@@ -163,12 +159,12 @@ class OjtPageHandler extends Handler
 
     public function getInstalledPlugin($args, $request)
     {
-        return showJson(self::$_plugin->_registeredModule ?? []);
+        return showJson($this->ojtPlugin->registeredModule ?? []);
     }
 
     public function toggleInstalledPlugin()
     {
-        $plugin = self::$_plugin;
+        $plugin = $this->ojtPlugin;
 
         $pluginFolder = $_POST['pluginFolder'];
         $isEnabled    = ($_POST['enabled'] == 'true') ? true : false;
@@ -195,20 +191,20 @@ class OjtPageHandler extends Handler
 
     public function installPlugin($args, $request)
     {
-        $plugin = self::$_plugin;
+        $plugin = $this->ojtPlugin;
 
         $pluginToInstall = json_decode($_POST['plugin']);
         $license         = $_POST['license'] ?? false;
 
         if (isset($_POST['upgrade']) && $targetPlugin = @include($plugin->getModulesPath() . "/$pluginToInstall->folder/index.php")) {
-            $license = $targetPlugin->getSetting($this->_contextId, 'license');
+            $license = $targetPlugin->getSetting($this->contextId, 'license');
         }
 
 
         $payload = [
             'token'        => $pluginToInstall->token,
             'license'       => $license,
-            'journal_url'   => $this->_baseUrl,
+            'journal_url'   => $this->baseUrl,
         ];
 
 
@@ -240,7 +236,7 @@ class OjtPageHandler extends Handler
         import('plugins.generic.ojtPlugin.modules.' . $pluginToInstall->folder . '.' . $pluginToInstall->class);
         $pluginInstance = new $pluginToInstall->class();
         if ($pluginInstance instanceof Plugin && isset($license)) {
-            $pluginInstance->updateSetting($this->_contextId, 'licenseMain', $license);
+            $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
         }
 
 
@@ -256,13 +252,13 @@ class OjtPageHandler extends Handler
         $pluginSettingsDao = \DAORegistry::getDAO('PluginSettingsDAO');
         $pluginName = strtolower_codesafe($pluginName);
 
-        $cache = $pluginSettingsDao->_getCache($this->_contextId, $pluginName);
+        $cache = $pluginSettingsDao->_getCache($this->contextId, $pluginName);
         $cache->flush();
 
         $pluginSettingsDao->update(
             'DELETE FROM plugin_settings WHERE context_id = ? AND plugin_name = ?
                 AND setting_name NOT IN (\'license\', \'licenseMain\', \'status_validated\', \'html\', \'time\')',
-            array((int) $this->_contextId, $pluginName)
+            array((int) $this->contextId, $pluginName)
         );
 
         if ($showJson) {
@@ -275,7 +271,7 @@ class OjtPageHandler extends Handler
 
     public function uninstallPlugin($args, $request)
     {
-        $plugin = self::$_plugin;
+        $plugin = $this->ojtPlugin;
 
         $removePlugin = json_decode($_POST['plugin']);
 
@@ -301,7 +297,7 @@ class OjtPageHandler extends Handler
 
     public function checkCurrentPlugin()
     {
-        $plugin          = self::$_plugin;
+        $plugin          = $this->ojtPlugin;
 
         $pluginFolder         = $_POST['pluginFolder'];
         $pluginVersion        = $_POST['pluginVersion'];

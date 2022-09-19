@@ -15,17 +15,22 @@ function checkUpdate() {
     updateAvailable: false,
     data: {},
     checkUpdate: async function () {
-      return;
+      let res = await fetch(
+        "https://demo.ini-sudah.online/index.php/wp-json/openjournalvalidation/v1/ojtpanel/check_update",
+        {
+          mode: "cors",
+        }
+      );
       // let res = await fetch("http://localhost/update.json", {
       //   mode: "cors",
       // });
-      // var ojtPlugin = await res.json();
+      let ojtPlugin = await res.json();
 
-      // this.data = ojtPlugin;
+      this.data = ojtPlugin;
 
-      // if (ojtPlugin.version > ojtPluginVersion) {
-      //   this.updateAvailable = true;
-      // }
+      if (ojtPlugin.latest_version > ojtPluginVersion) {
+        this.updateAvailable = true;
+      }
     },
     doUpdate() {
       Swal.fire({
@@ -40,7 +45,7 @@ function checkUpdate() {
           const formData = new FormData();
           formData.append("ojtPlugin", JSON.stringify(this.data));
 
-          return fetch(currentUrl + "update", {
+          return fetch(currentUrl + "updatePanel", {
             method: "POST",
             body: formData,
           })
@@ -50,14 +55,15 @@ function checkUpdate() {
             .catch((error) => {
               Swal.showValidationMessage(`Request failed: ${error}`);
             });
-          // let updating = await $.post(baseUrl + '/updatePlugin');
-          // return console.log(updating)
         },
         allowOutsideClick: () => !Swal.isLoading(),
       }).then((result) => {
         if (result.isConfirmed) {
           // show success message then reload page
           Swal.fire(result.value.msg).then(() => {
+            if (result.value.error) {
+              return;
+            }
             location.reload();
           });
         }

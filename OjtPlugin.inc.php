@@ -4,8 +4,8 @@ import('lib.pkp.classes.plugins.GenericPlugin');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 class OjtPlugin extends GenericPlugin
 {
-    public $_registeredModule;
-    public $_modulesPath;
+    public $registeredModule;
+    public $modulesPath;
 
     public function register($category, $path, $mainContextId = null)
     {
@@ -16,72 +16,96 @@ class OjtPlugin extends GenericPlugin
                 $this->registerModules();
                 HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
+                HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
             }
             return true;
         }
         return false;
     }
 
+    public function setupBackendPage($hookName, $args)
+    {
+        $request = $this->getRequest();
+        $templateMgr = TemplateManager::getManager($this->getRequest());
+        $dispatcher = $request->getDispatcher();
+        $router = $request->getRouter();
+        $userRoles = (array) $router->getHandler()->getAuthorizedContextObject(ASSOC_TYPE_USER_ROLES);
+        // dd(count(array_intersect([ROLE_ID_MANAGER, ROLE_ID_SITE_ADMIN], $userRoles)));
+        if (!$request->getUser() || !count(array_intersect([ROLE_ID_MANAGER, ROLE_ID_SITE_ADMIN], $userRoles))) return;
+
+
+
+        $menu = $templateMgr->getState('menu');
+        $menu['ojtPlugin'] = [
+            'name' => 'OJT Control Panel',
+            'url' => $router->url($request, null, 'ojt'),
+            "isCurrent" => false
+        ];
+
+        $templateMgr->setState(['menu' => $menu]);
+
+        // dd($templateMgr->get_template_vars('userRoles'));
+    }
+
     public function setModulesPath()
     {
-        $this->_modulesPath = $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules';
+        $this->modulesPath = $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules';
     }
 
     public function getModulesPath()
     {
-        return $this->_modulesPath;
+        return $this->modulesPath;
     }
 
     public function registerModules()
     {
-        $pluginsFolder = getDirs($this->getModulesPath());
+        $modulesFolder = getDirs($this->getModulesPath());
 
         import('lib.pkp.classes.site.VersionCheck');
 
         $plugins = [];
 
-        foreach ($pluginsFolder as $pluginFolder) {
+        foreach ($modulesFolder as $moduleFolder) {
             $fileManager = new FileManager();
-            if (!$fileManager->fileExists($this->getModulesPath() . "/$pluginFolder/version.xml") || !$fileManager->fileExists($this->getModulesPath() . "/$pluginFolder/index.php")) {
+            if (!$fileManager->fileExists($this->getModulesPath() . "/$moduleFolder/version.xml") || !$fileManager->fileExists($this->getModulesPath() . "/$moduleFolder/index.php")) {
                 continue;
             }
 
-            $plugin         = include($this->getModulesPath() . "/$pluginFolder/index.php");
+            $plugin         = include($this->getModulesPath() . "/$moduleFolder/index.php");
             if (!$plugin && $plugin instanceof Plugin) {
                 continue;
             }
 
-            $version        = VersionCheck::getValidPluginVersionInfo($this->getModulesPath() . "/$pluginFolder/version.xml");
+            $version        = VersionCheck::getValidPluginVersionInfo($this->getModulesPath() . "/$moduleFolder/version.xml");
             $categoryPlugin = explode('.', $version->getData('productType'))[1];
             $categoryDir    = $this->getModulesPath();
-            $pluginDir      = $categoryDir . '/' . $pluginFolder;
+            $pluginDir      = $categoryDir . '/' . $moduleFolder;
             PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
 
             $data                = $version->getAllData();
             $data['name']        = $plugin->getDisplayName();
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
+
             if (method_exists($plugin, 'getPage')) {
                 $data['page']        = $plugin->getPage();
             }
 
             $plugins[] = $data;
         }
-        // free memory i think
-        unset($plugin);
 
-        $this->_registeredModule = $plugins;
+        $this->registeredModule = $plugins;
 
         return $plugins;
     }
 
     public function createModulesFolder()
     {
-        if (is_dir(getcwd() . '/' . $this->getModulesPath())) {
+        if (is_dir(getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath())) {
             return;
         }
 
-        mkdir(getcwd() . '/' . $this->getModulesPath());
+        mkdir(getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath());
     }
     // Show available update on Setting -> Website
     function settingsWebsite($hookName, $args)
@@ -99,7 +123,7 @@ class OjtPlugin extends GenericPlugin
         return false;
     }
 
-    public function update($url)
+    public function updatePanel($url)
     {
         // Check ziparchive extension
         if (!class_exists('ZipArchive')) {
@@ -190,17 +214,6 @@ class OjtPlugin extends GenericPlugin
         return strtolower(__CLASS__);
     }
 
-    /**
-     * Get the URL for JQuery JS.
-     * @param $request PKPRequest
-     * @return string
-     */
-    public function _getJQueryUrl($request)
-    {
-        $min = Config::getVar('general', 'enable_minified') ? '.min' : '';
-        return $request->getBaseUrl() . '/lib/pkp/lib/vendor/components/jquery/jquery' . $min . '.js';
-    }
-
     public function setPageHandler($hookName, $params)
     {
         $page = $params[0];
@@ -209,8 +222,6 @@ class OjtPlugin extends GenericPlugin
             case 'ojt':
                 define('HANDLER_CLASS', 'OjtPageHandler');
                 $this->import('OjtPageHandler');
-                // Allow the static pages page handler to get the plugin object
-                OjtPageHandler::setPlugin($this);
 
                 return true;
                 break;
