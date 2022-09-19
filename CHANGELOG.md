@@ -15,3 +15,6 @@
 
 # 1.2.0.2
 - Support OJS 3.1
+
+# 1.2.1.0
+- New Feature: Update directry from OJTPanel
