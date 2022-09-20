@@ -1,4 +1,29 @@
 <?php
+import('plugins.generic.ojtPlugin.OjtPlugin');
+use Illuminate\Http\Client\PendingRequest as Http;
+
+/**
+ * @param Object plugin Plugin class
+ * @return array
+ * Get the plugin detail information based on product list wordpress
+ */
+if(! function_exists('getPluginDetail')) {
+    function getPluginDetail($plugin)
+    {
+        if(! is_object($plugin)) {
+            return [];
+        }
+        $request = app(Http::class)->get(OjtPlugin::API . '/product/list');
+        if(! $request->failed()) {
+            $plugins = $request->json();
+            $pluginKey = array_search(basename($plugin->getPluginPath()), array_column($plugins, 'folder'));
+            if($pluginKey !== false) {
+                return $plugins[$pluginKey];
+            }
+        }
+        return [];
+    }
+}
 
 if (!function_exists('getPostObject')) {
     function getPostObject()

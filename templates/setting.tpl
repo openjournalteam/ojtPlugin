@@ -13,14 +13,14 @@
   <ul class="ojt-flex ojt-border-b">
     <li @click="tab = 1" :class="{ 'ojt--mb-px': tab === 1 }" class="ojt--mb-px ojt-ml-3 ojt-mr-1">
       <a :class="tab === 1 ? activeTabClass : inactiveTabClass"
-        class="ojt-bg-white ojt-inline-block ojt-py-2 ojt-px-4 ojt-font-semibold" href="#">
+        class="ojt-bg-white ojt-inline-block ojt-py-2 ojt-px-4 ojt-font-semibold dark:ojt-bg-dark dark:ojt-text-light" href="#">
         Installed Plugins
       </a>
     </li>
     <li @click="tab = 2" :class="{ 'ojt--mb-px': tab === 2 }"
       @mouseenter.once="initiateAjaxContent($('.plugingallery'));" class="plugingallerytab ojt-mr-1">
       <a :class="tab === 2 ? activeTabClass : inactiveTabClass"
-        class="ojt-bg-white ojt-inline-block ojt-py-2 ojt-px-4 ojt-font-semibold" href="#">
+        class="ojt-bg-white ojt-inline-block ojt-py-2 ojt-px-4 ojt-font-semibold dark:ojt-bg-dark dark:ojt-text-light" href="#">
         Plugin Gallery
       </a>
     </li>

@@ -7,6 +7,13 @@ class OjtPlugin extends GenericPlugin
     public $registeredModule;
     public $modulesPath;
 
+    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1";
+    
+    public function apiUrl()
+    {
+        return static::API;
+    }
+
     public function register($category, $path, $mainContextId = null)
     {
         if (parent::register($category, $path, $mainContextId)) {

@@ -25,18 +25,18 @@
       <template x-for="(plugin, index) in plugins" :key="index">
         <div class="ojt-transition-all ojt-duration-150 ojt-flex ojt-w-full ojt-p-4 lg:ojt-w-1/2 xl:ojt-w-1/3">
           <div
-            class="ojt-flex ojt-flex-col ojt-items-stretch ojt-transition-all ojt-duration-150 ojt-bg-white ojt-rounded-lg ojt-shadow-lg hover:ojt-shadow-2xl ojt-w-full">
+            class="ojt-flex ojt-flex-col ojt-items-stretch ojt-transition-all ojt-duration-150 ojt-bg-white ojt-rounded-lg ojt-shadow-lg hover:ojt-shadow-2xl ojt-w-full dark:ojt-bg-dark dark:ojt-text-light">
             <div class="md:ojt-flex-shrink-0 md:ojt-min-h-48">
               <img :src="plugin?.placeholder ?? placeholderImg" :class="{ 'ojt-object-contain' : plugin.placeholder }"
                 :alt="plugin.name" class="ojt-w-full ojt-rounded-lg ojt-rounded-b-none md:ojt-h-56" loading="lazy" />
             </div>
             <div class="ojt-flex ojt-flex-wrap ojt-p-4 ojt-x-auto">
               <a href="#" @click="$dispatch('modal-plugin', plugin)"
-                class="ojt-text-2xl ojt-font-bold ojt-tracking-normal ojt-text-gray-800 hover:ojt-text-blue-800"
+                class="ojt-text-2xl ojt-font-bold ojt-tracking-normal ojt-text-gray-800 hover:ojt-text-blue-800 dark:ojt-text-light"
                 x-text="plugin.name"></a>
             </div>
             <hr class="ojt-border-gray-300" />
-            <p class="ojt-flex ojt-flex-row ojt-flex-wrap ojt-flex-grow ojt-w-full ojt-px-4 ojt-py-2 ojt-overflow-hidden ojt-text-sm ojt-text-gray-700"
+            <p class="ojt-flex ojt-flex-row ojt-flex-wrap ojt-flex-grow ojt-w-full ojt-px-4 ojt-py-2 ojt-overflow-hidden ojt-text-sm ojt-text-gray-700 dark:ojt-text-light"
               x-text="plugin.description.trimEllip(300)"></p>
             <hr class="ojt-border-gray-300" />
             <section class="ojt-p-4">
@@ -69,8 +69,8 @@
     x-show="show" x-transition:enter="ojt-transition ojt-duration-300" x-transition:enter-start="ojt-opacity-0"
     x-transition:enter-end="ojt-opacity-100" x-transition:leave="ojt-transition ojt-duration-300"
     x-transition:leave-start="ojt-opacity-100" x-transition:leave-end="ojt-opacity-0">
-    <div class="ojt-relative sm:ojt-w-3/4 ojt-mx-2 sm:ojt-mx-auto ojt-my-10 ojt-opacity-100">
-      <div class="ojt-relative ojt-bg-white ojt-shadow-lg ojt-rounded-md ojt-text-gray-900 ojt-z-20"
+    <div class="ojt-relative sm:ojt-w-3/4 ojt-mx-2 sm:ojt-mx-auto ojt-my-10 ojt-opacity-100 ">
+      <div class="ojt-relative ojt-bg-white ojt-shadow-lg ojt-rounded-md ojt-text-gray-900 ojt-z-20 dark:ojt-bg-dark dark:ojt-text-light"
         @click.away="show=false;key='';" x-show="show"
         x-transition:enter="ojt-transition ojt-transform ojt-duration-300" x-transition:enter-start="ojt-scale-0"
         x-transition:enter-end="ojt-scale-100" x-transition:leave="ojt-transition ojt-transform ojt-duration-300"
@@ -79,9 +79,9 @@
           <div>
             <header class="ojt-relative ojt-flex ojt-items-center ojt-justify-between">
               <img :src="plugin.thumbnail ?? placeholderImg" :alt="plugin.name"
-                class="ojt-w-full ojt-rounded-md ojt-rounded-b-none ojt-max-h-60 ojt-object-contain">
+                class="ojt-w-full ojt-rounded-md ojt-rounded-b-none ojt-max-h-60 ojt-object-contain ojt-mt-2">
               <div
-                class="ojt-rounded-lg ojt-absolute ojt-bottom-2 ojt-left-2 ojt-py-1 ojt-px-3 ojt-bg-pink-900 ojt-bg-opacity-80  ojt-text-white">
+                class="ojt-rounded-lg ojt-absolute ojt-bottom-2 ojt-left-2 ojt-py-1 ojt-px-3 ojt-bg-pink-900 ojt-bg-opacity-80 ojt-text-white dark:ojt-bg-pink-600 dark:ojt-text-light">
                 <p x-text="plugin.name" class="ojt-text-lg lg:ojt-text-2xl "></p>
               </div>
             </header>
@@ -145,7 +145,7 @@
                       </td>
                     </tr>
                     <tr>
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-blockojt-relative">
+                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-blockojt-relative dark:ojt-text-light">
                         <span x-text="'Version : ' + plugin.version" class="ojt-text-sm"></span>
                       </td>
                     </tr>

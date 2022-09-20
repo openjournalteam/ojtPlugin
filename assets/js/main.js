@@ -52,14 +52,20 @@ const Toast = Swal.mixin({
   },
 });
 
-function ajaxError(responseText, statusText, xhr, form) {
+function toastFire(icon, message) {
   Toast.fire({
-    icon: "error",
-    title:
-      responseText?.msg ??
-      responseText?.message ??
-      "Something went wrong,please contact the developer",
+    icon: icon,
+    title: message,
   });
+}
+
+function ajaxError(responseText, statusText, xhr, form) {
+  toastFire(
+    "error",
+    responseText?.msg ??
+      responseText?.message ??
+      "Something went wrong, please contact us"
+  );
 }
 
 function ajaxResponse(responseText, statusText, xhr, form) {
