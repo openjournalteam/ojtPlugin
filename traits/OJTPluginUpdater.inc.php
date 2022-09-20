@@ -6,11 +6,16 @@ trait OJTPluginUpdater
 {   
     abstract protected function getPlugin();
 
+    protected function getOjtPlugin()
+    {
+        return PluginRegistry::getPlugin('generic', 'ojtplugin');
+    }
+
     public function check_update()
     {
         $plugin = $this->getPlugin();
         $pluginDetail = getPluginDetail($plugin);
-        
+
         if(! $pluginDetail) {
             return showJson([
                 'error' => 1,
@@ -29,6 +34,6 @@ trait OJTPluginUpdater
 
     public function update()
     {
-
+        
     }
 }

@@ -2,6 +2,8 @@
 
 import('lib.pkp.classes.plugins.GenericPlugin');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
+use Illuminate\Http\Client\PendingRequest as Http;
+
 class OjtPlugin extends GenericPlugin
 {
     public $registeredModule;
@@ -315,11 +317,47 @@ class OjtPlugin extends GenericPlugin
         return true;
     }
 
+    public function getDownloadLink($pluginToken, $license = false, $journalUrl)
+    {
+        $payload = [
+            'token' => $pluginToken,
+            'license' => $license,
+            'journal_url' => $journalUrl
+        ];
+
+        $agents = [
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
+            'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.9) Gecko/20100508 SeaMonkey/2.0.4',
+            'Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 6.0; en-US)',
+            'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; da-dk) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1'
+        ];
+
+        $request = app(Http::class)
+            ->withHeaders([
+                'User-Agent' => $agents[rand(0, 3)],
+                'Access-Control-Allow-Origin' => '*',
+                'Access-Control-Allow-Headers' => 'x-csrf-uap-admin-token'
+            ])
+            ->asForm()
+            ->post(
+                static::API . '/product/get_download_link',
+                $payload
+            );
+
+        if(! $request->failed()) {
+            $response = $request->object();
+            if(! $response->error) {
+                $this->installPlugin($response->download_link);
+            }
+        }        
+    }
+
     /**
      * Installing plugin to targeted folder.
      * throw error if there is something wrong
      * @return bool - true if success.
      */
+
     public function installPlugin($url)
     {
         // Download file
