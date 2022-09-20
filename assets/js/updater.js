@@ -1,13 +1,13 @@
-function OjtPluginUpdater() {
+function OjtPluginUpdater(pluginPage) {
   return {
     updateAvailable: false,
-    checkUpdate: async (pluginPage) => {
+    checkUpdate: async () => {
       let urlCheckUpdate = `${baseUrl}/${pluginPage}/check_update`,
         request = await fetch(urlCheckUpdate),
         response = request.json();
       this.updateAvailable = response?.update_available;
     },
-    update: async (pluginPage) => {
+    update: async () => {
       if (!this.updateAvailable) {
         return;
       }
