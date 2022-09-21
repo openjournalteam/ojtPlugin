@@ -317,7 +317,7 @@ class OjtPlugin extends GenericPlugin
         return true;
     }
 
-    public function getDownloadLink($pluginToken, $license = false, $journalUrl)
+    public function getPluginDownloadLink($pluginToken, $license = false, $journalUrl)
     {
         $payload = [
             'token' => $pluginToken,
@@ -344,12 +344,14 @@ class OjtPlugin extends GenericPlugin
                 $payload
             );
 
+
         if(! $request->failed()) {
             $response = $request->object();
             if(! $response->error) {
-                $this->installPlugin($response->download_link);
+                return $response->data->download_link;
             }
-        }        
+        }
+        return false;        
     }
 
     /**

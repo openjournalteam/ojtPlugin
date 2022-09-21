@@ -174,37 +174,28 @@ class OjtPageHandler extends Handler
         $plugin = $this->ojtPlugin;
 
         $pluginToInstall = json_decode($_POST['plugin']);
-        $license         = $_POST['license'] ?? false;
+        $license = $_POST['license'] ?? false;
 
         if (isset($_POST['update']) && $targetPlugin = @include($plugin->getModulesPath() . "/$pluginToInstall->folder/index.php")) {
             $license = $targetPlugin->getSetting($this->contextId, 'license');
         }
 
         $payload = [
-            'token'        => $pluginToInstall->token,
-            'license'       => $license,
-            'journal_url'   => $this->baseUrl,
+            'token' => $pluginToInstall->token,
+            'license' => $license,
+            'journal_url' => $this->baseUrl,
         ];
 
-        $response = $this->curl($payload, $plugin->apiUrl() . '/product/get_download_link', true);
+        $downloadLink = $plugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
 
-        if ($response == false) {
+        if (! $downloadLink) {
             $json['error']  = 1;
             $json['msg']    = "There's a problem on the server, please try again later.";
             return showJson($json);
         }
-
-        if ($response->error == 1) {
-            $json['error']  = 1;
-            $json['msg']    = $response->msg;
-            return showJson($json);
-        }
-
-        $data = $response->data;
-
         // trying to install plugin
         try {
-            $plugin->installPlugin($data->download_link);
+            $plugin->installPlugin($downloadLink);
         } catch (Exception $e) {
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
@@ -213,7 +204,9 @@ class OjtPageHandler extends Handler
 
         // Applying input license to plugin setting  
         import('plugins.generic.ojtPlugin.modules.' . $pluginToInstall->folder . '.' . $pluginToInstall->class);
+
         $pluginInstance = new $pluginToInstall->class();
+        
         if ($pluginInstance instanceof Plugin && isset($license)) {
             $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
         }

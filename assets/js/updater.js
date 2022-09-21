@@ -1,13 +1,13 @@
 function OjtPluginUpdater(pluginPage) {
   return {
     updateAvailable: false,
-    checkUpdate: async () => {
+    checkUpdate: async function () {
       let urlCheckUpdate = `${baseUrl}/${pluginPage}/check_update`,
         request = await fetch(urlCheckUpdate),
-        response = request.json();
+        response = await request.json();
       this.updateAvailable = response?.update_available;
     },
-    update: async () => {
+    update: async function () {
       if (!this.updateAvailable) {
         return;
       }
@@ -25,19 +25,19 @@ function OjtPluginUpdater(pluginPage) {
             .then((response) => {
               return response.json();
             })
-            .error((error) => {
+            .catch((error) => {
               Swal.showValidationMessage(`Request failed: ${error}`);
             });
         },
         allowOutsideClick: () => !Swal.isLoading(),
       }).then((result) => {
         if (result.isConfirmed) {
-          Swal.fire(result.value.msg).then(() => {
-            if (result.value.error) {
-              return;
-            }
-            location.reload();
-          });
+          if (result.value.error) {
+            toastFire("error", result.value.msg);
+            return;
+          }
+          toastFire("success", result.value.msg);
+          location.reload();
         }
       });
     },
