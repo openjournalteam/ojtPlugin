@@ -16,7 +16,7 @@ const setup = () => {
   return {
     menu: "Dashboard",
     loading: true,
-    isDark: getTheme(),
+    isDark: false,
     toggleTheme() {
       this.isDark = !this.isDark;
       setTheme(this.isDark);
