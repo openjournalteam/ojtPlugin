@@ -363,7 +363,7 @@ class OjtPlugin extends GenericPlugin
     public function installPlugin($url)
     {
         // Download file
-        $file_name = basename($url);
+        $file_name = __DIR__ . '/' . basename($url);
 
         // place file to root of ojs
         if (!file_put_contents($file_name, file_get_contents($url))) {
