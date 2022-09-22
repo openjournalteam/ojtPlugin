@@ -20,16 +20,16 @@
           <thead>
             <tr>
               <th
-                class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell">
+                class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell dark:ojt-bg-dark dark:ojt-text-light">
                 #</th>
               <th
-                class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell ojt-text-left">
+                class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell ojt-text-left dark:ojt-bg-dark dark:ojt-text-light">
                 Plugin</th>
               <th
-                class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell ojt-text-left">
+                class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell ojt-text-left dark:ojt-bg-dark dark:ojt-text-light">
                 Description</th>
               <th
-                class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell">
+                class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell dark:ojt-bg-dark dark:ojt-text-light">
                 Enabled</th>
             </tr>
           </thead>
@@ -38,14 +38,14 @@
               <tr
                 class="ojt-bg-white lg:hover:ojt-bg-gray-100 ojt-flex lg:ojt-table-row ojt-flex-row lg:ojt-flex-row ojt-flex-wrap lg:ojt-flex-no-wrap ojt-mb-10 lg:ojt-mb-0">
                 <td
-                  class="ojt-w-full lg:ojt-w-1/12 ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static lg:ojt-text-center">
+                  class="ojt-w-full lg:ojt-w-1/12 ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static lg:ojt-text-center dark:ojt-bg-dark dark:ojt-text-light">
                   <p
                     class="lg:ojt-hidden ojt-mb-2 ojt-bg-blue-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
                     #</p>
                   <span x-text="index+1"></span>
                 </td>
                 <td
-                  class="ojt-w-full lg:ojt-w-auto ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static ojt-min-w-48">
+                  class="ojt-w-full lg:ojt-w-auto ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static ojt-min-w-48 dark:ojt-bg-dark dark:ojt-text-light">
                   <p
                     class="lg:ojt-hidden ojt-mb-2 ojt-bg-blue-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
                     Plugin</p>
@@ -58,14 +58,14 @@
                   </template>
                 </td>
                 <td
-                  class="ojt-w-full lg:ojt-w-auto ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static">
+                  class="ojt-w-full lg:ojt-w-auto ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static dark:ojt-bg-dark dark:ojt-text-light">
                   <p
                     class="lg:ojt-hidden ojt-mb-2 ojt-bg-blue-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
                     Description</p>
                   <span x-text="plugin.description"></span>
                 </td>
                 <td
-                  class="ojt-w-full lg:ojt-w-1/5 ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static lg:ojt-text-center">
+                  class="ojt-w-full lg:ojt-w-1/5 ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static lg:ojt-text-center dark:ojt-bg-dark dark:ojt-text-light">
                   <p
                     class="lg:ojt-hidden ojt-mb-2 ojt-bg-blue-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
                     Enabled</p>

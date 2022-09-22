@@ -4,7 +4,6 @@ import('classes.handler.Handler');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 import('lib.pkp.classes.plugins.Plugin');
 
-const API = 'https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/product/';
 class OjtPageHandler extends Handler
 {
     /** @var OjtPlugin  */
@@ -27,8 +26,6 @@ class OjtPageHandler extends Handler
     public function updatePanel($args, $request)
     {
         $plugin = $this->ojtPlugin;
-
-
 
         $ojtPlugin = json_decode($request->getUserVar('ojtPlugin'));
 
@@ -63,7 +60,7 @@ class OjtPageHandler extends Handler
             : $baseUrl . $publicFileManager->getContextFilesPath(ASSOC_TYPE_JOURNAL, $this->contextId) . '/';
 
         $ojtPlugin                                  = new \stdClass;
-        $ojtPlugin->api                             = API;
+        $ojtPlugin->api                             = $plugin->apiUrl() . '/product/';
         $ojtPlugin->baseUrl                         = $this->baseUrl;
         $ojtPlugin->journalPublicFolder             = $publicFolder;
         $ojtPlugin->pluginFullUrl                   = $pluginFullUrl;
@@ -87,6 +84,7 @@ class OjtPageHandler extends Handler
             $pluginFullUrl . '/assets/js/alpine/component.min.js',
             $pluginFullUrl . '/assets/js/mainAlpine.js',
             $pluginFullUrl . '/assets/js/main.js',
+            $pluginFullUrl . '/assets/js/updater.js'
         ];
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
@@ -176,38 +174,28 @@ class OjtPageHandler extends Handler
         $plugin = $this->ojtPlugin;
 
         $pluginToInstall = json_decode($_POST['plugin']);
-        $license         = $_POST['license'] ?? false;
+        $license = $_POST['license'] ?? false;
 
         if (isset($_POST['update']) && $targetPlugin = @include($plugin->getModulesPath() . "/$pluginToInstall->folder/index.php")) {
             $license = $targetPlugin->getSetting($this->contextId, 'license');
         }
 
-
         $payload = [
-            'token'        => $pluginToInstall->token,
-            'license'       => $license,
-            'journal_url'   => $this->baseUrl,
+            'token' => $pluginToInstall->token,
+            'license' => $license,
+            'journal_url' => $this->baseUrl,
         ];
 
+        $downloadLink = $plugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
 
-        $response = $this->curl($payload, API . 'get_download_link', true);
-        if ($response == false) {
+        if (! $downloadLink) {
             $json['error']  = 1;
             $json['msg']    = "There's a problem on the server, please try again later.";
             return showJson($json);
         }
-
-        if ($response->error == 1) {
-            $json['error']  = 1;
-            $json['msg']    = $response->msg;
-            return showJson($json);
-        }
-
-        $data = $response->data;
-
         // trying to install plugin
         try {
-            $plugin->installPlugin($data->download_link);
+            $plugin->installPlugin($downloadLink);
         } catch (Exception $e) {
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
@@ -216,7 +204,9 @@ class OjtPageHandler extends Handler
 
         // Applying input license to plugin setting  
         import('plugins.generic.ojtPlugin.modules.' . $pluginToInstall->folder . '.' . $pluginToInstall->class);
+
         $pluginInstance = new $pluginToInstall->class();
+        
         if ($pluginInstance instanceof Plugin && isset($license)) {
             $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
         }
@@ -245,7 +235,7 @@ class OjtPageHandler extends Handler
 
         if ($showJson) {
             $json['error'] = 0;
-            $json['msg']   = 'Reset Setting Success.';
+            $json['msg'] = 'Reset Setting Success.';
             showJson($json);
             return;
         }
@@ -279,22 +269,22 @@ class OjtPageHandler extends Handler
 
     public function checkCurrentPlugin()
     {
-        $plugin          = $this->ojtPlugin;
+        $plugin = $this->ojtPlugin;
 
-        $pluginFolder         = $_POST['pluginFolder'];
-        $pluginVersion        = $_POST['pluginVersion'];
+        $pluginFolder = $_POST['pluginFolder'];
+        $pluginVersion = $_POST['pluginVersion'];
 
-        $targetPlugin         = @include($plugin->getModulesPath() . "/$pluginFolder/index.php");
+        $targetPlugin = @include($plugin->getModulesPath() . "/$pluginFolder/index.php");
 
-        $json['update']       = false;
+        $json['update'] = false;
 
         if ($targetPlugin) {
             import('lib.pkp.classes.site.VersionCheck');
-            $version              = VersionCheck::parseVersionXML($plugin->getModulesPath() . "/$pluginFolder/version.xml");
-            $json['update']       = version_compare($version['release'], $pluginVersion, '<');
+            $version = VersionCheck::parseVersionXML($plugin->getModulesPath() . "/$pluginFolder/version.xml");
+            $json['update'] = version_compare($version['release'], $pluginVersion, '<');
         }
 
-        $json['error']     = 0;
+        $json['error'] = 0;
         $json['installed'] = ($targetPlugin) ? true : false;
         showJson($json);
     }
@@ -313,7 +303,8 @@ class OjtPageHandler extends Handler
             'Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 6.0; en-US)',
             'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; da-dk) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1'
         ];
-        $ch      = curl_init();
+
+        $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
