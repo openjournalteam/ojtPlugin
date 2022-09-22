@@ -17,4 +17,7 @@
 - Support OJS 3.1
 
 # 1.2.1.0
-- New Feature: Update directry from OJTPanel
+- New Feature: Update OJTPlugin directly from OJTPanel
+
+# 1.2.2.0
+- Add new API for updating modules 
