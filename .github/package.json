@@ -1,6 +1,5 @@
 {
   "platform": "OJS",
   "product_category": "plugin",
-  "name": "ojtPlugin",
-  "version": "latest"
+  "name": "ojtPlugin"
 }
