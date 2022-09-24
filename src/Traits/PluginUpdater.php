@@ -1,15 +1,18 @@
 <?php
+
+namespace Openjournalteam\OjtPlugin\Traits;
+
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 import('lib.pkp.classes.site.VersionCheck');
 
-trait OJTPluginUpdater
-{   
+trait PluginUpdater
+{
     abstract protected function getPlugin();
     abstract protected function getBaseUrl();
 
     protected function getOjtPlugin()
     {
-        return PluginRegistry::getPlugin('generic', 'ojtPlugin');
+        return \PluginRegistry::getPlugin('generic', 'ojtPlugin');
     }
 
     public function check_update()
@@ -17,14 +20,14 @@ trait OJTPluginUpdater
         $plugin = $this->getPlugin();
         $pluginDetail = getPluginDetail($plugin);
 
-        if(! $pluginDetail) {
+        if (!$pluginDetail) {
             return showJson([
                 'error' => 1,
                 'update_available' => false,
                 'msg' => "Failed to check update"
             ]);
         }
-        $pluginVersion = VersionCheck::parseVersionXML($plugin->getPluginPath() . '/version.xml');
+        $pluginVersion = \VersionCheck::parseVersionXML($plugin->getPluginPath() . '/version.xml');
         $updateAvailable = version_compare($pluginVersion['release'], $pluginDetail['version'], '<');
         return showJson([
             'error' => 0,
@@ -39,7 +42,7 @@ trait OJTPluginUpdater
         $ojtPlugin = $this->getOjtPlugin();
         $pluginDetail = getPluginDetail($plugin);
 
-        if(! $pluginDetail) {
+        if (!$pluginDetail) {
             return showJson([
                 'error' => 1,
                 'msg' => "Failed to fetch plugin's data"
@@ -48,7 +51,7 @@ trait OJTPluginUpdater
         $currentLicense = $plugin->getSetting($plugin->getCurrentContextId(), 'license') ?? false;
         $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginDetail['token'], $currentLicense, $this->getBaseUrl());
 
-        if(! $downloadLink) {
+        if (!$downloadLink) {
             return showJson([
                 'error' => 1,
                 'msg' => 'Failed to get plugin update link'
@@ -60,7 +63,7 @@ trait OJTPluginUpdater
                 'error' => 0,
                 'msg' => "Plugin updated successfully"
             ]);
-        } catch (\Exception $e){
+        } catch (\Exception $e) {
             return showJson([
                 'error' => 1,
                 'msg' => "Failed to update plugin : " . $e->getMessage()

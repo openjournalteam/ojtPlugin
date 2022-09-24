@@ -14,9 +14,10 @@
   "version": "1.0.0",
   "main": "postcss.config.js",
   "scripts": {
-    "build:css": "postcss assets/stylesheets/tw.css -o assets/stylesheets/tailwind.css",
-    "watch": "postcss assets/stylesheets/tw.css -o assets/stylesheets/tailwind.css -w",
-    "dev": "TAILWIND_MODE=watch postcss -i tailwind.css -o build.css --watch"
+    "watch": "npx tailwindcss -i ./assets/stylesheets/tw.css -o ./assets/stylesheets/tailwind.css -w",
+    "dev": "npx tailwindcss -i ./assets/stylesheets/tw.css -o ./assets/stylesheets/tailwind.css",
+    "prod": "npm run production",
+    "production": "npx tailwindcss -i ./assets/stylesheets/tw.css -o ./assets/stylesheets/tailwind.css --minify"
   },
   "repository": {
     "type": "git",
