@@ -1,0 +1,9 @@
+{
+    "name": "openjournalteam/ojtplugin",
+    "autoload": {
+        "psr-4": {
+            "Openjournalteam\\OjtPlugin\\": "src/"
+        }
+    },
+    "require": {}
+}
