@@ -180,7 +180,7 @@
             </nav>
           </div>
         </header>
-        <div class="ojt-h-full">
+        <div class="ojt-h-full ojt-flex ojt-flex-col ojt-justify-between">
           <main class="ojt-space-y-4">
             <div x-data="checkUpdate()" x-init="() => { checkUpdate() }" x-show="updateAvailable"
               class="update-available ojt-flex ojt-flex-col ojt-p-8 ojt-bg-white ojt-shadow-md ojt-border-l-8 ojt-border-yellow-500">
@@ -210,6 +210,17 @@
 
             </div>
           </main>
+          <div
+            class="ojt-bg-white ojt-flex ojt-items-center ojt-justify-between ojt-p-2 ojt-border-t dark:ojt-border-blue-800 ojt-py-4">
+            <div>
+              Copyright © 2022 <a href="https://openjournaltheme.com" target="_blank"
+                class="ojt-font-bold hover:ojt-text-purple-600 hover:ojt-text-underline">Open Journal Theme</a>. All
+              rights reserved.
+            </div>
+            <p class="version ojt-text-right">
+              Current Version : <b> {$ojtPlugin->version} </b>
+            </p>
+          </div>
         </div>
       </div>
     </div>
