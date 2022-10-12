@@ -1,5 +1,5 @@
 {assign var="logoImage" value=$currentContext->getLocalizedData('pageHeaderLogoImage')}
-
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -23,7 +23,7 @@
 <div id="moduleCss"></div>
 
 <body>
-  <div x-data="setup()" id="utama" x-init="$refs.loading.classList.add('ojt-hidden');" :class="{ 'dark': isDark }">
+  <div x-data="utama()" id="utama" x-init="$refs.loading.classList.add('ojt-hidden');" :class="{ 'dark': isDark }">
     <div
       class="ojt-flex ojt-h-screen ojt-antialiased ojt-text-gray-900 ojt-bg-gray-100 dark:ojt-bg-dark dark:ojt-text-light">
       <div x-ref="loading"
@@ -108,7 +108,7 @@
       </aside>
 
       <div class="ojt-flex ojt-flex-col ojt-flex-1 ojt-min-h-screen ojt-overflow-x-hidden ojt-overflow-y-auto">
-        <header class="ojt-sticky ojt-top-0 ojt-relative ojt-bg-white dark:ojt-bg-darker">
+        <header class="ojt-sticky ojt-top-0 ojt-bg-white dark:ojt-bg-darker">
           <div class="ojt-flex ojt-items-center ojt-justify-between ojt-p-2 ojt-border-b dark:ojt-border-blue-800">
             <button @click="isMobileMainMenuOpen = !isMobileMainMenuOpen"
               class="ojt-p-1 ojt-text-blue-400 ojt-transition-colors ojt-duration-200 ojt-rounded-md ojt-bg-blue-50 hover:ojt-text-blue-600 hover:ojt-bg-blue-100 dark:hover:ojt-text-light dark:hover:ojt-bg-blue-700 dark:ojt-bg-dark md:ojt-hidden focus:ojt-outline-none focus:ojt-ring">
@@ -207,7 +207,7 @@
             <div x-show="menu == 'Plugin'" x-transition:enter="ojt-transition ojt-ease-out ojt-duration-300"
               x-transition:enter-start="ojt-opacity-0 ojt-transform ojt-scale-50"
               x-transition:enter-end="ojt-opacity-100 ojt-transform ojt-scale-100" id="main-menu">
-
+                
             </div>
           </main>
           <div

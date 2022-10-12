@@ -112,6 +112,12 @@ class OjtPageHandler extends Handler
         return showJson($json);
     }
 
+    public function getPluginGalleryList($args, $request)
+    {
+        $url = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/product/list";
+        
+    }
+
     public function pluginInstalled($args, $request)
     {
         $templateMgr            = TemplateManager::getManager($request);
@@ -142,14 +148,14 @@ class OjtPageHandler extends Handler
         return showJson($this->ojtPlugin->registeredModule ?? []);
     }
 
-    public function toggleInstalledPlugin()
+    public function toggleInstalledPlugin($args, $request)
     {
         $plugin = $this->ojtPlugin;
 
-        $pluginFolder = $_POST['pluginFolder'];
-        $isEnabled    = ($_POST['enabled'] == 'true') ? true : false;
+        $pluginFolder = $request->getUserVar('pluginFolder');
+        $isEnabled    = ($request->getUserVar('enabled') == 'true') ? true : false;
 
-        $targetPlugin         = include($plugin->getModulesPath() . "/$pluginFolder/index.php");
+        $targetPlugin         = include($plugin->getModulesPath() . DIRECTORY_SEPARATOR . $pluginFolder . DIRECTORY_SEPARATOR . "index.php");
 
         if (!$targetPlugin && !is_object($targetPlugin)) {
             $json['error'] = 1;
@@ -188,7 +194,7 @@ class OjtPageHandler extends Handler
 
         $downloadLink = $plugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
 
-        if (! $downloadLink) {
+        if (!$downloadLink) {
             $json['error']  = 1;
             $json['msg']    = "There's a problem on the server, please try again later.";
             return showJson($json);
@@ -206,7 +212,7 @@ class OjtPageHandler extends Handler
         import('plugins.generic.ojtPlugin.modules.' . $pluginToInstall->folder . '.' . $pluginToInstall->class);
 
         $pluginInstance = new $pluginToInstall->class();
-        
+
         if ($pluginInstance instanceof Plugin && isset($license)) {
             $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
         }
@@ -267,7 +273,7 @@ class OjtPageHandler extends Handler
         return;
     }
 
-    public function checkCurrentPlugin()
+    public function checkPluginInstalled($args, $request)
     {
         $plugin = $this->ojtPlugin;
 
@@ -287,6 +293,11 @@ class OjtPageHandler extends Handler
         $json['error'] = 0;
         $json['installed'] = ($targetPlugin) ? true : false;
         showJson($json);
+    }
+
+    public function isPluginInstalled($args, $request)
+    {
+        $plugin = $this->ojtPlugin;
     }
 
     /**

@@ -70,3 +70,255 @@ function checkUpdate() {
     },
   };
 }
+
+function pluginInstalled() {
+  return {
+    isLoading: true,
+    plugins: null,
+    async fetchInstalledPlugin() {
+      this.isLoading = true;
+      let res = await fetch(currentUrl + "getInstalledPlugin");
+
+      if (res.status != 200) {
+        return ajaxError();
+      }
+
+      let json = await res.json();
+      this.plugins = json;
+      console.log(json);
+
+      this.passPluginsToMenu();
+
+      this.isLoading = false;
+    },
+    async togglePlugin(currentPlugin) {
+      const formData = new FormData();
+      formData.append("pluginFolder", currentPlugin.product);
+      formData.append("enabled", !currentPlugin.enabled);
+
+      let response = await fetch(currentUrl + "toggleInstalledPlugin", {
+        method: "POST",
+        body: formData,
+      });
+
+      let data = await response.json();
+
+      ajaxResponse(data);
+
+      this.plugins = this.plugins.map((plugin) =>
+        plugin.product === currentPlugin.product
+          ? {
+              ...plugin,
+              enabled: !plugin.enabled,
+            }
+          : plugin
+      );
+
+      this.passPluginsToMenu();
+    },
+    passPluginsToMenu() {
+      alpineComponent("pluginMenu").plugins = this.plugins;
+    },
+    async resetSetting(pluginName) {
+      var swal = await Swal.fire({
+        title: "Are you sure you wish to reset this plugin setting?",
+        showCancelButton: true,
+        confirmButtonText: `Yes`,
+      });
+
+      if (!swal.isConfirmed) {
+        return;
+      }
+
+      let response = await fetch(currentUrl + "resetSetting/" + pluginName);
+
+      if (res.status != 200) {
+        ajaxError();
+        return;
+      }
+
+      let data = await response.json();
+
+      ajaxResponse(data);
+    },
+  };
+}
+
+function pluginGallery() {
+  return {
+    loading: true,
+    error: false,
+    search: "",
+    plugins: [],
+    async reload() {
+      this.error = false;
+      this.fetchPlugins();
+    },
+    async fetchPlugins() {
+      this.loading = true;
+      let res = await fetch(api + "list", {
+        mode: "cors",
+      }).catch(function (error) {
+        this.loading = false;
+        this.error = true;
+        ajaxError(error);
+        return;
+      });
+
+      if (res.status != 200) {
+        ajaxError();
+        return;
+      }
+
+      var plugins = await res.json();
+
+      // plugins = plugins.map(async (plugin) => {
+      //   alpineComponent("pluginInstalled");
+      // });
+      // plugins = Promise.all(
+      //   plugins.map(async (plugin) => {
+      //     let formData = new FormData();
+
+      //     formData.append("pluginFolder", plugin.folder);
+      //     formData.append("pluginVersion", plugin.version);
+
+      //     let response = await fetch(currentUrl + "checkPluginInstalled", {
+      //       method: "POST",
+      //       body: formData,
+      //     });
+
+      //     let data = await response.json();
+      //     return { ...plugin, installed: data.installed, update: data.update };
+      //   })
+      // );
+
+      this.plugins = await plugins;
+      this.loading = false;
+    },
+    get filteredPlugins() {
+      if (!this.search) {
+        return this.plugins;
+      }
+
+      let plugins = this.plugins.filter((plugin) => {
+        return plugin.name.toLowerCase().includes(this.search.toLowerCase());
+      });
+
+      return plugins;
+    },
+  };
+}
+
+function modalPlugin() {
+  return {
+    show: false,
+    plugin: null,
+    resetSetting: false,
+    loading: false,
+    key: "",
+    close() {
+      this.show = false;
+      this.key = "";
+      this.loading = false;
+      this.resetSetting = false;
+    },
+    showPlugin(plugin) {
+      this.plugin = plugin;
+      this.show = true;
+    },
+    async installPlugin(plugin, update = false) {
+      if (this.key == "" && !update) {
+        Toast.fire({
+          icon: "info",
+          title: "Please insert license Key ..",
+        });
+        return;
+      }
+
+      if (this.loading == true) {
+        Toast.fire({
+          icon: "info",
+          title: "Please Wait, still Processing ...",
+        });
+        return;
+      }
+
+      this.loading = true;
+
+      const formData = new FormData();
+      formData.append("plugin", JSON.stringify(plugin));
+      formData.append("license", this.key);
+      if (update) {
+        formData.append("update", true);
+      }
+
+      let response = await fetch(currentUrl + "installPlugin", {
+        method: "POST",
+        body: formData,
+      }).catch(function (error) {
+        this.loading = false;
+        ajaxError(error);
+        return;
+      });
+
+      let data = await response.json();
+      if (data.error == 1) {
+        this.loading = false;
+        console.log(data);
+        ajaxError(data);
+        return;
+      }
+
+      ajaxResponse(data);
+
+      alpineComponent("pluginGallery").plugins = alpineComponent(
+        "pluginGallery"
+      ).plugins.map((plug) =>
+        plug.token === plugin.token ? { ...plug, installed: true } : plug
+      );
+
+      this.close();
+
+      alpineComponent("pluginInstalled").fetchInstalledPlugin();
+      alpineComponent("ojt-setting").tab = 1;
+    },
+    async uninstall(plugin) {
+      if (this.loading == true) {
+        Toast.fire({
+          icon: "info",
+          title: "Please Wait, still Processing ...",
+        });
+        return;
+      }
+
+      this.loading = true;
+
+      const formData = new FormData();
+      formData.append("plugin", JSON.stringify(plugin));
+      formData.append("resetSetting", this.resetSetting);
+
+      let response = await fetch(currentUrl + "uninstallPlugin", {
+        method: "POST",
+        body: formData,
+      }).catch(function (error) {
+        this.loading = false;
+        ajaxError(error);
+      });
+
+      let data = await response.json();
+
+      ajaxResponse(data);
+
+      alpineComponent("pluginGallery").plugins = alpineComponent(
+        "pluginGallery"
+      ).plugins.map((plug) =>
+        plug.token === plugin.token ? { ...plug, installed: false } : plug
+      );
+
+      this.close();
+
+      alpineComponent("pluginInstalled").fetchInstalledPlugin();
+      alpineComponent("ojt-setting").tab = 1;
+    },
+  };
+}

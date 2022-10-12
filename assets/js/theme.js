@@ -1,4 +1,4 @@
-const setup = () => {
+const utama = () => {
   const getTheme = () => {
     if (window.localStorage.getItem("dark")) {
       return JSON.parse(window.localStorage.getItem("dark"));

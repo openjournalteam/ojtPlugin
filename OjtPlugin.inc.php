@@ -2,6 +2,7 @@
 
 import('lib.pkp.classes.plugins.GenericPlugin');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
+
 use Illuminate\Http\Client\PendingRequest as Http;
 
 class OjtPlugin extends GenericPlugin
@@ -10,7 +11,7 @@ class OjtPlugin extends GenericPlugin
     public $modulesPath;
 
     const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1";
-    
+
     public function apiUrl()
     {
         return static::API;
@@ -20,10 +21,18 @@ class OjtPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
+
+                $templateMgr = TemplateManager::getManager(Application::get()->getRequest());
+                $templateMgr->clearTemplateCache();
+                $templateMgr->clearCssCache();
+
+                $cacheMgr = CacheManager::getManager();
+                $cacheMgr->flush();
+
                 $this->setModulesPath();
                 $this->createModulesFolder();
                 $this->registerModules();
-                HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
+                // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
                 HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
             }
@@ -52,8 +61,6 @@ class OjtPlugin extends GenericPlugin
         ];
 
         $templateMgr->setState(['menu' => $menu]);
-
-        // dd($templateMgr->get_template_vars('userRoles'));
     }
 
     public function setModulesPath()
@@ -61,7 +68,7 @@ class OjtPlugin extends GenericPlugin
         $this->modulesPath = $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules';
     }
 
-    public function getModulesPath()
+    public function getModulesPath($path = '')
     {
         return $this->modulesPath;
     }
@@ -76,19 +83,24 @@ class OjtPlugin extends GenericPlugin
 
         foreach ($modulesFolder as $moduleFolder) {
             $fileManager = new FileManager();
-            if (!$fileManager->fileExists($this->getModulesPath() . "/$moduleFolder/version.xml") || !$fileManager->fileExists($this->getModulesPath() . "/$moduleFolder/index.php")) {
+            $versionFile = $this->getModulesPath() . DIRECTORY_SEPARATOR . $moduleFolder  . DIRECTORY_SEPARATOR . "version.xml";
+            $indexFile = $this->getModulesPath() . DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php";
+            if (
+                !$fileManager->fileExists($versionFile) ||
+                !$fileManager->fileExists($indexFile)
+            ) {
                 continue;
             }
 
-            $plugin         = include($this->getModulesPath() . "/$moduleFolder/index.php");
+            $plugin         = include($indexFile);
             if (!$plugin && $plugin instanceof Plugin) {
                 continue;
             }
 
-            $version        = VersionCheck::getValidPluginVersionInfo($this->getModulesPath() . "/$moduleFolder/version.xml");
+            $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
             $categoryPlugin = explode('.', $version->getData('productType'))[1];
             $categoryDir    = $this->getModulesPath();
-            $pluginDir      = $categoryDir . '/' . $moduleFolder;
+            $pluginDir      = $categoryDir . DIRECTORY_SEPARATOR . $moduleFolder;
             PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
 
             $data                = $version->getAllData();
@@ -283,7 +295,7 @@ class OjtPlugin extends GenericPlugin
             return false;
         }
 
-        return is_dir(getcwd() . '/' . $this->getModulesPath() . $folder);
+        return is_dir(getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath() . $folder);
     }
 
     /**
@@ -345,13 +357,13 @@ class OjtPlugin extends GenericPlugin
             );
 
 
-        if(! $request->failed()) {
+        if (!$request->failed()) {
             $response = $request->object();
-            if(! $response->error) {
+            if (!$response->error) {
                 return $response->data->download_link;
             }
         }
-        return false;        
+        return false;
     }
 
     /**

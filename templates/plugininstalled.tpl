@@ -1,4 +1,4 @@
-<div x-data="pluginInstalled()" id="pluginInstalled" x-init="fetchInstalledPlugin()">
+<div x-data="pluginInstalled()" id="pluginInstalled" x-init="fetchInstalledPlugin();">
   <template x-if="isLoading">
     <div class="loading-menu ojt-flex ojt-items-center ojt-h-80">
       <div class="lds-roller ojt-self-center ojt-mx-auto">
@@ -98,77 +98,3 @@
     </div>
   </template>
 </div>
-
-<script type="text/javascript">
-  function pluginInstalled() {
-    return {
-      isLoading: true,
-      plugins: null,
-      async fetchInstalledPlugin() {
-        this.isLoading = true;
-        let res = await fetch(currentUrl + 'getInstalledPlugin');
-
-        if (res.status != 200) {
-          return ajaxError();
-        }
-
-        let json = await res.json();
-
-        this.plugins = json;
-
-        this.passPluginsToMenu();
-
-        this.isLoading = false;
-      },
-      async togglePlugin(currentPlugin) {
-        let isEnabled = currentPlugin?.enable ?? false;
-
-        const formData = new FormData();
-        formData.append('pluginFolder', currentPlugin.product);
-        formData.append('enabled', !currentPlugin.enabled);
-
-
-        let response = await fetch(currentUrl + 'toggleInstalledPlugin', {
-          method: 'POST',
-          body: formData
-        })
-
-        let data = await response.json();
-
-        ajaxResponse(data);
-
-        this.plugins = this.plugins.map((plugin) => plugin.product === currentPlugin.product ? {
-          ...plugin,
-          enabled: !plugin.enabled
-        } : plugin)
-
-        this.passPluginsToMenu();
-      },
-      passPluginsToMenu() {
-        alpineComponent('pluginMenu').plugins = this.plugins;
-      },
-      async resetSetting(pluginName) {
-        var swal = await Swal.fire({
-          title: '{translate key="plugins.generic.ojtPlugin.promptResetPluginSetting"}',
-          showCancelButton: true,
-          confirmButtonText: `Yes`,
-        });
-
-        if (!swal.isConfirmed) {
-          return;
-        }
-
-        let response = await fetch(currentUrl + 'resetSetting/' + pluginName);
-
-        if (res.status != 200) {
-          ajaxError();
-          return;
-        }
-
-        let data = await response.json();
-
-        ajaxResponse(data);
-      }
-    }
-  }
-</script>
