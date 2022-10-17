@@ -83,13 +83,16 @@ function pluginInstalled() {
         return ajaxError();
       }
 
-      let json = await res.json();
-      this.plugins = json;
-      console.log(json);
+      let plugins = await res.json();
+      console.log(plugins);
+      this.plugins = plugins;
 
       this.passPluginsToMenu();
 
       this.isLoading = false;
+    },
+    getPluginByProduct(product) {
+      return this.plugins.find((plugin) => plugin.product == product);
     },
     async togglePlugin(currentPlugin) {
       const formData = new FormData();
@@ -155,45 +158,19 @@ function pluginGallery() {
       this.fetchPlugins();
     },
     async fetchPlugins() {
-      this.loading = true;
-      let res = await fetch(api + "list", {
-        mode: "cors",
-      }).catch(function (error) {
+      try {
+        this.loading = true;
+        let res = await fetch(currentUrl + "getPluginGalleryList");
+
+        this.plugins = await res.json();
+      } catch (error) {
         this.loading = false;
         this.error = true;
         ajaxError(error);
         return;
-      });
-
-      if (res.status != 200) {
-        ajaxError();
-        return;
+      } finally {
+        this.loading = false;
       }
-
-      var plugins = await res.json();
-
-      // plugins = plugins.map(async (plugin) => {
-      //   alpineComponent("pluginInstalled");
-      // });
-      // plugins = Promise.all(
-      //   plugins.map(async (plugin) => {
-      //     let formData = new FormData();
-
-      //     formData.append("pluginFolder", plugin.folder);
-      //     formData.append("pluginVersion", plugin.version);
-
-      //     let response = await fetch(currentUrl + "checkPluginInstalled", {
-      //       method: "POST",
-      //       body: formData,
-      //     });
-
-      //     let data = await response.json();
-      //     return { ...plugin, installed: data.installed, update: data.update };
-      //   })
-      // );
-
-      this.plugins = await plugins;
-      this.loading = false;
     },
     get filteredPlugins() {
       if (!this.search) {
@@ -215,6 +192,9 @@ function modalPlugin() {
     plugin: null,
     resetSetting: false,
     loading: false,
+    installing: false,
+    uninstalling: false,
+    updating: false,
     key: "",
     close() {
       this.show = false;
@@ -319,6 +299,12 @@ function modalPlugin() {
 
       alpineComponent("pluginInstalled").fetchInstalledPlugin();
       alpineComponent("ojt-setting").tab = 1;
+    },
+    isValidURL(string) {
+      var res = string.match(
+        /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g
+      );
+      return res !== null;
     },
   };
 }

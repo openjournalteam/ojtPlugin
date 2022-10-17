@@ -8,7 +8,6 @@ use Illuminate\Http\Client\PendingRequest as Http;
 class OjtPlugin extends GenericPlugin
 {
     public $registeredModule;
-    public $modulesPath;
 
     const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1";
 
@@ -21,15 +20,7 @@ class OjtPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
-
-                $templateMgr = TemplateManager::getManager(Application::get()->getRequest());
-                $templateMgr->clearTemplateCache();
-                $templateMgr->clearCssCache();
-
-                $cacheMgr = CacheManager::getManager();
-                $cacheMgr->flush();
-
-                $this->setModulesPath();
+                $this->flushCache();
                 $this->createModulesFolder();
                 $this->registerModules();
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
@@ -39,6 +30,16 @@ class OjtPlugin extends GenericPlugin
             return true;
         }
         return false;
+    }
+
+    public function flushCache()
+    {
+        $templateMgr = TemplateManager::getManager(Application::get()->getRequest());
+        $templateMgr->clearTemplateCache();
+        $templateMgr->clearCssCache();
+
+        $cacheMgr = CacheManager::getManager();
+        $cacheMgr->flush();
     }
 
     public function setupBackendPage($hookName, $args)
@@ -63,14 +64,9 @@ class OjtPlugin extends GenericPlugin
         $templateMgr->setState(['menu' => $menu]);
     }
 
-    public function setModulesPath()
-    {
-        $this->modulesPath = $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules';
-    }
-
     public function getModulesPath($path = '')
     {
-        return $this->modulesPath;
+        return $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $path;
     }
 
     public function registerModules()
@@ -83,8 +79,8 @@ class OjtPlugin extends GenericPlugin
 
         foreach ($modulesFolder as $moduleFolder) {
             $fileManager = new FileManager();
-            $versionFile = $this->getModulesPath() . DIRECTORY_SEPARATOR . $moduleFolder  . DIRECTORY_SEPARATOR . "version.xml";
-            $indexFile = $this->getModulesPath() . DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php";
+            $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
+            $indexFile = $this->getModulesPath(DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php");
             if (
                 !$fileManager->fileExists($versionFile) ||
                 !$fileManager->fileExists($indexFile)
@@ -98,16 +94,19 @@ class OjtPlugin extends GenericPlugin
             }
 
             $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
+
             $categoryPlugin = explode('.', $version->getData('productType'))[1];
             $categoryDir    = $this->getModulesPath();
             $pluginDir      = $categoryDir . DIRECTORY_SEPARATOR . $moduleFolder;
             PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
 
             $data                = $version->getAllData();
+            $data['version']     = $version->getVersionString();
             $data['name']        = $plugin->getDisplayName();
+            $data['className']   = $plugin->getName();
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
-
+            $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
             if (method_exists($plugin, 'getPage')) {
                 $data['page']        = $plugin->getPage();
             }
@@ -118,6 +117,13 @@ class OjtPlugin extends GenericPlugin
         $this->registeredModule = $plugins;
 
         return $plugins;
+    }
+
+    public function getDefaultPluginIcon()
+    {
+        $templateMgr = TemplateManager::getManager(Application::get()->getRequest());
+
+        return $templateMgr->fetch($this->getTemplateResource('defaultIcon.tpl'));
     }
 
     public function createModulesFolder()
@@ -304,7 +310,7 @@ class OjtPlugin extends GenericPlugin
      */
     public function uninstallPlugin($plugin)
     {
-        $path    = $this->getModulesPath() . $plugin->folder;
+        $path    = $this->getModulesPath($plugin->folder);
 
         if (!is_dir($path)) {
             throw new InvalidArgumentException("$plugin->name not Found");

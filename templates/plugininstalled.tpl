@@ -29,6 +29,9 @@
                 class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell ojt-text-left dark:ojt-bg-dark dark:ojt-text-light">
                 Description</th>
               <th
+                class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell ojt-text-left dark:ojt-bg-dark dark:ojt-text-light">
+                Version</th>
+              <th
                 class="ojt-p-3 ojt-font-bold ojt-uppercase ojt-bg-gray-200 ojt-text-gray-600 ojt-border ojt-border-gray-300 ojt-hidden lg:ojt-table-cell dark:ojt-bg-dark dark:ojt-text-light">
                 Enabled</th>
             </tr>
@@ -40,34 +43,43 @@
                 <td
                   class="ojt-w-full lg:ojt-w-1/12 ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static lg:ojt-text-center dark:ojt-bg-dark dark:ojt-text-light">
                   <p
-                    class="lg:ojt-hidden ojt-mb-2 ojt-bg-blue-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
+                    class="lg:ojt-hidden ojt-mb-2 ojt-bg-primary-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
                     #</p>
                   <span x-text="index+1"></span>
                 </td>
                 <td
-                  class="ojt-w-full lg:ojt-w-auto ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static ojt-min-w-48 dark:ojt-bg-dark dark:ojt-text-light">
+                  class="ojt-w-full lg:ojt-w-auto ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static ojt-min-w-[12rem] dark:ojt-bg-dark dark:ojt-text-light">
                   <p
-                    class="lg:ojt-hidden ojt-mb-2 ojt-bg-blue-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
+                    class="lg:ojt-hidden ojt-mb-2 ojt-bg-primary-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
                     Plugin</p>
                   <template x-if="!plugin.enabled || (plugin.enabled && !plugin?.page)">
                     <span x-text="plugin.name"></span>
                   </template>
                   <template x-if="plugin.enabled && plugin?.page">
-                    <a href="#" @click="alpineComponent('utama').menu = 'Plugin'" x-text="plugin.name"
-                      :page="plugin.page" class="menu_item ojt-text-blue-700 hover:ojt-text-blue-800"></a>
+                    <a href="#"
+                      @click="alpineComponent('utama').menu = 'Plugin'; alpineComponent('pluginMenu').page = plugin.name"
+                      x-text="plugin.name" :page="plugin.page"
+                      class="menu_item ojt-text-primary-600 hover:ojt-text-primary-800"></a>
                   </template>
                 </td>
                 <td
                   class="ojt-w-full lg:ojt-w-auto ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static dark:ojt-bg-dark dark:ojt-text-light">
                   <p
-                    class="lg:ojt-hidden ojt-mb-2 ojt-bg-blue-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
+                    class="lg:ojt-hidden ojt-mb-2 ojt-bg-primary-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
                     Description</p>
                   <span x-text="plugin.description"></span>
                 </td>
                 <td
+                  class="ojt-w-full lg:ojt-w-auto ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static dark:ojt-bg-dark dark:ojt-text-light">
+                  <p
+                    class="lg:ojt-hidden ojt-mb-2 ojt-bg-primary-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
+                    Version</p>
+                  <span x-text="plugin.version"></span>
+                </td>
+                <td
                   class="ojt-w-full lg:ojt-w-1/5 ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block lg:ojt-table-cell ojt-relative lg:ojt-static lg:ojt-text-center dark:ojt-bg-dark dark:ojt-text-light">
                   <p
-                    class="lg:ojt-hidden ojt-mb-2 ojt-bg-blue-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
+                    class="lg:ojt-hidden ojt-mb-2 ojt-bg-primary-200 ojt-px-2 ojt-py-1 ojt-text-xs ojt-font-bold ojt-uppercase">
                     Enabled</p>
                   <div class="ojt-flex ojt-place-items-center">
                     <div class="lg:ojt-mx-auto">

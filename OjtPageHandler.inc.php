@@ -4,6 +4,8 @@ import('classes.handler.Handler');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 import('lib.pkp.classes.plugins.Plugin');
 
+use Illuminate\Http\Client\PendingRequest as Http;
+
 class OjtPageHandler extends Handler
 {
     /** @var OjtPlugin  */
@@ -69,7 +71,6 @@ class OjtPageHandler extends Handler
         $ojtPlugin->favIcon                         = $pluginFullUrl . '/assets/img/ojt.ico';
         $ojtPlugin->placeholderImg                  = $pluginFullUrl . '/assets/img/placeholder.png';
         $ojtPlugin->tailwindCss                     = $pluginFullUrl . '/assets/stylesheets/tailwind.css';
-        $ojtPlugin->themeCss                        = $pluginFullUrl . '/assets/stylesheets/theme.css';
         $ojtPlugin->fontAwesomeCss                  = $pluginFullUrl . '/assets/vendors/font-awesome-5/css/all.min.css';
         $ojtPlugin->sweetAlertCss                   = $pluginFullUrl . '/assets/vendors/sweetalert/sweetalert2.min.css';
         $ojtPlugin->pageName                        = 'ojt';
@@ -114,8 +115,34 @@ class OjtPageHandler extends Handler
 
     public function getPluginGalleryList($args, $request)
     {
-        $url = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/product/list";
-        
+        $plugin = $this->ojtPlugin;
+
+        $url = $plugin->apiUrl() . '/product/list';
+
+        $request = app(Http::class)
+            ->get($url);
+        $plugins = array_map(function ($plugin) {
+            $ojtplugin = $this->ojtPlugin;
+
+            $pluginFolder = $plugin['folder'];
+            $pluginVersion = $plugin['version'];
+
+            $targetPlugin = @include($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
+
+            $plugin['update'] = false;
+
+            if ($targetPlugin) {
+                import('lib.pkp.classes.site.VersionCheck');
+                $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
+                $plugin['update'] = version_compare($version['release'], $pluginVersion, '<');
+            }
+
+            $plugin['installed'] = ($targetPlugin) ? true : false;
+
+            return $plugin;
+        }, $request->json());
+
+        return showJson($plugins);
     }
 
     public function pluginInstalled($args, $request)
@@ -155,7 +182,7 @@ class OjtPageHandler extends Handler
         $pluginFolder = $request->getUserVar('pluginFolder');
         $isEnabled    = ($request->getUserVar('enabled') == 'true') ? true : false;
 
-        $targetPlugin         = include($plugin->getModulesPath() . DIRECTORY_SEPARATOR . $pluginFolder . DIRECTORY_SEPARATOR . "index.php");
+        $targetPlugin         = include($plugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
 
         if (!$targetPlugin && !is_object($targetPlugin)) {
             $json['error'] = 1;
@@ -182,7 +209,7 @@ class OjtPageHandler extends Handler
         $pluginToInstall = json_decode($_POST['plugin']);
         $license = $_POST['license'] ?? false;
 
-        if (isset($_POST['update']) && $targetPlugin = @include($plugin->getModulesPath() . "/$pluginToInstall->folder/index.php")) {
+        if (isset($_POST['update']) && $targetPlugin = @include($plugin->getModulesPath($pluginToInstall->folder . DIRECTORY_SEPARATOR . 'index.php'))) {
             $license = $targetPlugin->getSetting($this->contextId, 'license');
         }
 
@@ -280,13 +307,13 @@ class OjtPageHandler extends Handler
         $pluginFolder = $_POST['pluginFolder'];
         $pluginVersion = $_POST['pluginVersion'];
 
-        $targetPlugin = @include($plugin->getModulesPath() . "/$pluginFolder/index.php");
+        $targetPlugin = @include($plugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
 
         $json['update'] = false;
 
         if ($targetPlugin) {
             import('lib.pkp.classes.site.VersionCheck');
-            $version = VersionCheck::parseVersionXML($plugin->getModulesPath() . "/$pluginFolder/version.xml");
+            $version = VersionCheck::parseVersionXML($plugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
             $json['update'] = version_compare($version['release'], $pluginVersion, '<');
         }
 
@@ -295,10 +322,6 @@ class OjtPageHandler extends Handler
         showJson($json);
     }
 
-    public function isPluginInstalled($args, $request)
-    {
-        $plugin = $this->ojtPlugin;
-    }
 
     /**
      * send the curl
