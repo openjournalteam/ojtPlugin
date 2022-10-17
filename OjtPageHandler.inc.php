@@ -67,30 +67,42 @@ class OjtPageHandler extends Handler
         $ojtPlugin->journalPublicFolder             = $publicFolder;
         $ojtPlugin->pluginFullUrl                   = $pluginFullUrl;
         $ojtPlugin->version                         = $this->ojtPlugin->getPluginVersion();
-        $ojtPlugin->logo                            = $pluginFullUrl . '/assets/img/ojt-logo.png';
-        $ojtPlugin->favIcon                         = $pluginFullUrl . '/assets/img/ojt.ico';
-        $ojtPlugin->placeholderImg                  = $pluginFullUrl . '/assets/img/placeholder.png';
-        $ojtPlugin->tailwindCss                     = $pluginFullUrl . '/assets/stylesheets/tailwind.css';
-        $ojtPlugin->fontAwesomeCss                  = $pluginFullUrl . '/assets/vendors/font-awesome-5/css/all.min.css';
-        $ojtPlugin->sweetAlertCss                   = $pluginFullUrl . '/assets/vendors/sweetalert/sweetalert2.min.css';
+        $ojtPlugin->logo                            = $this->getPluginFullUrl('assets/img/ojt-logo.png');
+        $ojtPlugin->favIcon                         = $this->getPluginFullUrl('assets/img/ojt.ico');
+        $ojtPlugin->placeholderImg                  = $this->getPluginFullUrl('assets/img/placeholder.png');
+        $ojtPlugin->tailwindCss                     = $this->getPluginFullUrl('assets/stylesheets/tailwind.css');
+        $ojtPlugin->fontAwesomeCss                  = $this->getPluginFullUrl('assets/vendors/font-awesome-5/css/all.min.css');
+        $ojtPlugin->sweetAlertCss                   = $this->getPluginFullUrl('assets/vendors/sweetalert/sweetalert2.min.css');
         $ojtPlugin->pageName                        = 'ojt';
 
         $ojtPlugin->javascript  = [
             $request->getBaseUrl() . '/lib/pkp/lib/vendor/components/jquery/jquery.min.js',
-            $pluginFullUrl . '/assets/vendors/sweetalert/sweetalert2.all.min.js',
-            $pluginFullUrl . '/assets/js/theme.js',
-            $pluginFullUrl . '/assets/js/jquery.form.min.js',
-            $pluginFullUrl . '/assets/js/jquery.validate.min.js',
-            $pluginFullUrl . '/assets/js/alpine/alpine.min.js',
-            $pluginFullUrl . '/assets/js/alpine/component.min.js',
-            $pluginFullUrl . '/assets/js/mainAlpine.js',
-            $pluginFullUrl . '/assets/js/main.js',
-            $pluginFullUrl . '/assets/js/updater.js'
+            $this->getPluginFullUrl('assets/vendors/sweetalert/sweetalert2.all.min.js'),
+            $this->getPluginFullUrl('assets/js/theme.js'),
+            $this->getPluginFullUrl('assets/js/jquery.form.min.js'),
+            $this->getPluginFullUrl('assets/js/jquery.validate.min.js'),
+            $this->getPluginFullUrl('assets/js/alpine/alpine.min.js'),
+            $this->getPluginFullUrl('assets/js/alpine/component.min.js'),
+            $this->getPluginFullUrl('assets/js/mainAlpine.js'),
+            $this->getPluginFullUrl('assets/js/main.js'),
+            $this->getPluginFullUrl('assets/js/updater.js')
         ];
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
 
         return $templateMgr->display($this->ojtPlugin->getTemplateResource('index.tpl'));
+    }
+
+    protected function getPluginFullUrl($path = '', $withVersion = true)
+    {
+        $plugin = $this->ojtPlugin;
+
+        $fullUrl =  $plugin->getRequest()->getBaseUrl() . '/'  . $plugin->getPluginPath() . '/' . $path;
+        if ($withVersion) {
+            return $fullUrl . '?v=' . $plugin->getPluginVersion();
+        }
+
+        return $fullUrl;
     }
 
     public function setting($args, $request)
@@ -278,9 +290,9 @@ class OjtPageHandler extends Handler
     {
         $plugin = $this->ojtPlugin;
 
-        $removePlugin = json_decode($_POST['plugin']);
+        $removePlugin = json_decode($request->getUserVar('plugin'));
 
-        if ($_POST['resetSetting']) {
+        if ($request->getUserVar('resetSetting')) {
             $this->resetSetting($removePlugin->class, false);
         }
 

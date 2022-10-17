@@ -5,8 +5,8 @@
 <version>
 	<application>ojtPlugin</application>
 	<type>plugins.generic</type>
-	<release>1.2.3.0</release>
-	<date>2022-09-19</date>
+	<release>1.3.0.0</release>
+	<date>2022-10-17</date>
 	<lazy-load>0</lazy-load>
 	<class>OjtPlugin</class>
 </version>

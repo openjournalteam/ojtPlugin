@@ -69,7 +69,8 @@
                 :alt="plugin.name" class="ojt-w-full ojt-rounded-lg ojt-rounded-b-none md:ojt-h-56" loading="lazy" />
               <div class="ojt-flex ojt-absolute ojt-left-0 ojt-bottom-0 ojt-items-center ojt-px-4 ojt-py-2"
                 x-show="plugin.installed">
-                <div class="ojt-rounded-lg ojt-py-1 ojt-px-3 ojt-border-green-700 ojt-border ojt-text-green-700"
+                <div
+                  class="ojt-rounded-lg ojt-py-1 ojt-px-3 ojt-border-green-700 ojt-border ojt-text-green-700 ojt-bg-green-300/20"
                   x-show="plugin.installed">
                   <p class="ojt-text-xs">Installed</p>
                 </div>
@@ -166,14 +167,14 @@
                 <table class="ojt-border-collapse ojt-w-full">
                   <tbody>
                     <tr x-show="!plugin.installed">
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-blockojt-relative">
+                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
                         <input x-model="key"
                           class="ojt-tracking-wide ojt-py-2 ojt-px-4 ojt-leading-relaxed ojt-appearance-none ojt-block ojt-w-full ojt-bg-gray-200 ojt-border ojt-border-gray-200 ojt-rounded focus:ojt-outline-none focus:ojt-bg-white focus:ojt-border-gray-500"
                           id="key" placeholder="License Key" type="text">
                       </td>
                     </tr>
                     <tr x-show="!plugin.installed">
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-blockojt-relative">
+                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
                         <button x-text="(loading || installing) ? 'Installing ...' : 'Install'" :disabled="loading"
                           @click="installPlugin(plugin)"
                           class="disabled:ojt-opacity-50 ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-w-full ojt-uppercase ojt-transition ojt-bg-primary-700 ojt-rounded ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-primary-800 focus:ojt-outline-none ojt-waves-effect">
@@ -181,7 +182,7 @@
                       </td>
                     </tr>
                     <tr x-show="plugin.installed && plugin?.update">
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-blockojt-relative">
+                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
                         <button x-text="loading ? 'Updating ...' : 'Update'" :disabled="loading"
                           @click="installPlugin(plugin, true)"
                           class="disabled:ojt-opacity-50 ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-w-full ojt-uppercase ojt-transition ojt-bg-primary-700 ojt-rounded ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-primary-800 focus:ojt-outline-none ojt-waves-effect">
@@ -189,12 +190,12 @@
                       </td>
                     </tr>
                     <tr x-show="plugin.installed && !plugin?.update">
-                      <td class="ojt-w-full ojt-p-3 ojt-border ojt-border-b ojt-blockojt-relative ojt-text-green-700">
+                      <td class="ojt-w-full ojt-p-3 ojt-border ojt-border-b ojt-block ojt-text-green-700">
                         <small class="ojt-font-bold">Plugin is up-to-date.</small>
                       </td>
                     </tr>
                     <tr x-show="plugin.installed">
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-blockojt-relative">
+                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
                         <label class="ojt-inline-flex ojt-items-center">
                           <input type="checkbox" x-model="resetSetting"
                             class="ojt-form-checkbox ojt-h-4 ojt-w-4 ojt-text-red-600">
@@ -203,7 +204,7 @@
                       </td>
                     </tr>
                     <tr x-show="plugin.installed">
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-blockojt-relative">
+                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
                         <button x-text="loading ? 'Uninstalling ...' : 'Uninstall'" :disabled="loading"
                           @click="uninstall(plugin)"
                           class="disabled:ojt-opacity-50 ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-w-full ojt-uppercase ojt-transition ojt-bg-red-700 ojt-rounded ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-red-800 focus:ojt-outline-none ojt-waves-effect">
@@ -213,13 +214,13 @@
                     </tr>
                     <tr>
                       <td
-                        class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-blockojt-relative dark:ojt-text-light">
+                        class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block dark:ojt-text-light">
                         <span x-text="'Version : ' + plugin.version" class="ojt-text-sm"></span>
                       </td>
                     </tr>
-                    <tr>
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-blockojt-relative">
-                        <a :href="plugin.changelog" x-show="isValidURL(plugin.changelog)" target="_blank"
+                    <tr x-show="isValidURL(plugin.changelog)">
+                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
+                        <a :href="plugin.changelog" target="_blank"
                           class="ojt-text-primary-600 hover:ojt-text-primary-900">
                           Changelog </a>
                       </td>
