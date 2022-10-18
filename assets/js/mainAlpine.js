@@ -162,7 +162,13 @@ function pluginGallery() {
         this.loading = true;
         let res = await fetch(currentUrl + "getPluginGalleryList");
 
-        this.plugins = await res.json();
+        let response = await res.json();
+
+        if (response.error) {
+          throw response;
+        }
+
+        this.plugins = response;
       } catch (error) {
         this.loading = false;
         this.error = true;

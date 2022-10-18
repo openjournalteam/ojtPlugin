@@ -154,7 +154,12 @@ class OjtPageHandler extends Handler
             return $plugin;
         }, $request->json());
 
-        return showJson($plugins);
+        if ($plugins) return showJson($plugins);
+
+        return showJson([
+            'error' => 1,
+            'msg' => "Couldn't connect to Server, please try again."
+        ]);
     }
 
     public function pluginInstalled($args, $request)
