@@ -26,10 +26,28 @@ class OjtPlugin extends GenericPlugin
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
                 HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
+                HookRegistry::register('TemplateManager::display', [$this, 'templateManagerDisplay']);
             }
             return true;
         }
         return false;
+    }
+
+    public function templateManagerDisplay($hookName, $args)
+    {
+        $templateMgr            = $args[0];
+        if ($templateMgr->getTemplateVars('activeTheme') == null) {
+            $allThemes = PluginRegistry::loadCategory('themes', true);
+            $activeTheme = null;
+            foreach ($allThemes as $theme) {
+                if ($this->getRequest()->getContext()->getData('themePluginPath') === $theme->getDirName()) {
+                    $activeTheme = $theme;
+                    break;
+                }
+            }
+
+            $templateMgr->assign('activeTheme', $activeTheme);
+        }
     }
 
     public function flushCache()
