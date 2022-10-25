@@ -23,7 +23,7 @@
 
 <body id="ojt-plugin">
   <div x-data="utama()" id="utama" x-cloak>
-    <div class="ojt-flex ojt-h-screen ojt-antialiased ojt-text-gray-900 ojt-bg-[#FAFAFB]">
+    <div class="ojt-flex ojt-h-screen ojt-antialiased ojt-text-gray-900 ojt-bg-gray-100">
       <aside class="ojt-flex-shrink-0 ojt-hidden ojt-w-72 ojt-bg-white ojt-border-r md:ojt-block">
         <div class="ojt-flex ojt-flex-col ojt-h-full">
           <a href="https://openjournaltheme.com/" target="_blank"
@@ -35,10 +35,10 @@
           </a>
           <nav x-data="pluginMenu()" id="pluginMenu" aria-label="Main"
             class="ojt-flex-1 ojt-space-y-2 ojt-px-2 ojt-overflow-y-hidden hover:ojt-overflow-y-auto">
-            <a @click="page = 'dashboard'; alpineComponent('utama').menu = 'Dashboard'" href="#"
+            <button @click="page = 'dashboard'; alpineComponent('utama').menu = 'Dashboard'"
               :class="{ 'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50' : page == 'dashboard'}"
               role="button"
-              class="ojt-flex ojt-transition ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-lg ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br ojt-text-gray-500 hover:ojt-text-white ojt-gap-4">
+              class="ojt-w-full ojt-flex ojt-transition ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-lg ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br ojt-text-gray-500 hover:ojt-text-white ojt-gap-4">
               <span aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                   stroke="currentColor" class="ojt-w-5 ojt-h-5">
@@ -47,7 +47,7 @@
                 </svg>
               </span>
               <span> Dashboard </span>
-            </a>
+            </button>
             <template x-if="plugins.length > 0">
               <div>
                 <span class="ojt-uppercase ojt-tracking-widest ojt-text-gray-400 ojt-px-4 ojt-text-xs">PLUGINS</span>
@@ -55,15 +55,15 @@
                   <template x-for="plugin in plugins">
                     <div>
                       <template x-if="plugin.enabled && plugin?.page">
-                        <a href="javascript:void(0);"
-                          @click="alpineComponent('utama').menu = 'Plugin'; page = plugin.name" role="menuitem" :class="{ 
+                        <button role="button" @click="alpineComponent('utama').menu = 'Plugin'; page = plugin.name"
+                          role="menuitem" :class="{ 
                               'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50': page == plugin.name,
                               }" :page="plugin.page"
-                          class="ojt-flex ojt-text-gray-500 ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-4 menu_item">
+                          class="ojt-w-full ojt-flex ojt-text-gray-500 ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-4 menu_item ojt-text-left">
                           <span aria-hidden="true" class="ojt-min-w-[1.25rem]" x-html="plugin.icon">
                           </span>
                           <span x-text="plugin.name"></span>
-                        </a>
+                        </button>
                       </template>
                     </div>
                   </template>
@@ -71,9 +71,9 @@
               </div>
             </template>
           </nav>
-          <div class="ojt-mt-auto ojt-p-4 ojt-mx-auto">
+          <div class="ojt-mt-auto ojt-p-4 ojt-mx-auto ojt-w-full">
             <a href="https://openjournaltheme.com/about-open-journal-theme" target="_blank"
-              class="focus:ojt-outline-none ojt-text-white ojt-text-sm ojt-py-2.5 ojt-px-5 ojt-rounded-xl  ojt-flex ojt-items-center ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50 ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br ojt-gap-4">
+              class="focus:ojt-outline-none ojt-text-white ojt-text-sm ojt-justify-center ojt-py-2.5 ojt-px-5 ojt-rounded-xl  ojt-flex ojt-items-center ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50 ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br ojt-gap-4">
               <img src="{$ojtPlugin->logo}" class="ojt-h-5">
               <span>ABOUT US</span>
             </a>
@@ -176,20 +176,15 @@
                 </div>
               </div>
             </div>
-            <div x-show="menu == 'Dashboard'" x-transition:enter="ojt-transition ojt-ease-out ojt-duration-300"
-              x-transition:enter-start="ojt-opacity-0 ojt-transform ojt-scale-90"
-              x-transition:enter-end="ojt-opacity-100 ojt-transform ojt-scale-100" id="dashboard" class="ajax_load"
-              page="ojt/setting">
+            <div x-show="menu == 'Dashboard'" id="dashboard" class="ajax_load" page="ojt/setting">
 
             </div>
-            <div x-show="menu == 'Plugin'" x-transition:enter="ojt-transition ojt-ease-out ojt-duration-300"
-              x-transition:enter-start="ojt-opacity-0 ojt-transform ojt-scale-50"
-              x-transition:enter-end="ojt-opacity-100 ojt-transform ojt-scale-100" id="main-menu">
+            <div x-show="menu == 'Plugin'" id="main-menu">
 
             </div>
           </main>
           <div
-            class="ojt-bg-white ojt-flex ojt-items-center ojt-justify-between ojt-p-2 ojt-border-t dark:ojt-border-blue-800 ojt-py-4">
+            class="ojt-bg-white ojt-flex ojt-flex-col lg:ojt-flex-row lg:ojt-items-center lg:ojt-justify-between ojt-p-2 ojt-border-t dark:ojt-border-blue-800 ojt-py-4">
             <div>
               Copyright © 2022 <a href="https://openjournaltheme.com" target="_blank"
                 class="ojt-font-bold hover:ojt-text-purple-600 hover:ojt-text-underline">Open Journal Theme</a>. All

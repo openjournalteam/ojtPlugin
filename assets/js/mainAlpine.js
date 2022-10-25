@@ -96,6 +96,8 @@ function pluginInstalled() {
     },
     async togglePlugin(currentPlugin) {
       const formData = new FormData();
+      formData.append("className", currentPlugin.className);
+      formData.append("productType", currentPlugin.productType);
       formData.append("pluginFolder", currentPlugin.product);
       formData.append("enabled", !currentPlugin.enabled);
 

@@ -1,7 +1,7 @@
 <div
   x-data="{ tab: 1,activeTabClass: 'ojt-border-l ojt-border-t ojt-border-r ojt-rounded-t ojt-text-primary-700',inactiveTabClass: 'ojt-text-primary-500 hover:ojt-text-primary-800' }"
   id="ojt-setting"
-  class="ojt-my-4 ojt-w-auto ojt-max-w-screen-xl 2xl:ojt-mx-auto ojt-p-4 ojt-bg-white ojt-shadow-lg ojt-rounded-lg dark:ojt-bg-darker ojt-mx-4 ojt-transition-height ojt-duration-1000 ojt-ease-in-out">
+  class="ojt-my-4 ojt-border ojt-w-auto ojt-max-w-screen-xl 2xl:ojt-mx-auto ojt-p-4 ojt-bg-white ojt-shadow-lg dark:ojt-bg-darker ojt-mx-4 ojt-transition-height ojt-duration-1000 ojt-ease-in-out">
   <div class="lg:ojt-flex lg:ojt-items-center ojt-mb-4">
     <div class="ojt-flex ojt-items-center">
       <span class="ojt-text-xl ojt-font-bold">Dashboard</span>

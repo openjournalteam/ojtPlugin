@@ -178,4 +178,8 @@
     stroke-dasharray: 25;
     stroke-dashoffset: 25;
   }
+
+  .ojt-icon {
+    @apply ojt-w-5 ojt-h-5;
+  }
 }
