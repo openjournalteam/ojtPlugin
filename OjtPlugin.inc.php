@@ -89,7 +89,7 @@ class OjtPlugin extends GenericPlugin
 
     public function registerModules()
     {
-        $modulesFolder = getDirs($this->getModulesPath());
+        $modulesFolder = $this->getDirs($this->getModulesPath());
 
         import('lib.pkp.classes.site.VersionCheck');
 
@@ -125,9 +125,8 @@ class OjtPlugin extends GenericPlugin
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
-            if (method_exists($plugin, 'getPage')) {
-                $data['page']        = $plugin->getPage();
-            }
+            $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getPage() : null;
+            $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
 
             $plugins[] = $data;
         }
@@ -442,5 +441,31 @@ class OjtPlugin extends GenericPlugin
         $pluginSettingsDAO->flushCache();
 
         return true;
+    }
+
+    function getDirs($path, $recursive = false, array $filtered = [])
+    {
+        if (!is_dir($path)) {
+            throw new RuntimeException("$path does not exist.");
+        }
+
+        $filtered += ['.', '..', '.git', 'pluginTemplate'];
+
+        $dirs = [];
+        $d = dir($path);
+        while (($entry = $d->read()) !== false) {
+            if (is_dir("$path/$entry") && !in_array($entry, $filtered)) {
+                $dirs[] = $entry;
+
+                if ($recursive) {
+                    $newDirs = $this->getDirs("$path/$entry");
+                    foreach ($newDirs as $newDir) {
+                        $dirs[] = "$entry/$newDir";
+                    }
+                }
+            }
+        }
+
+        return $dirs;
     }
 }

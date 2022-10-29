@@ -21,7 +21,7 @@
   </template>
   <template x-if="plugins && !loading && !error">
     <div>
-      <div class="ojt-flex ojt-py-4">
+      <div class="ojt-flex ojt-pb-4">
         {* <div class="ojt-flex ojt-flex-shrink-0 ojt-relative" x-data="{ isOpen: false}" @click="isOpen = !isOpen"
           @keydown.escape="isOpen = false">
           <button

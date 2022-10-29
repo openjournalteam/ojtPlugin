@@ -80,15 +80,19 @@ class OjtPageHandler extends Handler
             $this->getPluginFullUrl('assets/vendors/sweetalert/sweetalert2.all.min.js'),
             $this->getPluginFullUrl('assets/js/theme.js'),
             $this->getPluginFullUrl('assets/js/jquery.form.min.js'),
+            $this->getPluginFullUrl('assets/js/alpine/spruce.umd.js'),
             $this->getPluginFullUrl('assets/js/jquery.validate.min.js'),
             $this->getPluginFullUrl('assets/js/alpine/alpine.min.js'),
-            $this->getPluginFullUrl('assets/js/alpine/component.min.js'),
+            // $this->getPluginFullUrl('assets/js/alpine/component.min.js'),
             $this->getPluginFullUrl('assets/js/mainAlpine.js'),
+            $this->getPluginFullUrl('assets/js/store.js'),
             $this->getPluginFullUrl('assets/js/main.js'),
             $this->getPluginFullUrl('assets/js/updater.js')
         ];
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
+        $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
+        $templateMgr->assign('pluginInstalledHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl')));
 
         return $templateMgr->display($this->ojtPlugin->getTemplateResource('index.tpl'));
     }
@@ -133,6 +137,7 @@ class OjtPageHandler extends Handler
 
         $request = app(Http::class)
             ->get($url);
+
         $plugins = array_map(function ($plugin) {
             $ojtplugin = $this->ojtPlugin;
 

@@ -7,6 +7,19 @@ function pluginMenu() {
   return {
     page: "dashboard",
     plugins: [],
+    // get activePlugins() {
+    //   return this.plugins.filter((plugin) => plugin.enabled && plugin.page);
+    // },
+  };
+}
+
+function dashboard() {
+  return {
+    tab: "plugin-installed",
+    activeTabClass:
+      "ojt-inline-block ojt-p-4 ojt-w-full  ojt-bg-gray-50 hover:ojt-bg-gray-100 focus:ojt-outline-none ojt-text-primary-600 hover:ojt-text-primary-600 ojt-border-primary-600 dark:ojt-border-primary-500",
+    inactiveTabClass:
+      "ojt-inline-block ojt-p-4 ojt-w-full ojt-bg-gray-50 hover:ojt-bg-gray-100 focus:ojt-outline-none ojt-text-gray-500 hover:ojt-text-gray-600 ojt-border-gray-100 hover:ojt-border-gray-300",
   };
 }
 
@@ -84,7 +97,7 @@ function pluginInstalled() {
       }
 
       let plugins = await res.json();
-      console.log(plugins);
+
       this.plugins = plugins;
 
       this.passPluginsToMenu();

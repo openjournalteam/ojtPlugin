@@ -22,7 +22,7 @@
 <div id="moduleCss"></div>
 
 <body id="ojt-plugin">
-  <div x-data="utama()" id="utama" x-cloak>
+  <div x-data="utama()" id="utama" x-init="$store.plugins.fetchInstalledPlugin();" x-cloak>
     <div class="ojt-flex ojt-h-screen ojt-antialiased ojt-text-gray-900 ojt-bg-gray-100">
       <aside class="ojt-flex-shrink-0 ojt-hidden ojt-w-72 ojt-bg-white ojt-border-r md:ojt-block">
         <div class="ojt-flex ojt-flex-col ojt-h-full">
@@ -30,8 +30,9 @@
             class="custom-logo-link ojt-flex ojt-flex-col ojt-items-center ojt-py-6 ojt-gap-2" rel="home"
             aria-current="page">
             <img width="32" height="37" src="{$ojtPlugin->logo}" class="ojt-mx-auto">
-            <span class="site-name ojt-ml-3 ojt-inline-block ojt-text-2xl ojt-tracking-wide">OJT
-              Plugin</span>
+            <span class="site-name ojt-ml-3 ojt-inline-block ojt-text-2xl ojt-tracking-wide">
+              OJT Plugin
+            </span>
           </a>
           <nav x-data="pluginMenu()" id="pluginMenu" aria-label="Main"
             class="ojt-flex-1 ojt-space-y-2 ojt-px-2 ojt-overflow-y-hidden hover:ojt-overflow-y-auto">
@@ -48,11 +49,11 @@
               </span>
               <span> Dashboard </span>
             </button>
-            <template x-if="plugins.length > 0">
+            <template x-if="$store.plugins.plugins.length > 0">
               <div>
                 <span class="ojt-uppercase ojt-tracking-widest ojt-text-gray-400 ojt-px-4 ojt-text-xs">PLUGINS</span>
-                <div x-show="open" class="ojt-mt-2 ojt-space-y-2" role="menu">
-                  <template x-for="plugin in plugins">
+                <div x-show="open" class="ojt-space-y-2 ojt-flex ojt-flex-col" role="menu">
+                  <template x-for="plugin in $store.plugins.activePlugins">
                     <div>
                       <template x-if="plugin.enabled && plugin?.page">
                         <button role="button" @click="alpineComponent('utama').menu = 'Plugin'; page = plugin.name"
@@ -71,7 +72,18 @@
               </div>
             </template>
           </nav>
-          <div class="ojt-mt-auto ojt-p-4 ojt-mx-auto ojt-w-full">
+
+          <div class="ojt-p-4 ojt-mx-auto ojt-w-full ojt-gap-2 ojt-flex ojt-flex-col">
+            <a href="https://openjournaltheme.com/docs/ojs/ojs-tutorial" target="_blank"
+              class="ojt-w-full ojt-flex ojt-text-gray-500 ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-4 ojt-text-left">
+              <svg class="ojt-icon" width="48" height="48" viewBox="0 0 48 48" fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd"
+                  d="M6 6H37V11H35V8H8V31H29.3871V33H6V6ZM36 19C37.6569 19 39 17.6569 39 16C39 14.3431 37.6569 13 36 13C34.3431 13 33 14.3431 33 16C33 17.6569 34.3431 19 36 19ZM38.0314 21.0107C39.3299 21.0107 40.3582 21.5937 41.0303 22.4959C41.6595 23.3405 41.9258 24.3864 41.9861 25.3507C42.0472 26.3298 41.9056 27.356 41.5894 28.2701C41.2881 29.1407 40.7815 30.0406 40 30.6579V40.5C40 41.2805 39.4015 41.9305 38.6237 41.9949C37.8459 42.0593 37.1487 41.5164 37.0204 40.7466L35.7293 33H35.4324L33.9743 40.7764C33.8316 41.5378 33.1325 42.0653 32.3612 41.9936C31.5899 41.9219 31 41.2746 31 40.5V26.2328C30.8874 26.4044 30.7831 26.5652 30.6911 26.7082C30.5726 26.8922 30.4752 27.0453 30.4078 27.152L30.3303 27.275L30.3105 27.3066L30.3047 27.316C30.0308 27.7555 29.5493 28.023 29.0314 28.023H24.0314C23.203 28.023 22.5314 27.3515 22.5314 26.523C22.5314 25.6946 23.203 25.023 24.0314 25.023H28.208C28.4506 24.6472 28.7705 24.1594 29.1067 23.6689C29.457 23.1577 29.8432 22.6169 30.1862 22.1935C30.3539 21.9864 30.5413 21.7699 30.7292 21.5924C30.8212 21.5056 30.9497 21.3932 31.105 21.2935C31.2158 21.2224 31.5575 21.0107 32.0314 21.0107H38.0314Z">
+                </path>
+              </svg>
+              <span>OJS Tutorial</span>
+            </a>
             <a href="https://openjournaltheme.com/about-open-journal-theme" target="_blank"
               class="focus:ojt-outline-none ojt-text-white ojt-text-sm ojt-justify-center ojt-py-2.5 ojt-px-5 ojt-rounded-xl  ojt-flex ojt-items-center ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50 ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br ojt-gap-4">
               <img src="{$ojtPlugin->logo}" class="ojt-h-5">
@@ -82,10 +94,10 @@
       </aside>
 
       <div class="ojt-flex ojt-flex-col ojt-flex-1 ojt-min-h-screen ojt-overflow-x-hidden ojt-overflow-y-auto">
-        <header class="ojt-sticky ojt-top-0 ojt-bg-white dark:ojt-bg-darker ojt-z-10">
-          <div class="ojt-flex ojt-items-center ojt-justify-between ojt-p-2 ojt-border-b dark:ojt-border-blue-800">
+        <header class="ojt-sticky ojt-top-0 ojt-bg-white ojt-z-10">
+          <div class="ojt-flex ojt-items-center ojt-justify-between ojt-p-2 ojt-border-b ">
             <button @click="isMobileMainMenuOpen = !isMobileMainMenuOpen"
-              class="ojt-p-1 ojt-text-blue-400 ojt-transition-colors ojt-duration-200 ojt-rounded-md ojt-bg-blue-50 hover:ojt-text-blue-600 hover:ojt-bg-blue-100 dark:hover:ojt-text-light dark:hover:ojt-bg-blue-700 dark:ojt-bg-dark md:ojt-hidden focus:ojt-outline-none focus:ojt-ring">
+              class="ojt-p-1 ojt-text-primary-400 ojt-transition-colors ojt-duration-200 ojt-rounded-md ojt-bg-primary-50 hover:ojt-text-primary-600 hover:ojt-bg-primary-100 md:ojt-hidden focus:ojt-outline-none focus:ojt-ring">
               <span class="ojt-sr-only">Open main manu</span>
               <span aria-hidden="true">
                 <svg class="ojt-w-8 ojt-h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -106,14 +118,14 @@
             <nav aria-label="Secondary" class="ojt-hidden ojt-space-x-2 md:ojt-flex md:ojt-items-center">
             </nav>
           </div>
-          <div class="ojt-border-b md:ojt-hidden dark:ojt-border-blue-800" x-show="isMobileMainMenuOpen"
+          {* <div class="ojt-border-b md:ojt-hidden" x-show="isMobileMainMenuOpen"
             @click.away="isMobileMainMenuOpen = false">
             <nav x-data="pluginMenu()" id="pluginMenuMobile" aria-label="Main"
               class="ojt-flex-1 ojt-px-2 ojt-py-4 ojt-space-y-2 ojt-overflow-y-hidden hover:ojt-overflow-y-auto">
               <div>
                 <a @click="page = 'dashboard'; alpineComponent('utama').menu = 'Dashboard'"
-                  :class="{ 'ojt-bg-blue-100 dark:ojt-bg-blue-600' : page == 'dashboard' }" href="#"
-                  class="ojt-flex ojt-items-center ojt-p-2 ojt-text-gray-500 ojt-transition-colors ojt-rounded-md dark:ojt-text-light hover:ojt-bg-blue-100 dark:hover:ojt-bg-blue-600"
+                  :class="{ 'ojt-bg-primary-100' : page == 'dashboard' }" href="#"
+                  class="ojt-flex ojt-items-center ojt-p-2 ojt-text-gray-500 ojt-transition-colors ojt-rounded-md hover:ojt-bg-primary-100"
                   role="button">
                   <span aria-hidden="true">
                     <svg class="ojt-w-5 ojt-h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -130,7 +142,7 @@
                 <template x-if="plugins.length > 0">
                   <div>
                     <a href="#" @click="$event.preventDefault();"
-                      class="ojt-flex ojt-items-center ojt-p-2 ojt-text-gray-500 ojt-transition-colors ojt-rounded-md dark:ojt-text-light hover:ojt-bg-blue-100 dark:ojt-hover:bg-blue-600"
+                      class="ojt-flex ojt-items-center ojt-p-2 ojt-text-gray-500 ojt-transition-colors ojt-rounded-md hover:ojt-bg-primary-100 "
                       role="button" aria-haspopup="true" :aria-expanded="(page == 'dashboard') ? 'true' : 'false'">
                       <span aria-hidden="true">
                         <svg class="ojt-w-5 ojt-h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -145,8 +157,8 @@
                       <template x-for="plugin in plugins">
                         <a href="javascript:void(0);"
                           @click="alpineComponent('utama').menu = 'Plugin'; page = plugin.name" role="menuitem"
-                          :class="{ 'ojt-bg-blue-100 dark:ojt-bg-blue-600': page == plugin.name }"
-                          class="ojt-block ojt-p-2 ojt-text-sm ojt-text-gray-400 ojt-transition-colors ojt-duration-200 ojt-rounded-md dark:ojt-text-gray-400 dark:hover:ojt-text-light hover:ojt-text-gray-700 menu_item"
+                          :class="{ 'ojt-bg-primary-100': page == plugin.name }"
+                          class="ojt-block ojt-p-2 ojt-text-sm ojt-text-gray-400 ojt-transition-colors ojt-duration-200 ojt-rounded-md  hover:ojt-text-gray-700 menu_item"
                           :page="plugin.page" x-text="plugin.name">
 
                         </a>
@@ -156,7 +168,7 @@
                 </template>
               </div>
             </nav>
-          </div>
+          </div> *}
         </header>
         <div class="ojt-h-full ojt-flex ojt-flex-col ojt-justify-between">
           <main class="ojt-space-y-4">
@@ -170,21 +182,56 @@
                       You are currently using <b>Version {$ojtPlugin->version}</b>, the most recent version is <b
                         x-text="data?.latest_version"></b>.
                       <a href="#" @click="doUpdate()"
-                        class="ojt-font-bold ojt-text-blue-700 hover:ojt-text-blue-800">Click here</a> to update
+                        class="ojt-font-bold ojt-text-primary-700 hover:ojt-text-primary-800">Click here</a> to update
                     </p>
                   </div>
                 </div>
               </div>
             </div>
-            <div x-show="menu == 'Dashboard'" id="dashboard" class="ajax_load" page="ojt/setting">
-
+            <div x-show="menu == 'Dashboard'">
+              <div x-data="dashboard()" id="dashboard"
+                class="ojt-w-full ojt-max-w-screen-xl ojt-m-2 lg:ojt-mx-auto ojt-bg-white ojt-rounded-lg ojt-border ojt-shadow-md">
+                <div class="sm:ojt-hidden">
+                  <label for="tabs" class="ojt-sr-only">Select tab</label>
+                  <select id="tabs"
+                    class="ojt-bg-gray-50 ojt-border-0 ojt-border-b ojt-border-gray-200 ojt-text-gray-900 sm:ojt-text-sm ojt-rounded-t-lg focus:ojt-ring-primary-500 focus:ojt-border-primary-500 ojt-block ojt-w-full ojt-p-2.5">
+                    <option>Statistics</option>
+                    <option>Services</option>
+                    <option>FAQ</option>
+                  </select>
+                </div>
+                <ul
+                  class="ojt-text-sm ojt-font-medium ojt-text-center ojt-text-gray-500 ojt-rounded-lg ojt-divide-x ojt-divide-gray-200 sm:ojt-flex"
+                  role="tablist">
+                  <li class="ojt-w-full">
+                    <button class="ojt-rounded-tl-lg" type="button" role="tab" @click="tab = 'plugin-installed'"
+                      :class="tab === 'plugin-installed' ? activeTabClass : inactiveTabClass">
+                      Plugin Installed</button>
+                  </li>
+                  <li class="ojt-w-full">
+                    <button class="ojt-rounded-tr-lg" type="button" role="tab" @click="tab = 'plugin-gallery';"
+                      :class="tab === 'plugin-gallery' ? activeTabClass : inactiveTabClass">Plugin
+                      Gallery</button>
+                  </li>
+                </ul>
+                <div class="ojt-border-t ojt-border-gray-200">
+                  <div x-show="tab == 'plugin-installed'" class="ojt-bg-white ojt-rounded-lg" role="tabpanel">
+                    {$pluginInstalledHtml}
+                  </div>
+                  <div x-show="tab == 'plugin-gallery'"
+                    class="ojt-p-4 ojt-bg-white ojt-rounded-lg md:ojt-p-8 plugin-gallery" page="ojt/pluginGallery"
+                    role="tabpanel">
+                    {$pluginGalleryHtml}
+                  </div>
+                </div>
+              </div>
             </div>
             <div x-show="menu == 'Plugin'" id="main-menu">
 
             </div>
           </main>
           <div
-            class="ojt-bg-white ojt-flex ojt-flex-col lg:ojt-flex-row lg:ojt-items-center lg:ojt-justify-between ojt-p-2 ojt-border-t dark:ojt-border-blue-800 ojt-py-4">
+            class="ojt-bg-white ojt-flex ojt-flex-col lg:ojt-flex-row lg:ojt-items-center lg:ojt-justify-between ojt-p-2 ojt-border-t ojt-py-4">
             <div>
               Copyright © 2022 <a href="https://openjournaltheme.com" target="_blank"
                 class="ojt-font-bold hover:ojt-text-purple-600 hover:ojt-text-underline">Open Journal Theme</a>. All

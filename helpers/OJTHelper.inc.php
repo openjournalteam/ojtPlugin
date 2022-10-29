@@ -84,31 +84,3 @@ if (!function_exists('vd')) {
         echo '</pre>';
     }
 }
-
-if (!function_exists('getDirs')) {
-    function getDirs($path, $recursive = false, array $filtered = [])
-    {
-        if (!is_dir($path)) {
-            throw new RuntimeException("$path does not exist.");
-        }
-
-        $filtered += ['.', '..', '.git', 'pluginTemplate'];
-
-        $dirs = [];
-        $d = dir($path);
-        while (($entry = $d->read()) !== false) {
-            if (is_dir("$path/$entry") && !in_array($entry, $filtered)) {
-                $dirs[] = $entry;
-
-                if ($recursive) {
-                    $newDirs = getDirs("$path/$entry");
-                    foreach ($newDirs as $newDir) {
-                        $dirs[] = "$entry/$newDir";
-                    }
-                }
-            }
-        }
-
-        return $dirs;
-    }
-}

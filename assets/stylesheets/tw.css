@@ -28,8 +28,9 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: rgba(29, 78, 216);
+    /* background: rgba(29, 78, 216); */
     margin: -4px 0 0 -4px;
+    @apply ojt-bg-primary-600;
   }
 
   .lds-roller div:nth-child(1) {

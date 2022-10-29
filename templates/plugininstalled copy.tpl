@@ -1,5 +1,5 @@
-<div id="pluginInstalled">
-  <template x-if="$store.plugins.isLoading">
+<div x-data="pluginInstalled()" id="pluginInstalled" x-init="fetchInstalledPlugin();">
+  <template x-if="isLoading">
     <div class="loading-menu ojt-flex ojt-items-center ojt-h-80">
       <div class="lds-roller ojt-self-center ojt-mx-auto">
         <div></div>
@@ -13,9 +13,9 @@
       </div>
     </div>
   </template>
-  <template x-if="$store.plugins.plugins && !$store.plugins.isLoading">
+  <template x-if="plugins && !isLoading">
     <div class="">
-      <div x-show.transition="$store.plugins.plugins.length > 0" id="selected-articles">
+      <div x-show.transition="plugins.length > 0" id="selected-articles">
         <table class="ojt-border-collapse ojt-w-full">
           <thead>
             <tr>
@@ -37,7 +37,7 @@
             </tr>
           </thead>
           <tbody>
-            <template x-for="(plugin, index) in $store.plugins.plugins" :key="index">
+            <template x-for="(plugin, index) in plugins" :key="index">
               <tr
                 class="ojt-bg-white lg:hover:ojt-bg-gray-100 ojt-flex lg:ojt-table-row ojt-flex-row lg:ojt-flex-row ojt-flex-wrap lg:ojt-flex-no-wrap ojt-mb-10 lg:ojt-mb-0">
                 <td
@@ -79,7 +79,7 @@
                     <div class="lg:ojt-mx-auto">
                       <input type="checkbox" x-model="plugin.enabled" x-on:click.prevent class="cbx ojt-hidden"
                         style="display: none;" />
-                      <label for="cbx" class="toggle" @click="$store.plugins.togglePlugin(plugin);"
+                      <label for="cbx" class="toggle" @click="togglePlugin(plugin);"
                         :id="'toggleplugin' + plugin.product">
                         <span>
                           <svg width="10px" height="10px" viewBox="0 0 10 10">
@@ -97,7 +97,7 @@
           </tbody>
         </table>
       </div>
-      <div x-show="$store.plugins.plugins.length < 1" class="empty ojt-flex ojt-flex-col">
+      <div x-show="plugins.length < 1" class="empty ojt-flex ojt-flex-col">
         <div class="empty-icon ojt-my-2 ojt-text-gray-600 ojt-mx-auto"><i class="fas fa-box-open fa-5x"></i></div>
         <p class="empty-title ojt-my-2 ojt-text-gray-600 ojt-mx-auto">You have no installed plugin</p>
       </div>
