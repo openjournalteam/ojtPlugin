@@ -22,24 +22,25 @@
 <div id="moduleCss"></div>
 
 <body id="ojt-plugin">
-  <div x-data="utama()" id="utama" x-init="$store.plugins.fetchInstalledPlugin();" x-cloak>
+  <div x-data="utama()" id="utama" x-init="init()" x-cloak>
     <div class="ojt-flex ojt-h-screen ojt-antialiased ojt-text-gray-900 ojt-bg-gray-100">
       <aside class="ojt-flex-shrink-0 ojt-hidden ojt-w-72 ojt-bg-white ojt-border-r md:ojt-block">
         <div class="ojt-flex ojt-flex-col ojt-h-full">
-          <a href="https://openjournaltheme.com/" target="_blank"
-            class="custom-logo-link ojt-flex ojt-flex-col ojt-items-center ojt-py-6 ojt-gap-2" rel="home"
-            aria-current="page">
-            <img width="32" height="37" src="{$ojtPlugin->logo}" class="ojt-mx-auto">
-            <span class="site-name ojt-ml-3 ojt-inline-block ojt-text-2xl ojt-tracking-wide">
-              OJT Plugin
-            </span>
-          </a>
-          <nav x-data="pluginMenu()" id="pluginMenu" aria-label="Main"
+          <div class="ojt-py-6">
+            <a href="https://openjournaltheme.com/" target="_blank"
+              class="custom-logo-link ojt-flex ojt-flex-col ojt-items-center ojt-gap-2" rel="home" aria-current="page">
+              <img width="32" height="37" src="{$ojtPlugin->logo}" class="ojt-mx-auto">
+              <span class="site-name ojt-ml-3 ojt-inline-block ojt-text-2xl ojt-tracking-wide">
+                OJT Plugin
+              </span>
+            </a>
+          </div>
+          <nav aria-label="Main"
             class="ojt-flex-1 ojt-space-y-2 ojt-px-2 ojt-overflow-y-hidden hover:ojt-overflow-y-auto">
-            <button @click="page = 'dashboard'; alpineComponent('utama').menu = 'Dashboard'"
-              :class="{ 'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50' : page == 'dashboard'}"
+            <button @click="$store.plugins.page = 'dashboard'; menu = 'Dashboard'"
+              :class="{ 'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50' : $store.plugins.page == 'dashboard' }"
               role="button"
-              class="ojt-w-full ojt-flex ojt-transition ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-lg ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br ojt-text-gray-500 hover:ojt-text-white ojt-gap-4">
+              class="ojt-w-full ojt-flex ojt-transition ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br ojt-text-gray-500 hover:ojt-text-white ojt-gap-4">
               <span aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                   stroke="currentColor" class="ojt-w-5 ojt-h-5">
@@ -49,28 +50,20 @@
               </span>
               <span> Dashboard </span>
             </button>
-            <template x-if="$store.plugins.plugins.length > 0">
-              <div>
-                <span class="ojt-uppercase ojt-tracking-widest ojt-text-gray-400 ojt-px-4 ojt-text-xs">PLUGINS</span>
-                <div x-show="open" class="ojt-space-y-2 ojt-flex ojt-flex-col" role="menu">
-                  <template x-for="plugin in $store.plugins.activePlugins">
-                    <div>
-                      <template x-if="plugin.enabled && plugin?.page">
-                        <button role="button" @click="alpineComponent('utama').menu = 'Plugin'; page = plugin.name"
-                          role="menuitem" :class="{ 
-                              'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50': page == plugin.name,
+            {* <span class="ojt-uppercase ojt-tracking-widest ojt-text-gray-400 ojt-px-4 ojt-text-xs">PLUGINS</span> *}
+            <div x-show="open" class="ojt-gap-2 ojt-flex ojt-flex-col" role="menu" id="plugin-menu-list">
+              <template x-for="(plugin, index) in $store.plugins.activePlugins" :key="plugin.className">
+                <button x-show="plugin.enabled && plugin?.page" role="button"
+                  @click="menu = 'Plugin'; $store.plugins.page  = plugin.name" role="menuitem" :class="{ 
+                              'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50': $store.plugins.page == plugin.name,
                               }" :page="plugin.page"
-                          class="ojt-w-full ojt-flex ojt-text-gray-500 ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-4 menu_item ojt-text-left">
-                          <span aria-hidden="true" class="ojt-min-w-[1.25rem]" x-html="plugin.icon">
-                          </span>
-                          <span x-text="plugin.name"></span>
-                        </button>
-                      </template>
-                    </div>
-                  </template>
-                </div>
-              </div>
-            </template>
+                  class="ojt-w-full ojt-flex ojt-text-gray-500 ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-4 menu_item ojt-text-left">
+                  <span aria-hidden="true" class="ojt-min-w-[1.25rem]" x-html="plugin.icon">
+                  </span>
+                  <span x-text="plugin.name"></span>
+                </button>
+              </template>
+            </div>
           </nav>
 
           <div class="ojt-p-4 ojt-mx-auto ojt-w-full ojt-gap-2 ojt-flex ojt-flex-col">
@@ -218,16 +211,14 @@
                   <div x-show="tab == 'plugin-installed'" class="ojt-bg-white ojt-rounded-lg" role="tabpanel">
                     {$pluginInstalledHtml}
                   </div>
-                  <div x-show="tab == 'plugin-gallery'"
-                    class="ojt-p-4 ojt-bg-white ojt-rounded-lg md:ojt-p-8 plugin-gallery" page="ojt/pluginGallery"
-                    role="tabpanel">
+                  <div x-show="tab == 'plugin-gallery'" class="ojt-p-4 ojt-bg-white ojt-rounded-lg plugin-gallery"
+                    page="ojt/pluginGallery" role="tabpanel">
                     {$pluginGalleryHtml}
                   </div>
                 </div>
               </div>
             </div>
             <div x-show="menu == 'Plugin'" id="main-menu">
-
             </div>
           </main>
           <div

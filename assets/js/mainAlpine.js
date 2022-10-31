@@ -2,14 +2,88 @@
 function alpineComponent(id) {
   return document.getElementById(id).__x.$data;
 }
+const utama = () => {
+  const getTheme = () => {
+    if (window.localStorage.getItem("dark")) {
+      return JSON.parse(window.localStorage.getItem("dark"));
+    }
+    return (
+      !!window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    );
+  };
+
+  const setTheme = (value) => {
+    window.localStorage.setItem("dark", value);
+  };
+
+  return {
+    menu: "Dashboard",
+    loading: true,
+    isDark: false,
+    init() {
+      this.$store.plugins.init();
+      this.$nextTick(() => {
+        autoAnimate(document.getElementById("plugin-menu-list"));
+      });
+    },
+    toggleTheme() {
+      this.isDark = !this.isDark;
+      setTheme(this.isDark);
+    },
+    setLightTheme() {
+      this.isDark = false;
+      setTheme(this.isDark);
+    },
+    setDarkTheme() {
+      this.isDark = true;
+      setTheme(this.isDark);
+    },
+    isSettingsPanelOpen: false,
+    openSettingsPanel() {
+      this.isSettingsPanelOpen = true;
+      this.$nextTick(() => {
+        this.$refs.settingsPanel.focus();
+      });
+    },
+    isNotificationsPanelOpen: false,
+    openNotificationsPanel() {
+      this.isNotificationsPanelOpen = true;
+      this.$nextTick(() => {
+        this.$refs.notificationsPanel.focus();
+      });
+    },
+    isSearchPanelOpen: false,
+    openSearchPanel() {
+      this.isSearchPanelOpen = true;
+      this.$nextTick(() => {
+        this.$refs.searchInput.focus();
+      });
+    },
+    isMobileSubMenuOpen: false,
+    openMobileSubMenu() {
+      this.isMobileSubMenuOpen = true;
+      this.$nextTick(() => {
+        this.$refs.mobileSubMenu.focus();
+      });
+    },
+    isMobileMainMenuOpen: false,
+    openMobileMainMenu() {
+      this.isMobileMainMenuOpen = true;
+      this.$nextTick(() => {
+        this.$refs.mobileMainMenu.focus();
+      });
+    },
+  };
+};
 
 function pluginMenu() {
   return {
     page: "dashboard",
     plugins: [],
-    // get activePlugins() {
-    //   return this.plugins.filter((plugin) => plugin.enabled && plugin.page);
-    // },
+    init() {
+      autoAnimate(document.getElementById("plugin-menu-list"));
+    },
   };
 }
 
@@ -86,78 +160,16 @@ function checkUpdate() {
 
 function pluginInstalled() {
   return {
-    isLoading: true,
-    plugins: null,
-    async fetchInstalledPlugin() {
-      this.isLoading = true;
-      let res = await fetch(currentUrl + "getInstalledPlugin");
-
-      if (res.status != 200) {
-        return ajaxError();
-      }
-
-      let plugins = await res.json();
-
-      this.plugins = plugins;
-
-      this.passPluginsToMenu();
-
-      this.isLoading = false;
-    },
-    getPluginByProduct(product) {
-      return this.plugins.find((plugin) => plugin.product == product);
-    },
-    async togglePlugin(currentPlugin) {
-      const formData = new FormData();
-      formData.append("className", currentPlugin.className);
-      formData.append("productType", currentPlugin.productType);
-      formData.append("pluginFolder", currentPlugin.product);
-      formData.append("enabled", !currentPlugin.enabled);
-
-      let response = await fetch(currentUrl + "toggleInstalledPlugin", {
-        method: "POST",
-        body: formData,
+    async init() {
+      this.$nextTick(() => {
+        if (this.$refs.tablepluginlist) {
+          autoAnimate(this.$refs.tablepluginlist, {
+            duration: 300,
+            // Easing for motion (default: 'ease-in-out')
+            // easing: "ease-in-out",
+          });
+        }
       });
-
-      let data = await response.json();
-
-      ajaxResponse(data);
-
-      this.plugins = this.plugins.map((plugin) =>
-        plugin.product === currentPlugin.product
-          ? {
-              ...plugin,
-              enabled: !plugin.enabled,
-            }
-          : plugin
-      );
-
-      this.passPluginsToMenu();
-    },
-    passPluginsToMenu() {
-      alpineComponent("pluginMenu").plugins = this.plugins;
-    },
-    async resetSetting(pluginName) {
-      var swal = await Swal.fire({
-        title: "Are you sure you wish to reset this plugin setting?",
-        showCancelButton: true,
-        confirmButtonText: `Yes`,
-      });
-
-      if (!swal.isConfirmed) {
-        return;
-      }
-
-      let response = await fetch(currentUrl + "resetSetting/" + pluginName);
-
-      if (res.status != 200) {
-        ajaxError();
-        return;
-      }
-
-      let data = await response.json();
-
-      ajaxResponse(data);
     },
   };
 }
@@ -168,6 +180,18 @@ function pluginGallery() {
     error: false,
     search: "",
     plugins: [],
+    async init() {
+      await this.fetchPlugins();
+      this.$nextTick(() => {
+        if (this.$refs.gallerylist) {
+          autoAnimate(this.$refs.gallerylist, {
+            // duration: 500,
+            // Easing for motion (default: 'ease-in-out')
+            easing: "ease-in-out",
+          });
+        }
+      });
+    },
     async reload() {
       this.error = false;
       this.fetchPlugins();
@@ -280,8 +304,7 @@ function modalPlugin() {
 
       this.close();
 
-      alpineComponent("pluginInstalled").fetchInstalledPlugin();
-      alpineComponent("ojt-setting").tab = 1;
+      this.$store.plugins.fetchInstalledPlugin();
     },
     async uninstall(plugin) {
       if (this.loading == true) {
@@ -318,8 +341,7 @@ function modalPlugin() {
 
       this.close();
 
-      alpineComponent("pluginInstalled").fetchInstalledPlugin();
-      alpineComponent("ojt-setting").tab = 1;
+      this.$store.plugins.fetchInstalledPlugin();
     },
     isValidURL(string) {
       var res = string.match(

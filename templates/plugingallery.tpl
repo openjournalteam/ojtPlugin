@@ -1,6 +1,6 @@
-<div x-data="pluginGallery()" id="pluginGallery" x-init="fetchPlugins()">
+<div x-data="pluginGallery()" id="pluginGallery" x-init="init()">
   <template x-if="loading && !error">
-    <div class="loading-menu ojt-flex ojt-items-center ojt-h-80">
+    <div class="loading-menu ojt-flex ojt-items-center ojt-h-50">
       <div class="lds-roller ojt-self-center ojt-mx-auto">
         <div></div>
         <div></div>
@@ -21,75 +21,57 @@
   </template>
   <template x-if="plugins && !loading && !error">
     <div>
-      <div class="ojt-flex ojt-pb-4">
-        {* <div class="ojt-flex ojt-flex-shrink-0 ojt-relative" x-data="{ isOpen: false}" @click="isOpen = !isOpen"
-          @keydown.escape="isOpen = false">
-          <button
-            class="ojt-flex-shrink-0 ojt-inline-flex ojt-items-center ojt-py-2.5 ojt-px-4 ojt-text-sm ojt-font-medium ojt-text-center ojt-text-gray-900 ojt-bg-gray-100 ojt-border ojt-border-gray-300 dark:ojt-border-gray-700 dark:ojt-text-white ojt-rounded-l-lg hover:ojt-bg-gray-200 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-gray-300 dark:ojt-bg-gray-600 dark:hover:ojt-bg-gray-700 dark:focus:ojt-ring-gray-800"
-            type="button">
-            All categories
-            <svg aria-hidden="true" class="ojt-ml-1 ojt-w-4 ojt-h-4" fill="currentColor" viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd"
-                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                clip-rule="evenodd"></path>
-            </svg>
-          </button>
-          <ul x-show="isOpen" @click.away="isOpen = false"
-            class="ojt-absolute ojt-font-normal ojt-bg-white ojt-shadow ojt-overflow-hidden ojt-rounded-lg ojt-min-w-[10rem] ojt-w-auto ojt-border ojt-mt-2 ojt-py-1 ojt-left-0 ojt-top-8 ojt-z-20">
-            <li>
-              <span class="ojt-flex ojt-items-center ojt-px-3 ojt-py-1 hover:ojt-bg-gray-200">
-                Test
-              </span>
-            </li>
-            <li>
-              <span class="ojt-flex ojt-items-center ojt-px-3 ojt-py-1 hover:ojt-bg-gray-200">
-                Test
-              </span>
-            </li>
-          </ul>
-        </div> *}
+      {* <div class="ojt-flex ojt-pb-4">
         <div class="ojt-w-full">
           <input type="search" id="search-dropdown"
-            class="ojt-block ojt-bg-white ojt-p-2.5 ojt-w-full ojt-z-20 ojt-text-sm ojt-text-gray-900 ojt-bg-gray-50 ojt-rounded-lg ojt-border ojt-border-gray-300 focus:ojt-ring-primary-500 focus:ojt-border-primary-500"
-            placeholder="Search plugins..." x-model="search">
-          {* <input type="search" id="search-dropdown"
-            class="ojt-block ojt-bg-white ojt-p-2.5 ojt-w-full ojt-z-20 ojt-text-sm ojt-text-gray-900 ojt-bg-gray-50 ojt-rounded-r-lg ojt-border-l-gray-100 ojt-border-l-2 ojt-border ojt-border-gray-300 focus:ojt-ring-primary-500 focus:ojt-border-primary-500"
-            placeholder="Search plugins..." x-model="search"> *}
+            class="ojt-block ojt-bg-white ojt-py-2 ojt-px-4 ojt-w-full ojt-z-20 ojt-text-sm ojt-text-gray-900 ojt-bg-gray-50 ojt-rounded-lg ojt-border ojt-border-gray-300 focus:ojt-ring-primary-500 focus:ojt-border-primary-500"
+            placeholder="Search plugins..." x-model.debounce="search">
         </div>
+      </div> *}
+      <div class="ojt-flex ojt-items-center ojt-my-2 ojt-gap-2">
+        <select
+          class="ojt-w-full ojt-max-w-[10rem] ojt-bg-gray-50 ojt-border ojt-border-gray-300 ojt-text-gray-900 ojt-text-sm ojt-rounded-lg focus:ojt-ring-primary-500 focus:ojt-border-primary-500 ojt-block ojt-w-full ojt-py-2 ojt-px-4">
+          <option value="all">All</option>
+          <option value="plugins">Plugins</option>
+          <option value="themes">Themes</option>
+        </select>
+
+        <input type="search" id="default-input"
+          class="ojt-bg-gray-50 ojt-border ojt-border-gray-300 ojt-text-gray-900 ojt-text-sm ojt-rounded-lg focus:ojt-ring-primary-500 focus:ojt-border-primary-500 ojt-block ojt-w-full ojt-max-w-sm ojt-py-2 ojt-px-4"
+          placeholder="Search ..." x-model.debounce="search">
+        <button @click="search = ''"
+          class="ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-sm ojt-font-medium ojt-text-center ojt-text-white ojt-transition ojt-bg-red-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-red-800 focus:ojt-outline-none ojt-waves-effect">
+          Reset
+        </button>
       </div>
-      <section
-        class="ojt-flex ojt-flex-row ojt-flex-wrap ojt-mx-auto ojt-grid sm:ojt-grid-cols-2 md:ojt-grid-cols-1 lg:ojt-grid-cols-3 ojt-gap-4">
+      <section class="ojt-flex ojt-flex-row ojt-flex-wrap ojt-mx-auto ojt-gap-4" x-ref="gallerylist">
         <!-- Card Component -->
-        <template x-for="(plugin, index) in filteredPlugins" :key="index">
+        <template x-for="(plugin, index) in filteredPlugins" :key="plugin.token">
           <div
-            class="ojt-flex ojt-flex-col ojt-items-stretch ojt-transition-all ojt-duration-150 ojt-bg-white ojt-rounded-lg ojt-w-full dark:ojt-bg-dark dark:ojt-text-light ojt-border ojt-border-gray-300 hover:ojt-ring-2 hover:ojt-ring-primary-600">
+            class="ojt-max-w-sm ojt-h-min ojt-flex ojt-flex-col ojt-items-stretch ojt-transition-all ojt-duration-150 ojt-bg-white ojt-rounded-lg ojt-w-full dark:ojt-bg-dark dark:ojt-text-light ojt-border ojt-border-gray-300 hover:ojt-ring-2 hover:ojt-ring-primary-600">
             <div class="md:ojt-flex-shrink-0 md:ojt-min-h-[12rem] ojt-relative">
               <img :src="plugin?.placeholder ?? placeholderImg" :class="{ 'ojt-object-contain' : plugin.placeholder }"
                 :alt="plugin.name" class="ojt-w-full ojt-rounded-lg ojt-rounded-b-none md:ojt-h-56" loading="lazy" />
               <div class="ojt-flex ojt-absolute ojt-left-0 ojt-bottom-0 ojt-items-center ojt-px-4 ojt-py-2"
                 x-show="plugin.installed">
-                <div
-                  class="ojt-rounded-lg ojt-py-1 ojt-px-3 ojt-border-green-700 ojt-border ojt-text-green-700 ojt-bg-green-300/20"
-                  x-show="plugin.installed">
-                  <p class="ojt-text-xs">Installed</p>
-                </div>
+                <span
+                  class="ojt-bg-green-100 ojt-text-green-800 ojt-text-xs ojt-font-semibold ojt-mr-2 ojt-px-2.5 ojt-py-0.5 ojt-rounded ">Installed</span>
               </div>
             </div>
             <div class="ojt-flex ojt-flex-wrap ojt-p-4 ojt-x-auto ojt-border-t">
               <a href="#" @click="$dispatch('modal-plugin', plugin)"
-                class="ojt-text-2xl ojt-font-bold ojt-tracking-normal ojt-text-primary-600 hover:ojt-text-primary-800 dark:ojt-text-light"
+                class="ojt-text-xl ojt-font-bold ojt-tracking-normal ojt-text-primary-600 hover:ojt-text-primary-800 dark:ojt-text-light"
                 x-text="plugin.name"></a>
             </div>
             <div class="ojt-border-t ojt-border-gray-300">
-              <p class="ojt-flex ojt-flex-row ojt-flex-wrap ojt-flex-grow ojt-w-full ojt-px-4 ojt-py-2 ojt-overflow-hidden ojt-text-sm ojt-text-gray-700 dark:ojt-text-light"
-                x-text="plugin.description.trimEllip(300)"></p>
+              <p class="ojt-px-4 ojt-py-2 ojt-overflow-hidden ojt-text-sm ojt-text-gray-700 dark:ojt-text-light"
+                x-text="plugin.description.trimEllip(200)"></p>
             </div>
             <section class="ojt-p-4 ojt-border-gray-300 ojt-border-t" x-show="plugin.shop">
               <div class="ojt-flex ojt-items-center ojt-justify-between">
                 <template x-if="plugin.shop">
                   <a :href="plugin.shop" target="_blank"
-                    class="ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-uppercase ojt-transition ojt-bg-primary-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-primary-800 focus:ojt-outline-none ojt-waves-effect">
+                    class="ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-uppercase ojt-transition ojt-bg-blue-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-blue-800 focus:ojt-outline-none ojt-waves-effect">
                     <i class="fas fa-shopping-cart"></i>
                     Buy Now
                   </a>

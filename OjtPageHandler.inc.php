@@ -76,6 +76,7 @@ class OjtPageHandler extends Handler
         $ojtPlugin->pageName                        = 'ojt';
 
         $ojtPlugin->javascript  = [
+            'https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js',
             $request->getBaseUrl() . '/lib/pkp/lib/vendor/components/jquery/jquery.min.js',
             $this->getPluginFullUrl('assets/vendors/sweetalert/sweetalert2.all.min.js'),
             $this->getPluginFullUrl('assets/js/theme.js'),
@@ -87,7 +88,8 @@ class OjtPageHandler extends Handler
             $this->getPluginFullUrl('assets/js/mainAlpine.js'),
             $this->getPluginFullUrl('assets/js/store.js'),
             $this->getPluginFullUrl('assets/js/main.js'),
-            $this->getPluginFullUrl('assets/js/updater.js')
+            $this->getPluginFullUrl('assets/js/updater.js'),
+            $this->getPluginFullUrl('assets/js/app.js'),
         ];
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
@@ -143,7 +145,6 @@ class OjtPageHandler extends Handler
 
             $pluginFolder = $plugin['folder'];
             $pluginVersion = $plugin['version'];
-
             $targetPlugin = @include($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
 
             $plugin['update'] = false;
@@ -153,6 +154,10 @@ class OjtPageHandler extends Handler
                 $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
                 $plugin['update'] = version_compare($version['release'], $pluginVersion, '<');
             }
+
+            // if ($plugin['folder'] == 'razorpay') {
+            //     dd($version['release'], $pluginVersion);
+            // }
 
             $plugin['installed'] = ($targetPlugin) ? true : false;
 
@@ -228,18 +233,12 @@ class OjtPageHandler extends Handler
     {
         $plugin = $this->ojtPlugin;
 
-        $pluginToInstall = json_decode($_POST['plugin']);
-        $license = $_POST['license'] ?? false;
+        $pluginToInstall = json_decode($request->getUserVar('plugin'));
+        $license = $request->getUserVar('license') ?? false;
 
-        if (isset($_POST['update']) && $targetPlugin = @include($plugin->getModulesPath($pluginToInstall->folder . DIRECTORY_SEPARATOR . 'index.php'))) {
+        if ($request->getUserVar('update') && $targetPlugin = @include($plugin->getModulesPath($pluginToInstall->folder . DIRECTORY_SEPARATOR . 'index.php'))) {
             $license = $targetPlugin->getSetting($this->contextId, 'license');
         }
-
-        $payload = [
-            'token' => $pluginToInstall->token,
-            'license' => $license,
-            'journal_url' => $this->baseUrl,
-        ];
 
         $downloadLink = $plugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
 
@@ -311,7 +310,7 @@ class OjtPageHandler extends Handler
             $plugin->uninstallPlugin($removePlugin);
         } catch (Exception $e) {
             $json['error']  = 1;
-            $json['msg']    = $e;
+            $json['msg']    = $e->getMessage();
             showJson($json);
             return;
         }

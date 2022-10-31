@@ -124,6 +124,7 @@ class OjtPlugin extends GenericPlugin
             $data['className']   = $plugin->getName();
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
+            $data['open']        = false;
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getPage() : null;
             $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
@@ -327,14 +328,17 @@ class OjtPlugin extends GenericPlugin
      */
     public function uninstallPlugin($plugin)
     {
-        $path    = $this->getModulesPath($plugin->folder);
+        $path    = $this->getModulesPath($plugin->product);
 
-        if (!is_dir($path)) {
-            throw new InvalidArgumentException("$plugin->name not Found");
-            return;
+        try {
+            if (!is_dir($path)) {
+                throw new Exception("$plugin->name not Found");
+                return;
+            }
+            return $this->recursiveDelete($path);
+        } catch (\Throwable $th) {
+            throw $th;
         }
-
-        return $this->recursiveDelete($path);
     }
 
     public function recursiveDelete($dirPath, $deleteParent = true)
@@ -343,7 +347,7 @@ class OjtPlugin extends GenericPlugin
             return false;
         }
         foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
-            $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
+            $deleted =  $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
         }
         if ($deleteParent) {
             rmdir($dirPath);
