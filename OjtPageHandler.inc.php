@@ -99,14 +99,7 @@ class OjtPageHandler extends Handler
 
     protected function getPluginFullUrl($path = '', $withVersion = true)
     {
-        $plugin = $this->ojtPlugin;
-
-        $fullUrl =  $plugin->getRequest()->getBaseUrl() . '/'  . $plugin->getPluginPath() . '/' . $path;
-        if ($withVersion) {
-            return $fullUrl . '?v=' . $plugin->getPluginVersion();
-        }
-
-        return $fullUrl;
+        return $this->ojtPlugin->getPluginFullUrl($path, $withVersion);
     }
 
     public function setting($args, $request)
