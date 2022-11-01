@@ -85,7 +85,7 @@
                     </svg>
                     <div>
                       <template x-if="!plugin.enabled || (plugin.enabled && !plugin?.page)">
-                        <span x-text="plugin.name" class="ojt-font-bold"></span>
+                        <span x-text="plugin.name" :class="{ 'ojt-font-bold' : plugin.enabled }"></span>
                       </template>
                       <template x-if="plugin.enabled && plugin?.page">
                         <a href="#"
