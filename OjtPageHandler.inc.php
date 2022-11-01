@@ -76,7 +76,6 @@ class OjtPageHandler extends Handler
         $ojtPlugin->pageName                        = 'ojt';
 
         $ojtPlugin->javascript  = [
-            'https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js',
             $request->getBaseUrl() . '/lib/pkp/lib/vendor/components/jquery/jquery.min.js',
             $this->getPluginFullUrl('assets/vendors/sweetalert/sweetalert2.all.min.js'),
             $this->getPluginFullUrl('assets/js/theme.js'),
@@ -147,10 +146,6 @@ class OjtPageHandler extends Handler
                 $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
                 $plugin['update'] = version_compare($version['release'], $pluginVersion, '<');
             }
-
-            // if ($plugin['folder'] == 'razorpay') {
-            //     dd($version['release'], $pluginVersion);
-            // }
 
             $plugin['installed'] = ($targetPlugin) ? true : false;
 

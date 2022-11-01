@@ -176,24 +176,6 @@
                         <small class="ojt-font-bold">Plugin is up-to-date.</small>
                       </td>
                     </tr>
-                    <tr x-show="plugin.installed">
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
-                        <label class="ojt-inline-flex ojt-items-center">
-                          <input type="checkbox" x-model="resetSetting"
-                            class="ojt-form-checkbox ojt-h-4 ojt-w-4 ojt-text-red-600">
-                          <span class="ojt-ml-2 ojt-text-gray-700 ojt-text-sm">Reset Setting</span>
-                        </label>
-                      </td>
-                    </tr>
-                    <tr x-show="plugin.installed">
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
-                        <button x-text="loading ? 'Uninstalling ...' : 'Uninstall'" :disabled="loading"
-                          @click="uninstall(plugin)"
-                          class="disabled:ojt-opacity-50 ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-w-full ojt-uppercase ojt-transition ojt-bg-red-700 ojt-rounded ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-red-800 focus:ojt-outline-none ojt-waves-effect">
-
-                        </button>
-                      </td>
-                    </tr>
                     <tr>
                       <td
                         class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block dark:ojt-text-light">

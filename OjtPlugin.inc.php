@@ -16,12 +16,17 @@ class OjtPlugin extends GenericPlugin
         return static::API;
     }
 
+    public static function get()
+    {
+        return PluginRegistry::getPlugin('generic', 'ojtPlugin');
+    }
+
     public function register($category, $path, $mainContextId = null)
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
-                $this->flushCache();
                 $this->createModulesFolder();
+                // $this->flushCache();
                 $this->registerModules();
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
@@ -357,8 +362,16 @@ class OjtPlugin extends GenericPlugin
         if (empty($dirPath) && !is_dir($dirPath)) {
             return false;
         }
-        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
-            $deleted =  $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
+
+        $paths = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+
+        foreach ($paths as $path) {
+            if (!$path->isWritable()) {
+                throw new Exception("Can't remove plugins, please check folder permission.");
+            };
+        }
+        foreach ($paths as $path) {
+            $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
         }
         if ($deleteParent) {
             rmdir($dirPath);
@@ -460,6 +473,8 @@ class OjtPlugin extends GenericPlugin
 
     function getDirs($path, $recursive = false, array $filtered = [])
     {
+        $this->createModulesFolder();
+
         if (!is_dir($path)) {
             throw new RuntimeException("$path does not exist.");
         }
@@ -468,6 +483,7 @@ class OjtPlugin extends GenericPlugin
 
         $dirs = [];
         $d = dir($path);
+
         while (($entry = $d->read()) !== false) {
             if (is_dir("$path/$entry") && !in_array($entry, $filtered)) {
                 $dirs[] = $entry;
