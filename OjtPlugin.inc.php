@@ -256,7 +256,18 @@ class OjtPlugin extends GenericPlugin
 
     public function getPluginName(): String
     {
-        return strtolower(__CLASS__);
+        return $this->getName();
+    }
+
+    public function getPluginFullUrl($path = '', $withVersion = true)
+    {
+        $fullUrl =  $this->getRequest()->getBaseUrl() . '/'  . $this->getPluginPath() . '/' . $path;
+
+        if ($withVersion) {
+            return $fullUrl . '?v=' . $this->getPluginVersion();
+        }
+
+        return $fullUrl;
     }
 
     public function setPageHandler($hookName, $params)
