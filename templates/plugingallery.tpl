@@ -1,4 +1,4 @@
-<div x-data="pluginGallery()" id="pluginGallery" x-init="init()">
+<div x-data="pluginGallery()" id="pluginGallery">
   <template x-if="loading && !error">
     <div class="loading-menu ojt-flex ojt-items-center ojt-h-50">
       <div class="lds-roller ojt-self-center ojt-mx-auto">

@@ -165,7 +165,7 @@
         </header>
         <div class="ojt-h-full ojt-flex ojt-flex-col ojt-justify-between">
           <main class="ojt-space-y-4">
-            <div x-data="checkUpdate()" id="checkUpdate" x-init="() => { checkUpdate() }" x-show="updateAvailable"
+            <div x-show="$store.checkUpdate.updateAvailable"
               class="update-available ojt-flex ojt-flex-col ojt-p-8 ojt-bg-white ojt-shadow-md ojt-border-l-8 ojt-border-yellow-500">
               <div class="ojt-flex ojt-items-center ojt-justify-between">
                 <div class="ojt-flex ojt-items-center">
@@ -173,8 +173,8 @@
                     <div class="ojt-font-medium ojt-leading-none">There is a new version of OJTPlugin available!</div>
                     <p class="ojt-text-sm ojt-text-gray-600 ojt-leading-none ojt-mt-1">
                       You are currently using <b>Version {$ojtPlugin->version}</b>, the most recent version is <b
-                        x-text="data?.latest_version"></b>.
-                      <a href="#" @click="doUpdate()"
+                        x-text="$store.checkUpdate.data?.latest_version"></b>.
+                      <a href="#" @click="$store.checkUpdate.doUpdate()"
                         class="ojt-font-bold ojt-text-primary-700 hover:ojt-text-primary-800">Click here</a> to update
                     </p>
                   </div>
@@ -203,8 +203,10 @@
                   </li>
                   <li class="ojt-w-full">
                     <button class="ojt-rounded-tr-lg" type="button" role="tab" @click="tab = 'plugin-gallery';"
-                      :class="tab === 'plugin-gallery' ? activeTabClass : inactiveTabClass">Plugin
-                      Gallery</button>
+                      :class="tab === 'plugin-gallery' ? activeTabClass : inactiveTabClass"
+                      x-on:mouseenter.once="alpineComponent('pluginGallery').init()">
+                      Plugin Gallery
+                    </button>
                   </li>
                 </ul>
                 <div class="ojt-border-t ojt-border-gray-200">

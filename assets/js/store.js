@@ -140,40 +140,86 @@ Spruce.store("plugins", {
         // show success message then reload page
       }
     });
-    // if (this.loading == true) {
-    //   Toast.fire({
-    //     icon: "info",
-    //     title: "Please Wait, still Processing ...",
-    //   });
-    //   return;
-    // }
-
-    // this.loading = true;
-
-    // const formData = new FormData();
-    // formData.append("plugin", JSON.stringify(plugin));
-    // formData.append("resetSetting", this.resetSetting);
-
-    // let response = await fetch(currentUrl + "uninstallPlugin", {
-    //   method: "POST",
-    //   body: formData,
-    // }).catch(function (error) {
-    //   this.loading = false;
-    //   ajaxError(error);
-    // });
-
-    // let data = await response.json();
-
-    // ajaxResponse(data);
-
-    // alpineComponent("pluginGallery").plugins = alpineComponent(
-    //   "pluginGallery"
-    // ).plugins.map((plug) =>
-    //   plug.token === plugin.token ? { ...plug, installed: false } : plug
-    // );
-
-    // this.close();
-
-    // this.$store.plugins.fetchInstalledPlugin();
   },
 });
+
+Spruce.store(
+  "checkUpdate",
+  {
+    updateAvailable: false,
+    lastChecked: null,
+    data: {},
+    checkUpdate: async function () {
+      try {
+        if (!this.isTimeToCheckUpdate()) return;
+        let res = await fetch(
+          "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update",
+          {
+            mode: "cors",
+          }
+        );
+        let ojtPlugin = await res.json();
+
+        this.data = ojtPlugin;
+
+        if (ojtPlugin.latest_version > ojtPluginVersion) {
+          this.updateAvailable = true;
+        }
+
+        this.lastChecked = Date.now();
+      } catch (error) {}
+    },
+    isTimeToCheckUpdate() {
+      if (!this.lastChecked) return true;
+
+      var dateNow = Date.now();
+
+      var difference = dateNow - this.lastChecked;
+      var hoursDifference = Math.floor(difference / 1000 / 60);
+
+      if (hoursDifference > 60) {
+        return true;
+      }
+
+      return false;
+    },
+    doUpdate() {
+      Swal.fire({
+        title: "Are you sure want to Update Plugin?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, update it!",
+        showLoaderOnConfirm: true,
+        preConfirm: async () => {
+          const formData = new FormData();
+          formData.append("ojtPlugin", JSON.stringify(this.data));
+
+          return fetch(currentUrl + "updatePanel", {
+            method: "POST",
+            body: formData,
+          })
+            .then((response) => {
+              return response.json();
+            })
+            .catch((error) => {
+              Swal.showValidationMessage(`Request failed: ${error}`);
+            });
+        },
+        allowOutsideClick: () => !Swal.isLoading(),
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // show success message then reload page
+          Swal.fire(result.value.msg).then(() => {
+            if (result.value.error) {
+              return;
+            }
+            location.reload();
+          });
+        }
+      });
+    },
+  },
+  true
+);

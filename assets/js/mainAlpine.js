@@ -22,6 +22,7 @@ const utama = () => {
     loading: true,
     isDark: false,
     init() {
+      this.$store.checkUpdate.checkUpdate();
       this.$store.plugins.init();
       this.$nextTick(() => {
         autoAnimate(document.getElementById("plugin-menu-list"));
