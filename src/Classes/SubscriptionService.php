@@ -55,11 +55,12 @@ class SubscriptionService
     return $response;
   }
 
+  /**
+   * TODO add api to check quota
+   */
   public function getQuota()
   {
-    return [
-      ''
-    ];
+    // 
   }
 
   protected function getPlugin()
@@ -93,15 +94,9 @@ class SubscriptionService
     }
   }
 
-  protected function getClient()
+  public function getClient()
   {
-    return new \GuzzleHttp\Client([
-      'timeout' => 60,
-      'headers' => [
-        'Content-Type' => 'application/x-www-form-urlencoded',
-        // 'x-openjournaltheme' => 1
-      ]
-    ]);
+    return $this->getOjtPlugin()->getHttpClient();
   }
 
   protected function &getRequest()
