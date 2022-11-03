@@ -4,6 +4,9 @@ import('lib.pkp.classes.plugins.GenericPlugin');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 
 use Illuminate\Http\Client\PendingRequest as Http;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
 
 class OjtPlugin extends GenericPlugin
 {
@@ -21,10 +24,27 @@ class OjtPlugin extends GenericPlugin
         return PluginRegistry::getPlugin('generic', 'ojtPlugin');
     }
 
+    public function getHttpClient()
+    {
+        return new \GuzzleHttp\Client([
+            'timeout' => 60,
+            'headers' => [
+                'Content-Type' => 'application/x-www-form-urlencoded',
+                // 'x-openjournaltheme' => 1
+            ]
+        ]);
+    }
+
     public function register($category, $path, $mainContextId = null)
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
+                $this->setLogger();
+
+                $versionDao = DAORegistry::getDAO('VersionDAO');
+                $version    = $versionDao->getCurrentVersion();
+                $version->getVersionString();
+
                 $this->createModulesFolder();
                 // $this->flushCache();
                 $this->registerModules();
@@ -36,6 +56,15 @@ class OjtPlugin extends GenericPlugin
             return true;
         }
         return false;
+    }
+
+
+    public function setLogger()
+    {
+        $logger = new Logger('OJTLog');
+        $logger->pushHandler(new StreamHandler(__DIR__ . '/error.log', Logger::DEBUG));
+
+        ErrorHandler::register($logger);
     }
 
     public function templateManagerDisplay($hookName, $args)
