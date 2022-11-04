@@ -115,7 +115,7 @@ class OjtPageHandler extends Handler
     {
         $templateMgr            = TemplateManager::getManager($request);
         $templateMgr->assign('plugins', $this->ojtPlugin->getRegisteredModules());
-        $templateMgr->assign('errorLog', file_get_contents($this->ojtPlugin->getErrorLogFile()));
+        // $templateMgr->assign('errorLog', file_get_contents($this->ojtPlugin->getErrorLogFile()));
         // dd(base64_encode(file_get_contents($this->ojtPlugin->getErrorLogFile())));
         $json['css']  = [];
         $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('reportBug.tpl'));

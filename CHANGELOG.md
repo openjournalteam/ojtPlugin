@@ -34,5 +34,6 @@
 - Revamp dashboard.
 - Now support themes
 - Uninstall directly from Plugin Installed
-- Add search in Plugin Installed
-- Add filter [Themes, Plugins]
+- Improve Plugin Installed
+- Improve Plugin Gallery
+- Give Feedback or Report Bug directly from OJTPlugin
