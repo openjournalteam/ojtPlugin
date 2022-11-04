@@ -250,6 +250,61 @@ function pluginGallery() {
       this.filter.type = "all";
       this.filter.category = "all";
     },
+    async installPlugin(plugin) {
+      try {
+        let result = await Swal.fire({
+          title: `Install ${plugin.name} ?`,
+          icon: "warning",
+          input: plugin.category == "PAID" ? "text" : null,
+          inputAttributes:
+            plugin.category == "PAID"
+              ? {
+                  required: "",
+                }
+              : {},
+          inputPlaceholder: "Insert License Key.",
+          showCancelButton: true,
+          // confirmButtonColor: "#d33",
+          // cancelButtonColor: "#3085d6",
+          confirmButtonText: "Yes, install!",
+          showLoaderOnConfirm: true,
+          preConfirm: (license) => this.submitInstall(plugin, license),
+          allowOutsideClick: () => !Swal.isLoading(),
+        });
+
+        if (!result.isConfirmed) return;
+
+        if (result.value.error) throw result.value.msg;
+
+        // this.fetchInstalledPlugin();
+        this.data = this.data.filter((plug) => plugin != plug);
+        ajaxResponse(result.value);
+
+        return;
+      } catch (error) {
+        console.log(error);
+        ajaxError({
+          error: 1,
+          msg: error,
+        });
+      }
+    },
+    async submitInstall(plugin, license) {
+      const formData = new FormData();
+      formData.append("plugin", JSON.stringify(plugin));
+      formData.append("license", license);
+
+      let response = await fetch(currentUrl + "installPlugin", {
+        method: "POST",
+        body: formData,
+      }).catch(function (error) {
+        this.loading = false;
+        ajaxError(error);
+        return;
+      });
+
+      return await response.json();
+    },
   };
 }
 

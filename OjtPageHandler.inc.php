@@ -115,8 +115,7 @@ class OjtPageHandler extends Handler
     {
         $templateMgr            = TemplateManager::getManager($request);
         $templateMgr->assign('plugins', $this->ojtPlugin->getRegisteredModules());
-        // $templateMgr->assign('errorLog', file_get_contents($this->ojtPlugin->getErrorLogFile()));
-        // dd(base64_encode(file_get_contents($this->ojtPlugin->getErrorLogFile())));
+
         $json['css']  = [];
         $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('reportBug.tpl'));
         $json['js']   = [];
@@ -125,7 +124,7 @@ class OjtPageHandler extends Handler
 
     public function submitBug($args, $request)
     {
-        dd($_FILES);
+        // dd($_FILES);
         dd($request->getUserVars());
     }
 
@@ -224,41 +223,39 @@ class OjtPageHandler extends Handler
 
     public function installPlugin($args, $request)
     {
-        $plugin = $this->ojtPlugin;
-
-        $pluginToInstall = json_decode($request->getUserVar('plugin'));
-        $license = $request->getUserVar('license') ?? false;
-        $update = $request->getUserVar('update');
-
-        $downloadLink = $plugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
-
-        if (!$downloadLink) {
-            $json['error']  = 1;
-            $json['msg']    = "There's a problem on the server, please try again later.";
-            return showJson($json);
-        }
-        // trying to install plugin
         try {
-            $plugin->installPlugin($downloadLink);
+            $ojtPlugin = $this->ojtPlugin;
+            $fileManager = new FileManager();
+
+            $pluginToInstall = json_decode($request->getUserVar('plugin'));
+            $license = $request->getUserVar('license') ?? false;
+            $update = $request->getUserVar('update');
+
+            $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
+            if (!$downloadLink) throw new Exception("There's a problem on the server, please try again later.");
+
+            // trying to install plugin
+            $ojtPlugin->installPlugin($downloadLink);
+
+
+            $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
+            if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
+
+            $pluginInstance         = include($indexFile);
+            // Applying input license to plugin setting  
+            if ($pluginInstance instanceof Plugin && $license && !$update) {
+                $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
+            }
+
+
+            $json['error']  = 0;
+            $json['msg']    = 'Plugin Installed';
+            return showJson($json);
         } catch (Exception $e) {
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
             return showJson($json);
         }
-
-        // Applying input license to plugin setting  
-        import('plugins.generic.ojtPlugin.modules.' . $pluginToInstall->folder . '.' . $pluginToInstall->class);
-
-        $pluginInstance = new $pluginToInstall->class();
-
-        if ($pluginInstance instanceof Plugin && $license && !$update) {
-            $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
-        }
-
-
-        $json['error']  = 0;
-        $json['msg']    = 'Plugin Installed';
-        return showJson($json);
     }
 
     public function resetSetting($args, $showJson = true)

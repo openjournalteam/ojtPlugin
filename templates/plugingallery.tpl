@@ -67,76 +67,78 @@
               <div class="md:ojt-flex-shrink-0 md:ojt-min-h-[12rem] ojt-relative">
                 <img :src="plugin?.placeholder ?? placeholderImg" :class="{ 'ojt-object-contain' : plugin.placeholder }"
                   :alt="plugin.name" class="ojt-w-full ojt-rounded-lg ojt-rounded-b-none md:ojt-h-56" loading="lazy" />
-                <div class="ojt-flex ojt-absolute ojt-left-0 ojt-bottom-0 ojt-items-center ojt-px-4 ojt-py-2"
-                  x-show="plugin.installed">
-                  <span
+                <div class="ojt-flex ojt-absolute ojt-left-0 ojt-bottom-0 ojt-items-center ojt-px-4 ojt-py-2">
+                  <span x-show="plugin.installed"
                     class="ojt-bg-green-100 ojt-text-green-800 ojt-text-xs ojt-font-semibold ojt-mr-2 ojt-px-2.5 ojt-py-0.5 ojt-rounded ">
                     Installed
                   </span>
+                  <span x-show="plugin.update"
+                    class="ojt-bg-orange-100 ojt-text-orange-800 ojt-text-xs ojt-font-semibold ojt-mr-2 ojt-px-2.5 ojt-py-0.5 ojt-rounded ">
+                    Update Available
+                  </span>
                 </div>
               </div>
-              <div class="ojt-flex ojt-flex-wrap ojt-p-4 ojt-x-auto ojt-border-t">
+              <div class="ojt-flex ojt-flex-col ojt-flex-wrap ojt-p-4 ojt-x-auto ojt-border-t">
                 <a href="#" @click="$dispatch('modal-plugin', plugin)" {* :ojt-modal-toggle="'modal-' + plugin.token" *}
                   class="ojt-text-xl ojt-font-bold ojt-tracking-normal ojt-text-primary-600 hover:ojt-text-primary-800 dark:ojt-text-light"
                   x-text="plugin.name"></a>
+                <div class="ojt-text-xs">Latest Version : <span class="ojt-font-bold" x-text="plugin.version"></span>
+                </div>
               </div>
-              <div class="ojt-border-t ojt-border-gray-300">
+              {* <div class="ojt-flex ojt-flex-wrap ojt-px-4 ojt-py-1 ojt-x-auto ojt-border-t ojt-gap-2 ojt-items-center"
+                x-show="plugin.type">
+                <div class="ojt-font-bold ojt-text-sm">Type : </div>
+                <span
+                  class="ojt-bg-primary-100 ojt-text-primary-800 ojt-text-sm ojt-font-medium ojt-px-2.5 ojt-py-0.5 ojt-rounded"
+                  x-text="plugin.type"></span>
+              </div>
+              <div class="ojt-flex ojt-flex-wrap ojt-px-4 ojt-py-1 ojt-x-auto ojt-border-t ojt-gap-2 ojt-items-center"
+                x-show="plugin.tags">
+                <div class="ojt-font-bold ojt-text-sm">Tags : </div>
+                <template x-for="(tag, index) in plugin.tags">
+                  <span
+                    class="ojt-bg-blue-100 ojt-text-blue-800 ojt-text-sm ojt-font-medium ojt-px-2.5 ojt-py-0.5 ojt-rounded"
+                    x-text="tag"></span>
+                </template>
+              </div> *}
+              <div class="ojt-border-t ojt-border-gray-300 ojt-h-full">
                 <p class="ojt-px-4 ojt-py-2 ojt-overflow-hidden ojt-text-sm ojt-text-gray-700 dark:ojt-text-light"
                   x-text="plugin.description.trimEllip(200)"></p>
               </div>
               <section class="ojt-p-4 ojt-border-gray-300 ojt-border-t" x-show="plugin.shop">
                 <div class="ojt-flex ojt-items-center ojt-justify-between">
-                  <template x-if="plugin.shop">
+                  <template x-if="plugin.shop && plugin.category != 'free'">
                     <a :href="plugin.shop" target="_blank"
-                      class="ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-uppercase ojt-transition ojt-bg-primary-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-primary-800 focus:ojt-outline-none ojt-waves-effect">
+                      class="ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-transition ojt-bg-blue-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-blue-800 focus:ojt-outline-none ojt-waves-effect">
                       <i class="fas fa-shopping-cart"></i>
-                      Buy Now
+                      Shop
                     </a>
                   </template>
-                  {* <button @click="$dispatch('modal-plugin', plugin)"
-                    class="ojt-ml-auto ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-uppercase ojt-transition ojt-bg-primary-700 ojt-rounded ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-primary-800 focus:ojt-outline-none ojt-waves-effect">
-                    <i class="fas fa-info-circle"></i> Details
-                  </button> *}
+                  <template x-if="plugin.update">
+                    <button
+                      class="ojt-flex ojt-items-center ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white  ojt-transition ojt-bg-orange-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-orange-800 focus:ojt-outline-none ojt-waves-effect ojt-gap-1">
+                      <svg class="ojt-w-4 ojt-h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15"
+                        fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                          d="M1.90321 7.29677C1.90321 10.341 4.11041 12.4147 6.58893 12.8439C6.87255 12.893 7.06266 13.1627 7.01355 13.4464C6.96444 13.73 6.69471 13.9201 6.41109 13.871C3.49942 13.3668 0.86084 10.9127 0.86084 7.29677C0.860839 5.76009 1.55996 4.55245 2.37639 3.63377C2.96124 2.97568 3.63034 2.44135 4.16846 2.03202L2.53205 2.03202C2.25591 2.03202 2.03205 1.80816 2.03205 1.53202C2.03205 1.25588 2.25591 1.03202 2.53205 1.03202L5.53205 1.03202C5.80819 1.03202 6.03205 1.25588 6.03205 1.53202L6.03205 4.53202C6.03205 4.80816 5.80819 5.03202 5.53205 5.03202C5.25591 5.03202 5.03205 4.80816 5.03205 4.53202L5.03205 2.68645L5.03054 2.68759L5.03045 2.68766L5.03044 2.68767L5.03043 2.68767C4.45896 3.11868 3.76059 3.64538 3.15554 4.3262C2.44102 5.13021 1.90321 6.10154 1.90321 7.29677ZM13.0109 7.70321C13.0109 4.69115 10.8505 2.6296 8.40384 2.17029C8.12093 2.11718 7.93465 1.84479 7.98776 1.56188C8.04087 1.27898 8.31326 1.0927 8.59616 1.14581C11.4704 1.68541 14.0532 4.12605 14.0532 7.70321C14.0532 9.23988 13.3541 10.4475 12.5377 11.3662C11.9528 12.0243 11.2837 12.5586 10.7456 12.968L12.3821 12.968C12.6582 12.968 12.8821 13.1918 12.8821 13.468C12.8821 13.7441 12.6582 13.968 12.3821 13.968L9.38205 13.968C9.10591 13.968 8.88205 13.7441 8.88205 13.468L8.88205 10.468C8.88205 10.1918 9.10591 9.96796 9.38205 9.96796C9.65819 9.96796 9.88205 10.1918 9.88205 10.468L9.88205 12.3135L9.88362 12.3123C10.4551 11.8813 11.1535 11.3546 11.7585 10.6738C12.4731 9.86976 13.0109 8.89844 13.0109 7.70321Z"
+                          fill="currentColor"></path>
+                      </svg>
+                      Update Now
+                    </button>
+                  </template>
+                  <template x-if="!plugin.installed">
+                    <button @click="installPlugin(plugin)"
+                      class="ojt-flex ojt-items-center ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white  ojt-transition ojt-bg-primary-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-primary-800 focus:ojt-outline-none ojt-waves-effect ojt-gap-1">
+                      <svg class="ojt-w-4 ojt-h-4" viewBox="0 0 24 24">
+                        <path fill="none" stroke="currentColor" stroke-width="2"
+                          d="M19 13.5v4L12 22l-7-4.5v-4m7 8.5v-8.5m6.5-5l-6.5-4L15.5 2L22 6l-3.5 2.5h0zm-13 0l6.5-4L8.5 2L2 6l3.5 2.5h0zm13 .5L12 13l3.5 2.5l6.5-4L18.5 9h0zm-13 0l6.5 4l-3.5 2.5l-6.5-4L5.5 9h0z">
+                        </path>
+                      </svg>
+                      Install
+                    </button>
+                  </template>
                 </div>
               </section>
-            </div>
-            <div :id="'modal-' + plugin.token" tabindex="-1" aria-hidden="true"
-              class="ojt-hidden ojt-overflow-y-auto ojt-overflow-x-hidden ojt-fixed ojt-top-0 ojt-right-0 ojt-left-0 ojt-z-50 ojt-w-full md:ojt-inset-0 ojt-h-modal md:ojt-h-full">
-              <div class="ojt-relative ojt-p-4 ojt-w-full ojt-max-w-2xl ojt-h-full md:ojt-h-auto" id="modal-content">
-                <!-- Modal content -->
-                <div class="ojt-relative ojt-bg-white ojt-rounded-lg ojt-shadow dark:ojt-bg-gray-700">
-                  <!-- Modal header -->
-                  <div
-                    class="ojt-flex ojt-justify-between ojt-items-start ojt-p-4 ojt-rounded-t ojt-border-b dark:ojt-border-gray-600">
-                    <h3 class="ojt-text-xl ojt-font-semibold ojt-text-gray-900 dark:ojt-text-white"
-                      x-text="plugin.name">
-
-                    </h3>
-                    <button type="button"
-                      class="ojt-text-gray-400 ojt-bg-transparent hover:ojt-bg-gray-200 hover:ojt-text-gray-900 ojt-rounded-lg ojt-text-sm ojt-p-1.5 ojt-ml-auto ojt-inline-flex ojt-items-center"
-                      ojt-modal-toggle="defaultModal">
-                      <svg aria-hidden="true" class="ojt-w-5 ojt-h-5" fill="currentColor" viewBox="0 0 20 20"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd"
-                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                          clip-rule="evenodd"></path>
-                      </svg>
-                      <span class="sr-only">Close modal</span>
-                    </button>
-                  </div>
-                  <!-- Modal body -->
-                  <div class="ojt-p-6 ojt-space-y-6">
-                    dsadsadsa
-                  </div>
-                  <!-- Modal footer -->
-                  <div
-                    class="ojt-flex ojt-items-center ojt-p-6 ojt-space-x-2 ojt-rounded-b ojt-border-t ojt-border-gray-200">
-                    <button ojt-modal-toggle="defaultModal" type="button"
-                      class="ojt-text-white ojt-bg-blue-700 hover:ojt-bg-blue-800 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-blue-300 ojt-font-medium ojt-rounded-lg ojt-text-sm ojt-px-5 ojt-py-2.5 ojt-text-center ">
-                      dsadas</button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </template>
@@ -170,16 +172,13 @@
 <div x-data="modalPlugin()" @modal-plugin.window="showPlugin($event.detail)" id="modalPlugin" x-cloak>
   <div
     class="ojt-fixed ojt-inset-0 ojt-w-full ojt-h-full ojt-z-20 ojt-bg-black ojt-bg-opacity-50 ojt-duration-300 ojt-overflow-y-auto"
-    x-show="show" x-transition:enter="ojt-transition ojt-duration-300" x-transition:enter-start="ojt-opacity-0"
-    x-transition:enter-end="ojt-opacity-100" x-transition:leave="ojt-transition ojt-duration-300"
+    x-show="show" x-transition:enter="ojt-transition ojt-duration-400" x-transition:enter-start="ojt-opacity-0"
+    x-transition:enter-end="ojt-opacity-100" x-transition:leave="ojt-transition ojt-duration-400"
     x-transition:leave-start="ojt-opacity-100" x-transition:leave-end="ojt-opacity-0">
-    <div class="ojt-relative sm:ojt-w-3/4 ojt-mx-2 sm:ojt-mx-auto ojt-my-10 ojt-opacity-100 ">
+    <div class="ojt-relative ojt-max-w-4xl ojt-mx-2 sm:ojt-mx-auto ojt-my-10 ojt-opacity-100 ">
       <div
         class="ojt-relative ojt-bg-white ojt-shadow-lg ojt-rounded-md ojt-text-gray-900 ojt-z-20 dark:ojt-bg-dark dark:ojt-text-light"
-        @click.away="show=false;key='';" x-show="show"
-        x-transition:enter="ojt-transition ojt-transform ojt-duration-300" x-transition:enter-start="ojt-scale-0"
-        x-transition:enter-end="ojt-scale-100" x-transition:leave="ojt-transition ojt-transform ojt-duration-300"
-        x-transition:leave-start="ojt-scale-100" x-transition:leave-end="ojt-scale-0">
+        @click.away="close()">
         <template x-if="plugin">
           <div>
             <header class="ojt-relative ojt-flex ojt-items-center ojt-justify-between">
@@ -191,42 +190,26 @@
               </div>
             </header>
             <main class="ojt-grid ojt-p-4 lg:ojt-grid-cols-3 ojt-grid-row-col ojt-gap-4">
-              <div class="ojt-col-span-2">
-                <p class="ojt-mt-4 ojt-text-sm ojt-text-justify" x-text="plugin.description"></p>
-                <div class="ojt-py-4" x-show="isValidURL(plugin.shop)">
+              <div class="lg:ojt-col-span-2">
+                <p class="ojt-text-sm ojt-text-justify" x-text="plugin.description"></p>
+
+                <div class="ojt-py-4" x-show="isValidURL(plugin.shop) && plugin.category == 'PAID'">
                   Doesn't have license key ?
                   <a :href="plugin.shop" target="_blank" class="ojt-text-primary-600 hover:ojt-text-primary-900">
                     Click here
                   </a>
                   to buy.
                 </div>
+                <div class="ojt-py-4" x-show="plugin.category == 'SUBSCRIPTION'">
+                  Trial token :
+                  <span class="ojt-text-primary-600" @click="navigator.clipboard.writeText('OJT-TRIAL-SUBSCRIPTION');">
+                    OJT-TRIAL-SUBSCRIPTION
+                  </span>
+                </div>
               </div>
-              <div class="">
+              <div class="lg:ojt-col-span-1">
                 <table class="ojt-border-collapse ojt-w-full">
                   <tbody>
-                    <tr x-show="!plugin.installed">
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
-                        <input x-model="key"
-                          class="ojt-tracking-wide ojt-py-2 ojt-px-4 ojt-leading-relaxed ojt-appearance-none ojt-block ojt-w-full ojt-bg-gray-200 ojt-border ojt-border-gray-200 ojt-rounded focus:ojt-outline-none focus:ojt-bg-white focus:ojt-border-gray-500"
-                          id="key" placeholder="License Key" type="text">
-                      </td>
-                    </tr>
-                    <tr x-show="!plugin.installed">
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
-                        <button x-text="(loading || installing) ? 'Installing ...' : 'Install'" :disabled="loading"
-                          @click="installPlugin(plugin)"
-                          class="disabled:ojt-opacity-50 ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-w-full ojt-uppercase ojt-transition ojt-bg-primary-700 ojt-rounded ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-primary-800 focus:ojt-outline-none ojt-waves-effect">
-                        </button>
-                      </td>
-                    </tr>
-                    <tr x-show="plugin.installed && plugin?.update">
-                      <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
-                        <button x-text="loading ? 'Updating ...' : 'Update'" :disabled="loading"
-                          @click="installPlugin(plugin, true)"
-                          class="disabled:ojt-opacity-50 ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-w-full ojt-uppercase ojt-transition ojt-bg-primary-700 ojt-rounded ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-primary-800 focus:ojt-outline-none ojt-waves-effect">
-                        </button>
-                      </td>
-                    </tr>
                     <tr x-show="plugin.installed && !plugin?.update">
                       <td class="ojt-w-full ojt-p-3 ojt-border ojt-border-b ojt-block ojt-text-green-700">
                         <small class="ojt-font-bold">Plugin is up-to-date.</small>
@@ -235,9 +218,47 @@
                     <tr>
                       <td
                         class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block dark:ojt-text-light">
-                        <span x-text="'Version : ' + plugin.version" class="ojt-text-sm"></span>
+                        <span class="ojt-text-sm">Version : </span>
+                        <span x-text="plugin.version" class="ojt-text-sm ojt-font-bold"></span>
                       </td>
                     </tr>
+
+                    <tr x-show="plugin.tags">
+                      <td
+                        class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block dark:ojt-text-light">
+                        <div class="ojt-flex ojt-flex-wrap ojt-x-auto ojt-gap-2 ojt-items-center">
+                          <span class="ojt-text-sm">Tags :</span>
+                          <template x-for="(tag, index) in plugin.tags">
+                            <span
+                              class="ojt-bg-blue-100 ojt-text-blue-800 ojt-text-sm ojt-font-medium ojt-px-2.5 ojt-py-0.5 ojt-rounded"
+                              x-text="tag"></span>
+                          </template>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block dark:ojt-text-light">
+                        <div class="ojt-flex ojt-flex-wrap ojt-x-auto ojt-gap-2 ojt-items-center" x-show="plugin.type">
+                          <div class="ojt-text-sm">Type : </div>
+                          <span
+                            class="ojt-bg-primary-100 ojt-text-primary-800 ojt-text-sm ojt-font-medium ojt-px-2.5 ojt-py-0.5 ojt-rounded"
+                            x-text="plugin.type"></span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block dark:ojt-text-light">
+                        <div class="ojt-flex ojt-flex-wrap ojt-x-auto ojt-gap-2 ojt-items-center" x-show="plugin.type">
+                          <div class="ojt-text-sm">Category : </div>
+                          <span
+                            class="ojt-bg-primary-100 ojt-capitalize ojt-text-primary-800 ojt-text-sm ojt-font-medium ojt-px-2.5 ojt-py-0.5 ojt-rounded"
+                            x-text="plugin.category"></span>
+                        </div>
+                      </td>
+                    </tr>
+
                     <tr x-show="isValidURL(plugin.changelog)">
                       <td class="ojt-w-full ojt-p-3 ojt-text-gray-800 ojt-border ojt-border-b ojt-block">
                         <a :href="plugin.changelog" target="_blank"

@@ -3,7 +3,9 @@
 import('lib.pkp.classes.plugins.GenericPlugin');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 
-use Illuminate\Http\Client\PendingRequest as Http;
+use GuzzleHttp\Exception\BadResponseException;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
@@ -28,14 +30,26 @@ class OjtPlugin extends GenericPlugin
         return $plugin;
     }
 
-    public function getHttpClient()
+    public function getHttpClient($headers = [])
     {
+        $agents = [
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
+            'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.9) Gecko/20100508 SeaMonkey/2.0.4',
+            'Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 6.0; en-US)',
+            'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; da-dk) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1'
+        ];
+
+        $headers = array_merge($headers, [
+            'Content-Type' => 'application/x-www-form-urlencoded',
+            'User-Agent' => $agents[rand(0, 3)],
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Headers' => 'x-csrf-uap-admin-token'
+            // 'x-openjournaltheme' => 1
+        ]);
+
         return new \GuzzleHttp\Client([
             'timeout' => 60,
-            'headers' => [
-                'Content-Type' => 'application/x-www-form-urlencoded',
-                // 'x-openjournaltheme' => 1
-            ]
+            'headers' => $headers
         ]);
     }
 
@@ -136,8 +150,8 @@ class OjtPlugin extends GenericPlugin
 
         $plugins = [];
 
+        $fileManager = new FileManager();
         foreach ($modulesFolder as $moduleFolder) {
-            $fileManager = new FileManager();
             $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
             $indexFile = $this->getModulesPath(DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php");
             if (
@@ -167,7 +181,7 @@ class OjtPlugin extends GenericPlugin
             $data['enabled']     = $plugin->getEnabled();
             $data['open']        = false;
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
-            $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getPage() : null;
+            $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
             $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
 
             $plugins[] = $data;
@@ -427,39 +441,29 @@ class OjtPlugin extends GenericPlugin
 
     public function getPluginDownloadLink($pluginToken, $license = false, $journalUrl)
     {
-        $payload = [
-            'token' => $pluginToken,
-            'license' => $license,
-            'journal_url' => $journalUrl
-        ];
+        try {
+            $payload = [
+                'token' => $pluginToken,
+                'license' => $license,
+                'journal_url' => $journalUrl
+            ];
 
-        $agents = [
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
-            'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.9) Gecko/20100508 SeaMonkey/2.0.4',
-            'Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 6.0; en-US)',
-            'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; da-dk) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1'
-        ];
+            $request = $this->getHttpClient(['Content-Type' => 'application/x-www-form-urlencoded',])
+                ->post(
+                    static::API . '/product/get_download_link',
+                    [
+                        'form_params' => $payload,
+                    ]
+                );
+            dd($request);
 
-        $request = app(Http::class)
-            ->withHeaders([
-                'User-Agent' => $agents[rand(0, 3)],
-                'Access-Control-Allow-Origin' => '*',
-                'Access-Control-Allow-Headers' => 'x-csrf-uap-admin-token'
-            ])
-            ->asForm()
-            ->post(
-                static::API . '/product/get_download_link',
-                $payload
-            );
-
-
-        if (!$request->failed()) {
-            $response = $request->object();
-            if (!$response->error) {
-                return $response->data->download_link;
-            }
+            $result = json_decode((string) $request->getBody(), true);
+            return $result->data->download_link;
+        } catch (BadResponseException $e) {
+            return json_decode((string) $e->getResponse()->getBody(), true);
+        } catch (Exception $e) {
+            throw $e;
         }
-        return false;
     }
 
     /**
@@ -498,6 +502,8 @@ class OjtPlugin extends GenericPlugin
         $zip->close();
 
         unlink($file_name);
+
+        return true;
     }
 
     public function getJournalVersion()

@@ -58,7 +58,7 @@
 
       <div class="ojt-overflow-x-auto ojt-relative sm:ojt-rounded-lg">
         <table class="ojt-w-full ojt-text-left ojt-text-gray-500 ojt-border sm:ojt-rounded-lg">
-          <thead class="ojt-text-xs ojt-text-gray-700 ojt-uppercase ojt-bg-gray-100">
+          <thead class="ojt-text-xs ojt-text-gray-700 ojt-bg-gray-100">
             <tr class='sm:ojt-rounded-t-lg'>
               <th scope="col" class="ojt-py-3 ojt-px-6">
                 #
@@ -66,8 +66,8 @@
               <th scope="col" class="ojt-py-3 ojt-px-6">
                 Plugin
               </th>
-              <th scope="col" class="ojt-py-3 ojt-px-6">
-                description
+              <th scope="col" class="ojt-py-3 ojt-px-6 lg:ojt-w-[35%]">
+                Description
               </th>
               <th scope="col" class="ojt-py-3 ojt-px-6">
                 Version
@@ -98,14 +98,15 @@
                         <span x-text="plugin.name" :class="{ 'ojt-font-bold' : plugin.enabled }"></span>
                       </template>
                       <template x-if="plugin.enabled && plugin?.page">
-                        <a href="#"
-                          @click="alpineComponent('utama').menu = 'Plugin'; alpineComponent('pluginMenu').page = plugin.name"
+                        <a href="#" @click="alpineComponent('utama').menu = 'Plugin'; $store.plugins.page = plugin.name"
                           x-text="plugin.name" :page="plugin.page"
                           class="menu_item ojt-font-bold ojt-text-primary-600 hover:ojt-text-primary-800"></a>
                       </template>
                     </div>
                   </div>
-                  <div x-show.transition="plugin.open" class="ojt-mt-4 ojt-flex ojt-items-center ojt-gap-2">
+                  <div x-show.transition="plugin.open" class="ojt-mt-4 ojt-flex ojt-items-center ojt-gap-4">
+                    <a :href="plugin.documentation" x-show="plugin.documentation" target="_blank"
+                      class="ojt-text-blue-600 ojt-text-sm ojt-font-bold hover:ojt-underline">Documentation</a>
                     <a href="#" @click.prevent="$store.plugins.uninstall(plugin)"
                       class="ojt-text-red-600 ojt-text-sm ojt-font-bold hover:ojt-underline">Delete</a>
                     {* <button type="button" @click="$store.plugins.uninstall(plugin)"
