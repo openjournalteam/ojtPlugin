@@ -13,7 +13,9 @@ class ErrorHandler extends MonologErrorHandler
       return false;
     }
 
-    $this->deleteLogInDays();
+    if ($this->isTimeToDeleteLog()) {
+      $this->deleteLogFile();
+    };
 
     parent::handleError($code, $message, $file, $line, $context);
 
@@ -22,27 +24,25 @@ class ErrorHandler extends MonologErrorHandler
 
   protected function isTimeToDeleteLog($days = 7)
   {
-    $ojt = OjtPlugin::get();
-    $lastDelete = $ojt->getSetting(CONTEXT_SITE, 'lastDeleteLog');
-    if (!$lastDelete) {
-      $ojt->updateSetting(CONTEXT_SITE, 'lastDeleteLog', time());
-      $lastDelete = $ojt->getSetting(CONTEXT_SITE, 'lastDeleteLog');
-    }
+    $errorLogFile = OjtPlugin::getErrorLogFile();
+
+    if (!is_file($errorLogFile)) return false;
+
+    $dateCreatedFile = filemtime($errorLogFile);
 
     $now = time();
-    $datediff = $now - $lastDelete;
+    $datediff = $now - $dateCreatedFile;
     $diffInDays = round($datediff / (60 * 60 * 24));
+
     return $diffInDays > $days;
   }
 
-  public function deleteLogInDays($days = 7): void
+  protected function deleteLogFile(): bool
   {
-    $ojt = OjtPlugin::get();
     $errorLogFile = OjtPlugin::getErrorLogFile();
-    if (!$this->isTimeToDeleteLog($days) || !is_file($errorLogFile)) return;
+    if (!is_file($errorLogFile)) return false;
 
-    unlink($errorLogFile);
 
-    $ojt->updateSetting(CONTEXT_SITE, 'lastDeleteLog', time());
+    return unlink($errorLogFile);
   }
 }
