@@ -163,13 +163,13 @@ function pluginInstalled() {
   return {
     async init() {
       this.$nextTick(() => {
-        if (this.$refs.tablepluginlist) {
-          autoAnimate(this.$refs.tablepluginlist, {
-            duration: 300,
-            // Easing for motion (default: 'ease-in-out')
-            // easing: "ease-in-out",
-          });
-        }
+        // if (this.$refs.tablepluginlist) {
+        //   autoAnimate(this.$refs.tablepluginlist, {
+        //     duration: 300,
+        //     // Easing for motion (default: 'ease-in-out')
+        //     // easing: "ease-in-out",
+        //   });
+        // }
       });
     },
   };
@@ -179,6 +179,10 @@ function pluginGallery() {
   return {
     loading: true,
     error: false,
+    filter: {
+      type: "all",
+      category: "all",
+    },
     search: "",
     plugins: [],
     async init() {
@@ -218,16 +222,33 @@ function pluginGallery() {
         this.loading = false;
       }
     },
-    get filteredPlugins() {
-      if (!this.search) {
-        return this.plugins;
-      }
-
+    get list() {
       let plugins = this.plugins.filter((plugin) => {
-        return plugin.name.toLowerCase().includes(this.search.toLowerCase());
+        let search = true;
+        let type = true;
+        let category = true;
+
+        if (this.search) {
+          search = plugin.name
+            .toLowerCase()
+            .includes(this.search.toLowerCase());
+        }
+        if (this.filter.type != "all") {
+          type = plugin.type.toLowerCase() == this.filter.type;
+        }
+        if (this.filter.category != "all") {
+          category = plugin.category.toLowerCase() == this.filter.category;
+        }
+
+        return search && type && category;
       });
 
       return plugins;
+    },
+    reset() {
+      this.search = "";
+      this.filter.type = "all";
+      this.filter.category = "all";
     },
   };
 }

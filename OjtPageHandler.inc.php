@@ -4,8 +4,6 @@ import('classes.handler.Handler');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 import('lib.pkp.classes.plugins.Plugin');
 
-use Illuminate\Http\Client\PendingRequest as Http;
-
 class OjtPageHandler extends Handler
 {
     /** @var OjtPlugin  */
@@ -78,17 +76,16 @@ class OjtPageHandler extends Handler
         $ojtPlugin->javascript  = [
             $request->getBaseUrl() . '/lib/pkp/lib/vendor/components/jquery/jquery.min.js',
             $this->getPluginFullUrl('assets/vendors/sweetalert/sweetalert2.all.min.js'),
-            $this->getPluginFullUrl('assets/js/theme.js'),
             $this->getPluginFullUrl('assets/js/jquery.form.min.js'),
-            $this->getPluginFullUrl('assets/js/alpine/spruce.umd.js'),
+            // $this->getPluginFullUrl('assets/js/alpine/spruce.umd.js'),
             $this->getPluginFullUrl('assets/js/jquery.validate.min.js'),
-            $this->getPluginFullUrl('assets/js/alpine/alpine.min.js'),
             // $this->getPluginFullUrl('assets/js/alpine/component.min.js'),
             $this->getPluginFullUrl('assets/js/mainAlpine.js'),
+            $this->getPluginFullUrl('assets/js/app.js'),
             $this->getPluginFullUrl('assets/js/store.js'),
             $this->getPluginFullUrl('assets/js/main.js'),
             $this->getPluginFullUrl('assets/js/updater.js'),
-            $this->getPluginFullUrl('assets/js/app.js'),
+            $this->getPluginFullUrl('assets/js/alpine/alpine.min.js'),
         ];
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
@@ -113,61 +110,69 @@ class OjtPageHandler extends Handler
         return showJson($json);
     }
 
-    public function pluginGallery($args, $request)
+
+    public function reportBug($args, $request)
     {
         $templateMgr            = TemplateManager::getManager($request);
-
+        $templateMgr->assign('plugins', $this->ojtPlugin->getRegisteredModules());
+        $templateMgr->assign('errorLog', file_get_contents($this->ojtPlugin->getErrorLogFile()));
+        // dd(base64_encode(file_get_contents($this->ojtPlugin->getErrorLogFile())));
         $json['css']  = [];
-        $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl'));
+        $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('reportBug.tpl'));
         $json['js']   = [];
         return showJson($json);
+    }
+
+    public function submitBug($args, $request)
+    {
+        dd($_FILES);
+        dd($request->getUserVars());
     }
 
     public function getPluginGalleryList($args, $request)
     {
-        $plugin = $this->ojtPlugin;
+        $versionDao = DAORegistry::getDAO('VersionDAO');
+        $version    = $versionDao->getCurrentVersion();
 
-        $url = $plugin->apiUrl() . '/product/list';
+        $url = $this->ojtPlugin->apiUrl() . '/product/list/ojs';
 
-        $request = app(Http::class)
-            ->get($url);
+        $params = [
+            'ojt_plugin_version' => $this->ojtPlugin->getPluginVersion(),
+            'ojs_version' => $version->getVersionString()
+        ];
 
-        $plugins = array_map(function ($plugin) {
-            $ojtplugin = $this->ojtPlugin;
+        try {
+            $response = $this->ojtPlugin->getHttpClient()->get($url, $params);
 
-            $pluginFolder = $plugin['folder'];
-            $pluginVersion = $plugin['version'];
-            $targetPlugin = @include($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
+            $plugins = array_map(function ($plugin) {
+                $ojtplugin = $this->ojtPlugin;
 
-            $plugin['update'] = false;
+                $pluginFolder = $plugin['folder'];
+                $pluginVersion = $plugin['version'];
+                $targetPlugin = @include($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
 
-            if ($targetPlugin) {
-                import('lib.pkp.classes.site.VersionCheck');
-                $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
-                $plugin['update'] = version_compare($version['release'], $pluginVersion, '<');
-            }
+                $plugin['update'] = false;
 
-            $plugin['installed'] = ($targetPlugin) ? true : false;
+                if ($targetPlugin) {
+                    import('lib.pkp.classes.site.VersionCheck');
+                    $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
+                    $plugin['update'] = version_compare($version['release'], $pluginVersion, '<');
+                }
 
-            return $plugin;
-        }, $request->json());
+                $plugin['installed'] = ($targetPlugin) ? true : false;
 
-        if ($plugins) return showJson($plugins);
+                return $plugin;
+            }, json_decode((string) $response->getBody(), true));
 
-        return showJson([
-            'error' => 1,
-            'msg' => "Couldn't connect to Server, please try again."
-        ]);
-    }
+            if (!$plugins) throw new Exception("Couldn't connect to Server, please try again.");
 
-    public function pluginInstalled($args, $request)
-    {
-        $templateMgr            = TemplateManager::getManager($request);
-
-        $json['css']  = [];
-        $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl'));
-        $json['js']   = [];
-        return showJson($json);
+            return showJson($plugins);
+        } catch (\Throwable $th) {
+            return showJson([
+                'error' => 1,
+                'msg' => $th->getMessage()
+            ]);
+        }
     }
 
     public function save($args, $request)
@@ -223,10 +228,7 @@ class OjtPageHandler extends Handler
 
         $pluginToInstall = json_decode($request->getUserVar('plugin'));
         $license = $request->getUserVar('license') ?? false;
-
-        if ($request->getUserVar('update') && $targetPlugin = @include($plugin->getModulesPath($pluginToInstall->folder . DIRECTORY_SEPARATOR . 'index.php'))) {
-            $license = $targetPlugin->getSetting($this->contextId, 'license');
-        }
+        $update = $request->getUserVar('update');
 
         $downloadLink = $plugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
 
@@ -249,7 +251,7 @@ class OjtPageHandler extends Handler
 
         $pluginInstance = new $pluginToInstall->class();
 
-        if ($pluginInstance instanceof Plugin && isset($license)) {
+        if ($pluginInstance instanceof Plugin && $license && !$update) {
             $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
         }
 
@@ -329,36 +331,5 @@ class OjtPageHandler extends Handler
         $json['error'] = 0;
         $json['installed'] = ($targetPlugin) ? true : false;
         showJson($json);
-    }
-
-
-    /**
-     * send the curl
-     */
-    public function curl($payload, $url, $isReturnJson)
-    {
-        header('Access-Control-Allow-Origin: *');
-        header('Access-Control-Allow-Headers: x-csrf-uap-admin-token');
-        // user agents
-        $agents = [
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
-            'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.9) Gecko/20100508 SeaMonkey/2.0.4',
-            'Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 6.0; en-US)',
-            'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; da-dk) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1'
-        ];
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, $agents[array_rand($agents)]);
-        $output = curl_exec($ch);
-        curl_close($ch);
-
-        if ($isReturnJson) {
-            return json_decode($output);
-        }
-
-        return $output;
     }
 }

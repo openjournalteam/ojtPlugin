@@ -18,6 +18,7 @@ Spruce.store("plugins", {
         plugin.name.toLowerCase().includes(this.search.toLowerCase())
       );
     }
+
     switch (this.type) {
       case "themes":
         plugins = plugins.filter(
@@ -102,44 +103,48 @@ Spruce.store("plugins", {
     ajaxResponse(data);
   },
   async uninstall(plugin) {
-    Swal.fire({
-      title: "Are you sure you wish to delete this plugin from the system?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-      showLoaderOnConfirm: true,
-      preConfirm: async () => {
-        const formData = new FormData();
-        formData.append("plugin", JSON.stringify(plugin));
+    try {
+      let result = await Swal.fire({
+        title: "Are you sure you wish to delete this plugin from the system?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, delete it!",
+        showLoaderOnConfirm: true,
+        preConfirm: async () => {
+          const formData = new FormData();
+          formData.append("plugin", JSON.stringify(plugin));
 
-        return await fetch(currentUrl + "uninstallPlugin", {
-          method: "POST",
-          body: formData,
-        })
-          .then((response) => {
-            return response.json();
+          return await fetch(currentUrl + "uninstallPlugin", {
+            method: "POST",
+            body: formData,
           })
-          .catch(function (error) {
-            ajaxError(error);
-          });
-      },
-      allowOutsideClick: () => !Swal.isLoading(),
-    }).then((result) => {
-      console.log(result);
-      if (result.isConfirmed) {
-        if (result.value.error) {
-          ajaxError(result.value);
-          return;
-        }
+            .then((response) => {
+              return response.json();
+            })
+            .catch(function (error) {
+              ajaxError(error);
+            });
+        },
+        allowOutsideClick: () => !Swal.isLoading(),
+      });
 
-        this.fetchInstalledPlugin();
+      if (result.isConfirmed) {
+        if (result.value.error) throw result.value.msg;
+
+        // this.fetchInstalledPlugin();
+        this.data = this.data.filter((plug) => plugin != plug);
         ajaxResponse(result.value);
+
         return;
-        // show success message then reload page
       }
-    });
+    } catch (error) {
+      ajaxError({
+        error: 1,
+        msg: error,
+      });
+    }
   },
 });
 
@@ -175,11 +180,8 @@ Spruce.store(
       var dateNow = Date.now();
 
       var difference = dateNow - this.lastChecked;
-      var hoursDifference = Math.floor(difference / 1000 / 60);
-
-      if (hoursDifference > 60) {
-        return true;
-      }
+      var minuteDifference = Math.floor(difference / 1000 / 60);
+      if (minuteDifference > 60) return true;
 
       return false;
     },

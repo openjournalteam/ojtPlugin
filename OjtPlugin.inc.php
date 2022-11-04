@@ -12,7 +12,7 @@ class OjtPlugin extends GenericPlugin
 {
     public $registeredModule;
 
-    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1";
+    const API = "https://dummy.thisnugroho.my.id/index.php/wp-json/openjournalvalidation/v2";
 
     public function apiUrl()
     {
@@ -21,7 +21,11 @@ class OjtPlugin extends GenericPlugin
 
     public static function get()
     {
-        return PluginRegistry::getPlugin('generic', 'ojtPlugin');
+        $plugin = PluginRegistry::getPlugin('generic', 'ojtPlugin');
+
+        if (!$plugin) return new static();
+
+        return $plugin;
     }
 
     public function getHttpClient()
@@ -40,13 +44,12 @@ class OjtPlugin extends GenericPlugin
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
                 $this->setLogger();
-
                 $versionDao = DAORegistry::getDAO('VersionDAO');
                 $version    = $versionDao->getCurrentVersion();
                 $version->getVersionString();
 
                 $this->createModulesFolder();
-                // $this->flushCache();
+                $this->flushCache();
                 $this->registerModules();
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
@@ -58,11 +61,15 @@ class OjtPlugin extends GenericPlugin
         return false;
     }
 
+    public static function getErrorLogFile()
+    {
+        return __DIR__ . '/error.log';
+    }
 
     public function setLogger()
     {
         $logger = new Logger('OJTLog');
-        $logger->pushHandler(new StreamHandler(__DIR__ . '/error.log', Logger::DEBUG));
+        $logger->pushHandler(new StreamHandler(static::getErrorLogFile(), Logger::DEBUG));
 
         ErrorHandler::register($logger);
     }
@@ -169,6 +176,15 @@ class OjtPlugin extends GenericPlugin
         $this->registeredModule = $plugins;
 
         return $plugins;
+    }
+
+    public function getRegisteredModules()
+    {
+        if (!$this->registeredModule) {
+            return $this->registerModules();
+        }
+
+        return $this->registeredModule;
     }
 
     public function getDefaultPluginIcon()
@@ -525,7 +541,8 @@ class OjtPlugin extends GenericPlugin
                 }
             }
         }
-
+        sort($dirs);
+        // dd($dirs);
         return $dirs;
     }
 }

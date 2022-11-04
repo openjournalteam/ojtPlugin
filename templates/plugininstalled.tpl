@@ -16,6 +16,18 @@
   <div x-show="!$store.plugins.isLoading">
     <div x-show="$store.plugins.data.length" id="selected-articles">
       <div class="ojt-flex ojt-items-center ojt-my-2 ojt-gap-2">
+        <div class="ojt-relative ojt-grow">
+          <div class="ojt-flex ojt-absolute ojt-inset-y-0 ojt-left-0 ojt-items-center ojt-pl-3 ojt-pointer-events-none">
+            <svg aria-hidden="true" class="ojt-w-5 ojt-h-5 ojt-text-gray-500" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+          <input type="search"
+            class="ojt-block ojt-p-2 ojt-pl-10 ojt-w-full ojt-text-sm ojt-text-gray-900 ojt-bg-gray-50 ojt-rounded-lg ojt-border ojt-border-gray-300 focus:ojt-ring-primary-500 focus:ojt-border-primary-500"
+            placeholder="Search ...." x-model.debounce="$store.plugins.search">
+        </div>
         <select
           class="ojt-w-full ojt-max-w-[10rem] ojt-bg-gray-50 ojt-border ojt-border-gray-300 ojt-text-gray-900 ojt-text-sm ojt-rounded-lg focus:ojt-ring-primary-500 focus:ojt-border-primary-500 ojt-block ojt-w-full ojt-py-2 ojt-px-4"
           x-model="$store.plugins.type">
@@ -23,10 +35,6 @@
           <option value="plugins">Plugins</option>
           <option value="themes">Themes</option>
         </select>
-
-        <input type="search" id="default-input"
-          class="ojt-bg-gray-50 ojt-border ojt-border-gray-300 ojt-text-gray-900 ojt-text-sm ojt-rounded-lg focus:ojt-ring-primary-500 focus:ojt-border-primary-500 ojt-block ojt-w-full ojt-max-w-sm ojt-py-2 ojt-px-4"
-          placeholder="Search ..." x-model.debounce="$store.plugins.search">
         <button @click="$store.plugins.resetFilter()"
           class="ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-sm ojt-font-medium ojt-text-center ojt-text-white ojt-transition ojt-bg-red-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-red-800 focus:ojt-outline-none ojt-waves-effect">
           Reset
@@ -44,6 +52,8 @@
             class="ojt-block ojt-w-full ojt-max-w-sm ojt-h-9 ojt-pl-9 ojt-placeholder-gray-400 ojt-transition ojt-duration-75 ojt-border-gray-300 ojt-rounded-lg ojt-shadow-sm focus:ojt-border-primary-500 focus:ojt-ring-1 focus:ojt-ring-inset focus:ojt-ring-primary-500"
             x-model.debounce="$store.plugins.search">
         </div> *}
+        <!-- Modal toggle -->
+
       </div>
 
       <div class="ojt-overflow-x-auto ojt-relative sm:ojt-rounded-lg">
