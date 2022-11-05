@@ -186,24 +186,31 @@ function pluginGallery() {
     search: "",
     plugins: [],
     async init() {
-      await this.fetchPlugins();
-      this.$nextTick(() => {
-        if (this.$refs.gallerylist) {
-          autoAnimate(this.$refs.gallerylist, {
-            // duration: 500,
-            // Easing for motion (default: 'ease-in-out')
-            easing: "ease-in-out",
-          });
-        }
-      });
+      this.loading = true;
+      try {
+        await this.fetchPlugins();
+        this.$nextTick(() => {
+          if (this.$refs.gallerylist) {
+            autoAnimate(this.$refs.gallerylist, {
+              // duration: 500,
+              // Easing for motion (default: 'ease-in-out')
+              easing: "ease-in-out",
+            });
+          }
+        });
+      } catch (error) {
+      } finally {
+        this.loading = false;
+      }
     },
     async reload() {
       this.error = false;
       this.fetchPlugins();
     },
     async fetchPlugins() {
+      this.loading = true;
+
       try {
-        this.loading = true;
         let res = await fetch(currentUrl + "getPluginGalleryList");
 
         let response = await res.json();
@@ -252,23 +259,45 @@ function pluginGallery() {
     },
     async installPlugin(plugin) {
       try {
+        switch (plugin.category) {
+          case "PAID":
+            input = "text";
+            inputAttributes = {
+              required: "",
+            };
+            inputLabel = "License key from the plugin you purchase.";
+            break;
+          default:
+            input = null;
+            inputAttributes = {};
+            inputLabel = null;
+
+            break;
+        }
+
         let result = await Swal.fire({
           title: `Install ${plugin.name} ?`,
           icon: "warning",
-          input: plugin.category == "PAID" ? "text" : null,
-          inputAttributes:
-            plugin.category == "PAID"
-              ? {
-                  required: "",
-                }
-              : {},
+          input: input,
+          inputLabel: inputLabel,
+          inputAttributes: inputAttributes,
           inputPlaceholder: "Insert License Key.",
+          customClass: {
+            title: "!ojt-text-lg",
+            inputLabel: "!ojt-text-base !ojt-justify-start",
+          },
           showCancelButton: true,
           // confirmButtonColor: "#d33",
           // cancelButtonColor: "#3085d6",
           confirmButtonText: "Yes, install!",
           showLoaderOnConfirm: true,
-          preConfirm: (license) => this.submitInstall(plugin, license),
+          preConfirm: (license) => {
+            if (plugin.category != "PAID") {
+              license = null;
+            }
+
+            return this.submitInstall(plugin, license);
+          },
           allowOutsideClick: () => !Swal.isLoading(),
         });
 
@@ -276,8 +305,12 @@ function pluginGallery() {
 
         if (result.value.error) throw result.value.msg;
 
-        // this.fetchInstalledPlugin();
-        this.data = this.data.filter((plug) => plugin != plug);
+        this.$store.plugins.fetchInstalledPlugin();
+        this.plugins = this.plugins.map((plug) =>
+          plug.token === plugin.token
+            ? { ...plug, installed: true, update: false }
+            : plug
+        );
         ajaxResponse(result.value);
 
         return;
@@ -289,10 +322,54 @@ function pluginGallery() {
         });
       }
     },
-    async submitInstall(plugin, license) {
+    async updatePlugin(plugin) {
+      try {
+        let result = await Swal.fire({
+          title: `Update ${plugin.name} ?`,
+          icon: "warning",
+          customClass: {
+            title: "!ojt-text-lg",
+            inputLabel: "!ojt-text-base !ojt-justify-start",
+          },
+          showCancelButton: true,
+          // confirmButtonColor: "#d33",
+          // cancelButtonColor: "#3085d6",
+          confirmButtonText: "Yes, update!",
+          showLoaderOnConfirm: true,
+          preConfirm: () => this.submitInstall(plugin, null, true),
+          allowOutsideClick: () => !Swal.isLoading(),
+        });
+
+        if (!result.isConfirmed) return;
+
+        if (result.value.error) throw result.value.msg;
+
+        this.$store.plugins.fetchInstalledPlugin();
+        this.plugins = this.plugins.map((plug) =>
+          plug.token === plugin.token
+            ? { ...plug, installed: true, update: false }
+            : plug
+        );
+        ajaxResponse(result.value);
+
+        return;
+      } catch (error) {
+        console.log(error);
+        ajaxError({
+          error: 1,
+          msg: error,
+        });
+      }
+    },
+    async submitInstall(plugin, license = null, isUpdate = false) {
       const formData = new FormData();
       formData.append("plugin", JSON.stringify(plugin));
-      formData.append("license", license);
+      if (license) {
+        formData.append("license", license);
+      }
+      if (isUpdate) {
+        formData.append("update", isUpdate);
+      }
 
       let response = await fetch(currentUrl + "installPlugin", {
         method: "POST",

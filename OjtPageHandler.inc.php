@@ -1,5 +1,7 @@
 <?php
 
+use GuzzleHttp\Exception\BadResponseException;
+
 import('classes.handler.Handler');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 import('lib.pkp.classes.plugins.Plugin');
@@ -124,8 +126,86 @@ class OjtPageHandler extends Handler
 
     public function submitBug($args, $request)
     {
-        // dd($_FILES);
-        dd($request->getUserVars());
+        try {
+            $url = 'https://sp.thisnugroho.my.id/api/v1/report/';
+
+            $params = $request->getUserVars();
+            $files = $this->reArrayFiles($_FILES['pictures']);
+            $logFile = OjtPlugin::getErrorLogFile();
+            $multipart = [];
+            foreach ($params as $key => $value) {
+                $multipart[] = [
+                    'name' => $key,
+                    'contents' => $value
+                ];
+            }
+
+            foreach ($files ?? [] as $key => $file) {
+                $multipart[] =
+                    [
+                        'name' => 'pictures[]',
+                        'filename' => $file['name'],
+                        // 'contents' => $file['tmp_name'],
+                        'contents' => file_get_contents($file['tmp_name']),
+                        'headers' => [
+                            'Content-Type' => mime_content_type($file['tmp_name'])
+                        ]
+                    ];
+            }
+
+            $multipart[] = [
+                'name' => 'log',
+                'filename' => 'error.log',
+                'contents' => file_get_contents($logFile),
+                'headers' => [
+                    'Content-Type' => mime_content_type($logFile)
+                ]
+            ];
+
+
+            $client = $this->ojtPlugin->getHttpClient([
+                'Accept'     => 'application/json',
+            ]);
+
+            $response = $client->post($url, [
+                'multipart' => $multipart
+            ]);
+
+
+            $result = json_decode((string) $response->getBody(), true);
+            // echo (string) $response->getBody();
+            return showJson([
+                'error' => 0,
+                'msg' => $result['message']
+            ]);
+        } catch (BadResponseException $e) {
+            // echo (string) $e->getResponse()->getBody();
+            // return;
+            $result = json_decode((string) $e->getResponse()->getBody(), true);
+            return showJson([
+                'error' => 1,
+                'msg' => $result['message']
+            ]);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    protected function reArrayFiles(&$file_post)
+    {
+        if (!$file_post) return $file_post;
+
+        $file_ary = array();
+        $file_count = count($file_post['name']);
+        $file_keys = array_keys($file_post);
+
+        for ($i = 0; $i < $file_count; $i++) {
+            foreach ($file_keys as $key) {
+                $file_ary[$i][$key] = $file_post[$key][$i];
+            }
+        }
+
+        return $file_ary;
     }
 
     public function getPluginGalleryList($args, $request)
@@ -162,7 +242,6 @@ class OjtPageHandler extends Handler
 
                 return $plugin;
             }, json_decode((string) $response->getBody(), true));
-
             if (!$plugins) throw new Exception("Couldn't connect to Server, please try again.");
 
             return showJson($plugins);
@@ -226,10 +305,16 @@ class OjtPageHandler extends Handler
         try {
             $ojtPlugin = $this->ojtPlugin;
             $fileManager = new FileManager();
-
             $pluginToInstall = json_decode($request->getUserVar('plugin'));
+            $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
             $license = $request->getUserVar('license') ?? false;
             $update = $request->getUserVar('update');
+            if ($update && $fileManager->fileExists($indexFile)) {
+                $pluginInstance = include($indexFile);
+
+                $license = $pluginInstance->getSetting($this->contextId, 'licenseMain');
+            }
+
 
             $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
             if (!$downloadLink) throw new Exception("There's a problem on the server, please try again later.");
@@ -238,10 +323,9 @@ class OjtPageHandler extends Handler
             $ojtPlugin->installPlugin($downloadLink);
 
 
-            $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
             if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
 
-            $pluginInstance         = include($indexFile);
+            $pluginInstance         = $pluginInstance ?? include($indexFile);
             // Applying input license to plugin setting  
             if ($pluginInstance instanceof Plugin && $license && !$update) {
                 $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
@@ -249,7 +333,7 @@ class OjtPageHandler extends Handler
 
 
             $json['error']  = 0;
-            $json['msg']    = 'Plugin Installed';
+            $json['msg']    =  !$update ? 'Plugin Installed' : 'Plugin Updated';
             return showJson($json);
         } catch (Exception $e) {
             $json['error']  = 1;

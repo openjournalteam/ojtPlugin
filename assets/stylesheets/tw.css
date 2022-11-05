@@ -6,7 +6,7 @@
   .site-name {
     color: #222;
     font-family: "Allura", cursive;
-    text-shadow: 0px 1px 1px #a855f7;
+    text-shadow: 0px 1px 1px rgba(var(--colors-primary-500-rgb), 1);
   }
 
   .lds-roller {
@@ -167,7 +167,7 @@
   }
 
   .cbx:checked + .toggle:before {
-    background: #52d66b;
+    background: rgba(var(--colors-primary-500-rgb), 1);
   }
 
   .cbx:checked + .toggle span {
@@ -175,7 +175,7 @@
   }
 
   .cbx:checked + .toggle span path {
-    stroke: #52d66b;
+    stroke: rgba(var(--colors-primary-500-rgb), 1);
     stroke-dasharray: 25;
     stroke-dashoffset: 25;
   }

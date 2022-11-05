@@ -21,7 +21,7 @@
 </head>
 <div id="moduleCss"></div>
 
-<body id="ojt-plugin">
+<body id="ojt-plugin" x-data="{}" class="ojt-transition-colors" :data-theme="$store.themes.active">
   <div x-data="utama()" id="utama" x-init="init()" x-cloak>
     <div class="ojt-flex ojt-h-screen ojt-antialiased ojt-text-gray-900 ojt-bg-gray-100">
       <aside class="ojt-flex-shrink-0 ojt-hidden ojt-w-72 ojt-bg-white ojt-border-r md:ojt-block">
@@ -219,9 +219,9 @@
                       Plugin Installed</button>
                   </li>
                   <li class="ojt-w-full">
-                    <button class="ojt-rounded-tr-lg" type="button" role="tab" @click="tab = 'plugin-gallery';"
-                      :class="tab === 'plugin-gallery' ? activeTabClass : inactiveTabClass"
-                      x-on:mouseenter.once="alpineComponent('pluginGallery').init()">
+                    <button class="ojt-rounded-tr-lg" type="button" role="tab"
+                      @click="tab = 'plugin-gallery';alpineComponent('pluginGallery').init();"
+                      :class="tab === 'plugin-gallery' ? activeTabClass : inactiveTabClass">
                       Plugin Gallery
                     </button>
                   </li>

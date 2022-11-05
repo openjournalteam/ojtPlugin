@@ -130,15 +130,15 @@ Spruce.store("plugins", {
         allowOutsideClick: () => !Swal.isLoading(),
       });
 
-      if (result.isConfirmed) {
-        if (result.value.error) throw result.value.msg;
+      if (!result.isConfirmed) return;
 
-        // this.fetchInstalledPlugin();
-        this.data = this.data.filter((plug) => plugin != plug);
-        ajaxResponse(result.value);
+      if (result.value.error) throw result.value.msg;
 
-        return;
-      }
+      // alpineComponent("pluginGallery").fetchPlugins();
+      this.data = this.data.filter((plug) => plugin != plug);
+      ajaxResponse(result.value);
+
+      return;
     } catch (error) {
       ajaxError({
         error: 1,
@@ -221,6 +221,31 @@ Spruce.store(
           });
         }
       });
+    },
+  },
+  true
+);
+
+Spruce.store(
+  "themes",
+  {
+    active: "default",
+    list: {
+      default: "#a855f7",
+      amber: "#f59e0b",
+      lime: "#84cc16",
+      green: "#22c55e",
+      emerald: "#10b981",
+      teal: "#14b8a6",
+      cyan: "#06b6d4",
+      pink: "#ec4899",
+      indigo: "#6366f1",
+      violet: "#8b5cf6",
+      fuchsia: "#d946ef",
+      sky: "#0ea5e9",
+    },
+    changeTheme(color) {
+      this.active = color;
     },
   },
   true

@@ -68,7 +68,7 @@
         <label class="ojt-block ojt-font-bold ojt-mb-2 ojt-text-sm ojt-font-medium ojt-text-gray-900">
           Upload Picture
         </label>
-        <input type="file" id="files" x-ref="files" name="files" accept="image/*" multiple>
+        <input type="file" id="pictures" x-ref="pictures" name="pictures" accept="image/*" multiple>
       </div>
 
       <button type="submit" @click.prevent="submit" :disabled="loading"
@@ -93,8 +93,8 @@
               this.loading = true;
               let formData = new FormData();
 
-              for (const file of this.$refs.files.files) {
-                formData.append('files[]', file, file.name);
+              for (const file of this.$refs.pictures.files) {
+                formData.append('pictures[]', file, file.name);
               }
 
               Object.entries(this.data).forEach(([key, val]) => {
@@ -102,14 +102,20 @@
               });
 
               let request = await fetch(
-                baseUrl + ' /ojt/submitBug', { method: "POST", body: formData });
+                baseUrl + '/ojt/submitBug', { method: "POST", body: formData });
               let response = await request.json();
 
               if (response.error) {
                 throw response.msg;
                 return;
               }
-              ajaxResponse(response);
+              Swal.fire({
+                title: response.msg,
+                icon: 'success',
+                customClass: {
+                  confirmButton: 'ojt-bg-gradient-to-l ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700'
+                }
+              })
             } catch (e) {
               console.log(e);
             } finally {

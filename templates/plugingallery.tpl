@@ -115,7 +115,7 @@
                     </a>
                   </template>
                   <template x-if="plugin.update">
-                    <button
+                    <button @click="updatePlugin(plugin)"
                       class="ojt-flex ojt-items-center ojt-px-4 ojt-py-2 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white  ojt-transition ojt-bg-orange-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-orange-800 focus:ojt-outline-none ojt-waves-effect ojt-gap-1">
                       <svg class="ojt-w-4 ojt-h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15"
                         fill="currentColor">

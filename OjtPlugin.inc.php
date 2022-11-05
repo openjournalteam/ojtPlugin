@@ -24,7 +24,6 @@ class OjtPlugin extends GenericPlugin
     public static function get()
     {
         $plugin = PluginRegistry::getPlugin('generic', 'ojtPlugin');
-
         if (!$plugin) return new static();
 
         return $plugin;
@@ -44,7 +43,6 @@ class OjtPlugin extends GenericPlugin
             'User-Agent' => $agents[rand(0, 3)],
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Headers' => 'x-csrf-uap-admin-token'
-            // 'x-openjournaltheme' => 1
         ]);
 
         return new \GuzzleHttp\Client([
@@ -63,7 +61,7 @@ class OjtPlugin extends GenericPlugin
                 $version->getVersionString();
 
                 $this->createModulesFolder();
-                $this->flushCache();
+                // $this->flushCache();
                 $this->registerModules();
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
@@ -91,18 +89,19 @@ class OjtPlugin extends GenericPlugin
     public function templateManagerDisplay($hookName, $args)
     {
         $templateMgr            = $args[0];
-        if ($templateMgr->getTemplateVars('activeTheme') == null) {
-            $allThemes = PluginRegistry::loadCategory('themes', true);
-            $activeTheme = null;
-            foreach ($allThemes as $theme) {
-                if ($this->getRequest()->getContext()->getData('themePluginPath') === $theme->getDirName()) {
-                    $activeTheme = $theme;
-                    break;
-                }
-            }
+        if ($templateMgr->getTemplateVars('activeTheme')) return;
 
-            $templateMgr->assign('activeTheme', $activeTheme);
+        $allThemes = PluginRegistry::loadCategory('themes', true);
+        $activeTheme = null;
+        $themePluginPath = $this->getRequest()->getContext()->getData('themePluginPath');
+        foreach ($allThemes as $theme) {
+            if ($themePluginPath === $theme->getDirName() && $theme->getEnabled()) {
+                $activeTheme = $theme;
+                break;
+            }
         }
+
+        $templateMgr->assign('activeTheme', $activeTheme);
     }
 
     public function flushCache()
@@ -149,7 +148,6 @@ class OjtPlugin extends GenericPlugin
         import('lib.pkp.classes.site.VersionCheck');
 
         $plugins = [];
-
         $fileManager = new FileManager();
         foreach ($modulesFolder as $moduleFolder) {
             $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
@@ -447,7 +445,6 @@ class OjtPlugin extends GenericPlugin
                 'license' => $license,
                 'journal_url' => $journalUrl
             ];
-
             $request = $this->getHttpClient(['Content-Type' => 'application/x-www-form-urlencoded',])
                 ->post(
                     static::API . '/product/get_download_link',
@@ -455,12 +452,15 @@ class OjtPlugin extends GenericPlugin
                         'form_params' => $payload,
                     ]
                 );
-            dd($request);
+
 
             $result = json_decode((string) $request->getBody(), true);
-            return $result->data->download_link;
+
+            if (isset($result['error']) && $result['error']) throw new Exception($result['msg']);
+
+            return $result['data']['download_link'];
         } catch (BadResponseException $e) {
-            return json_decode((string) $e->getResponse()->getBody(), true);
+            throw $e;
         } catch (Exception $e) {
             throw $e;
         }
