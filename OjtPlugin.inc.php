@@ -12,8 +12,8 @@ class OjtPlugin extends GenericPlugin
 {
     public $registeredModule;
 
-    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v2";
-    const SERVICE_API = "https://sp.openjournaltheme.com/";
+    const API = "https://dummy.thisnugroho.my.id/index.php/wp-json/openjournalvalidation/v2";
+    const SERVICE_API = "https://sp.thisnugroho.my.id/";
 
     public function apiUrl()
     {
