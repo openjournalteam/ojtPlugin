@@ -3,11 +3,10 @@
 namespace Openjournalteam\OjtPlugin\Classes;
 
 use Exception;
+use OjtPlugin;
 
 class SubscriptionService
 {
-  const URL = "https://openjournaltheme.com/api/v2/subscription/";
-
   protected $plugin;
   protected $baseUrl;
   protected $request;
@@ -15,6 +14,11 @@ class SubscriptionService
   public function __construct($plugin)
   {
     $this->plugin = $plugin;
+  }
+
+  public function getSubscriptionApi($method = '')
+  {
+    return OjtPlugin::SERVICE_API . 'api/v2/subscription/' . $method;
   }
 
   public static function init($plugin)
@@ -64,7 +68,6 @@ class SubscriptionService
       $response = $this->apiRequest(
         'quota',
       );
-
       if ($response['error']) {
         throw new Exception($response['message']);
       }
@@ -90,10 +93,11 @@ class SubscriptionService
     try {
       $client = $this->getClient();
 
-      $response = $client->post(static::URL . $method, [
+      $url = $this->getSubscriptionApi($method);
+
+      $response = $client->post($url, [
         'form_params' => array_merge($this->getRequiredPayload(), $payload),
       ]);
-
       if ($asJson) {
         return json_decode((string) $response->getBody(), true);
       }
