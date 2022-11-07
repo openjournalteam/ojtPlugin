@@ -47,11 +47,7 @@ class SubscriptionService
         $response['quota']
       );
 
-      $plugin->updateSetting(
-        $plugin->getCurrentContextId(),
-        'quota_left',
-        $response['quota']
-      );
+      return true;
     } catch (\Throwable $th) {
       throw $th;
     }
