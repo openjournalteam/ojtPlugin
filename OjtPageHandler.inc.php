@@ -91,6 +91,7 @@ class OjtPageHandler extends Handler
         ];
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
+        $templateMgr->assign('journal', $request->getContext());
         $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
         $templateMgr->assign('pluginInstalledHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl')));
 

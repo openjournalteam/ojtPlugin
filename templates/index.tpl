@@ -26,9 +26,10 @@
     <div class="ojt-flex ojt-h-screen ojt-antialiased ojt-text-gray-900 ojt-bg-gray-100">
       <aside class="ojt-flex-shrink-0 ojt-hidden ojt-w-72 ojt-bg-white ojt-border-r md:ojt-block">
         <div class="ojt-flex ojt-flex-col ojt-h-full">
-          <div class="ojt-py-6">
+          <div class="ojt-py-6 ojt-flex">
             <a href="https://openjournaltheme.com/" target="_blank"
-              class="custom-logo-link ojt-flex ojt-flex-col ojt-items-center ojt-gap-2" rel="home" aria-current="page">
+              class="custom-logo-link ojt-mx-auto ojt-flex ojt-flex-col ojt-items-center ojt-gap-2" rel="home"
+              aria-current="page">
               <img width="32" height="37" src="{$ojtPlugin->logo}" class="ojt-mx-auto">
               <span class="site-name ojt-ml-3 ojt-inline-block ojt-text-2xl ojt-tracking-wide">
                 OJT Plugin
@@ -135,6 +136,15 @@
               {/if}
             </div>
             <nav aria-label="Secondary" class="ojt-hidden ojt-space-x-2 md:ojt-flex md:ojt-items-center">
+              <a class="ojt-flex ojt-items-center ojt-gap-2 ojt-text-primary-700 hover:ojt-text-white ojt-text-black hover:ojt-bg-primary-700 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-primary-300 ojt-font-medium ojt-rounded-lg ojt-text-xs ojt-px-4 ojt-py-2 ojt-text-center"
+                href="{url journal=$journal->getPath() page="submissions"}">
+                <svg class="ojt-h-4 ojt-w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 24" fill="currentColor">
+                  <path
+                    d="m.511 13.019 16.695 10.836c.656.427 1.461-.136 1.461-1.02v-6.685l11.872 7.705c.656.427 1.461-.136 1.461-1.02v-21.669c0-.884-.805-1.447-1.461-1.02l-11.872 7.704v-6.684c0-.884-.805-1.447-1.461-1.02l-16.695 10.835c-.312.234-.511.604-.511 1.02s.2.785.508 1.017l.003.002z">
+                  </path>
+                </svg>
+                Back to OJS Dashboard
+              </a>
             </nav>
           </div>
           {* <div class="ojt-border-b md:ojt-hidden" x-show="isMobileMainMenuOpen"

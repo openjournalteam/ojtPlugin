@@ -4,8 +4,6 @@ import('lib.pkp.classes.plugins.GenericPlugin');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 
 use GuzzleHttp\Exception\BadResponseException;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\ServerException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Openjournalteam\OjtPlugin\Classes\ErrorHandler;

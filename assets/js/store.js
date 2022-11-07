@@ -247,6 +247,15 @@ Spruce.store(
     changeTheme(color) {
       this.active = color;
     },
+    randomTheme() {
+      const keys = Object.keys(this.list);
+
+      let key = keys[Math.floor(Math.random() * keys.length)];
+
+      this.changeTheme(key);
+
+      return key;
+    },
   },
   true
 );
