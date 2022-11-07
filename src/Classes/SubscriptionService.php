@@ -6,7 +6,7 @@ use Exception;
 
 class SubscriptionService
 {
-  const URL = "https://sp.thisnugroho.my.id/api/v2/subscription/";
+  const URL = "https://openjournaltheme.com/api/v2/subscription/";
 
   protected $plugin;
   protected $baseUrl;
@@ -60,7 +60,19 @@ class SubscriptionService
    */
   public function getQuota()
   {
-    // 
+    try {
+      $response = $this->apiRequest(
+        'quota',
+      );
+
+      if ($response['error']) {
+        throw new Exception($response['message']);
+      }
+
+      return $response;
+    } catch (\Throwable $th) {
+      throw $th;
+    }
   }
 
   protected function getPlugin()

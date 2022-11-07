@@ -53,7 +53,7 @@
           <option value="subscription">Subscription</option>
         </select>
         <button @click="reset()"
-          class="ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-sm ojt-font-medium ojt-text-center ojt-text-white ojt-transition ojt-bg-danger-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-danger-800 focus:ojt-outline-none ojt-waves-effect">
+          class="ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-sm ojt-font-medium ojt-text-center ojt-text-white ojt-transition ojt-bg-red-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-red-800 focus:ojt-outline-none ojt-waves-effect">
           Reset
         </button>
       </div>
@@ -69,7 +69,7 @@
                   :alt="plugin.name" class="ojt-w-full ojt-rounded-lg ojt-rounded-b-none md:ojt-h-56" loading="lazy" />
                 <div class="ojt-flex ojt-absolute ojt-left-0 ojt-bottom-0 ojt-items-center ojt-px-4 ojt-py-2">
                   <span x-show="plugin.installed"
-                    class="ojt-bg-success-100 ojt-text-success-800 ojt-text-xs ojt-font-semibold ojt-mr-2 ojt-px-2.5 ojt-py-0.5 ojt-rounded ">
+                    class="ojt-bg-green-100 ojt-text-green-800 ojt-text-xs ojt-font-semibold ojt-mr-2 ojt-px-2.5 ojt-py-0.5 ojt-rounded ">
                     Installed
                   </span>
                   <span x-show="plugin.update"
@@ -211,7 +211,7 @@
                 <table class="ojt-border-collapse ojt-w-full">
                   <tbody>
                     <tr x-show="plugin.installed && !plugin?.update">
-                      <td class="ojt-w-full ojt-p-3 ojt-border ojt-border-b ojt-block ojt-text-success-700">
+                      <td class="ojt-w-full ojt-p-3 ojt-border ojt-border-b ojt-block ojt-text-green-700">
                         <small class="ojt-font-bold">Plugin is up-to-date.</small>
                       </td>
                     </tr>
