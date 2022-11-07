@@ -109,18 +109,25 @@
                 throw response.msg;
                 return;
               }
+
               Swal.fire({
                 title: response.msg,
                 icon: 'success',
                 customClass: {
                   confirmButton: 'ojt-bg-gradient-to-l ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700'
                 }
-              })
+              });
+              this.resetForm();
+
             } catch (e) {
               console.log(e);
             } finally {
               this.loading = false;
             }
+          },
+          resetForm() {
+            this.data = {};
+            this.$refs.pictures.value = null;
           }
         }
       }
