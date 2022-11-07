@@ -173,14 +173,11 @@ class OjtPageHandler extends Handler
 
 
             $result = json_decode((string) $response->getBody(), true);
-            // echo (string) $response->getBody();
             return showJson([
                 'error' => 0,
                 'msg' => $result['message']
             ]);
         } catch (BadResponseException $e) {
-            // echo (string) $e->getResponse()->getBody();
-            // return;
             $result = json_decode((string) $e->getResponse()->getBody(), true);
             return showJson([
                 'error' => 1,

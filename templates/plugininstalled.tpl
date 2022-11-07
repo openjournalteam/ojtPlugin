@@ -36,7 +36,7 @@
           <option value="themes">Themes</option>
         </select>
         <button @click="$store.plugins.resetFilter()"
-          class="ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-sm ojt-font-medium ojt-text-center ojt-text-white ojt-transition ojt-bg-red-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-red-800 focus:ojt-outline-none ojt-waves-effect">
+          class="ojt-inline-block ojt-px-4 ojt-py-2 ojt-text-sm ojt-font-medium ojt-text-center ojt-text-white ojt-transition ojt-bg-danger-700 ojt-rounded-lg ojt-shadow ojt-ripple hover:ojt-shadow-lg hover:ojt-bg-danger-800 focus:ojt-outline-none ojt-waves-effect">
           Reset
         </button>
         {* <div class="ojt-relative ojt-group ojt-grow">
@@ -108,9 +108,9 @@
                     <a :href="plugin.documentation" x-show="plugin.documentation" target="_blank"
                       class="ojt-text-blue-600 ojt-text-sm ojt-font-bold hover:ojt-underline">Documentation</a>
                     <a href="#" @click.prevent="$store.plugins.uninstall(plugin)"
-                      class="ojt-text-red-600 ojt-text-sm ojt-font-bold hover:ojt-underline">Delete</a>
+                      class="ojt-text-danger-600 ojt-text-sm ojt-font-bold hover:ojt-underline">Delete</a>
                     {* <button type="button" @click="$store.plugins.uninstall(plugin)"
-                      class="ojt-py-2 ojt-px-3 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-bg-red-700 ojt-rounded-lg hover:ojt-bg-red-800 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-red-300">Delete</button> *}
+                      class="ojt-py-2 ojt-px-3 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-bg-danger-700 ojt-rounded-lg hover:ojt-bg-danger-800 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-danger-300">Delete</button> *}
                   </div>
                 </td>
                 <td class="ojt-py-4 ojt-px-6">

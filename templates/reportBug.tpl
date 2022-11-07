@@ -15,7 +15,7 @@
     <form x-data="reportBugForm()" method="POST">
       <div class="ojt-mb-6">
         <label class="ojt-block ojt-font-bold ojt-mb-2 ojt-text-sm ojt-font-medium ojt-text-gray-900">
-          Type <span class="ojt-text-red-700">*</span>
+          Type <span class="ojt-text-danger-700">*</span>
         </label>
         <select
           class="ojt-bg-gray-50 ojt-border ojt-border-gray-300 ojt-text-gray-900 ojt-text-sm ojt-rounded-lg focus:ojt-ring-blue-500 focus:ojt-border-blue-500 ojt-block ojt-w-full ojt-p-2.5"
@@ -27,7 +27,7 @@
       <div class="ojt-grid ojt-grid-cols-2 ojt-gap-4">
         <div class="ojt-mb-6">
           <label class="ojt-block ojt-font-bold ojt-mb-2 ojt-text-sm ojt-font-medium ojt-text-gray-900">
-            Name <span class="ojt-text-red-700">*</span>
+            Name <span class="ojt-text-danger-700">*</span>
           </label>
           <input type="text"
             class="ojt-bg-gray-50 ojt-border ojt-border-gray-300 ojt-text-gray-900 ojt-text-sm ojt-rounded-lg focus:ojt-ring-primary-500 focus:ojt-border-primary-500 ojt-block ojt-w-full ojt-p-2.5"
@@ -35,7 +35,7 @@
         </div>
         <div class="ojt-mb-6">
           <label class="ojt-block ojt-font-bold ojt-mb-2 ojt-text-sm ojt-font-medium ojt-text-gray-900">
-            Email <span class="ojt-text-red-700">*</span>
+            Email <span class="ojt-text-danger-700">*</span>
           </label>
           <input type="email"
             class="ojt-bg-gray-50 ojt-border ojt-border-gray-300 ojt-text-gray-900 ojt-text-sm ojt-rounded-lg focus:ojt-ring-primary-500 focus:ojt-border-primary-500 ojt-block ojt-w-full ojt-p-2.5"
@@ -44,7 +44,7 @@
       </div>
       <div class="ojt-mb-6">
         <label class="ojt-block ojt-font-bold ojt-mb-2 ojt-text-sm ojt-font-medium ojt-text-gray-900">
-          Plugin <span class="ojt-text-red-700">*</span>
+          Plugin <span class="ojt-text-danger-700">*</span>
         </label>
         <select
           class="ojt-bg-gray-50 ojt-border ojt-border-gray-300 ojt-text-gray-900 ojt-text-sm ojt-rounded-lg focus:ojt-ring-blue-500 focus:ojt-border-blue-500 ojt-block ojt-w-full ojt-p-2.5"
@@ -58,7 +58,7 @@
       </div>
       <div class="ojt-mb-6">
         <label class="ojt-block ojt-font-bold ojt-mb-2 ojt-text-sm ojt-font-medium ojt-text-gray-900">
-          Describe The Problem <span class="ojt-text-red-700">*</span>
+          Describe The Problem <span class="ojt-text-danger-700">*</span>
         </label>
         <textarea id="message" rows="4"
           class="ojt-block ojt-p-2.5 ojt-w-full ojt-text-sm ojt-text-gray-900 ojt-bg-gray-50 ojt-rounded-lg ojt-border ojt-border-gray-300 focus:ojt-ring-primary-500 focus:ojt-border-primary-500"
