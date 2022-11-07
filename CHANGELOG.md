@@ -31,7 +31,7 @@
 
 # 2.0.0.0
 
-- Revamp dashboard.
+- New User Interface.
 - Now support themes
 - Uninstall directly from Plugin Installed
 - Improve Plugin Installed
