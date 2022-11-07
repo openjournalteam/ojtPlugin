@@ -12,7 +12,7 @@ class OjtPlugin extends GenericPlugin
 {
     public $registeredModule;
 
-    const API = "https://dummy.thisnugroho.my.id/index.php/wp-json/openjournalvalidation/v2";
+    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v2";
 
     public function apiUrl()
     {

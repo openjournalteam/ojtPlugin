@@ -128,7 +128,7 @@ class OjtPageHandler extends Handler
     public function submitBug($args, $request)
     {
         try {
-            $url = 'https://sp.thisnugroho.my.id/api/v1/report/';
+            $url = 'https://sp.openjournaltheme.com/api/v1/report/';
 
             $params = $request->getUserVars();
             $files = $this->reArrayFiles($_FILES['pictures']);

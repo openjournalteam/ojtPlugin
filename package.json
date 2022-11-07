@@ -24,18 +24,9 @@
     "prod": "npm run production",
     "production": "npx tailwindcss -i ./assets/stylesheets/tw.css -o ./assets/stylesheets/tailwind.css --minify"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/thisnugroho/openjournal-plugin.git"
-  },
   "keywords": [
     "plugin",
     "ojs"
   ],
-  "author": "Open Journal Theme",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/thisnugroho/openjournal-plugin/issues"
-  },
-  "homepage": "https://github.com/thisnugroho/openjournal-plugin#readme"
+  "author": "Open Journal Theme"
 }
