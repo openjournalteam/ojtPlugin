@@ -1,10 +1,12 @@
-# OpenJournalTheme Service Plugin
+# OJT Plugin
 
-## Installation
-- Clone this git.
-- run `npm install`
-- run `npm run watch`
-- Start development
+OJTPlugin is a plugin wrapper for OJS that collect all Plugin created by OpenJournalTheme team.
+![Screenshot](assets/img/app.png)
 
-## Requirement
-- Node.js 12.13.0 or higher.
+## Feature
+
+Work in progress
+
+## Development
+
+Work in progress

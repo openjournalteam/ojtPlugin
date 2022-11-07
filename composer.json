@@ -5,5 +5,8 @@
             "Openjournalteam\\OjtPlugin\\": "src/"
         }
     },
-    "require": {}
+    "require": {
+        "guzzlehttp/guzzle": "^7.5",
+        "monolog/monolog": "^2.8"
+    }
 }

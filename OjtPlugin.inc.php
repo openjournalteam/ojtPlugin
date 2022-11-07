@@ -2,34 +2,114 @@
 
 import('lib.pkp.classes.plugins.GenericPlugin');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
-use Illuminate\Http\Client\PendingRequest as Http;
+
+use GuzzleHttp\Exception\BadResponseException;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
 
 class OjtPlugin extends GenericPlugin
 {
     public $registeredModule;
-    public $modulesPath;
 
-    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1";
-    
+    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v2";
+
     public function apiUrl()
     {
         return static::API;
+    }
+
+    public static function get()
+    {
+        $plugin = PluginRegistry::getPlugin('generic', 'ojtPlugin');
+        if (!$plugin) return new static();
+
+        return $plugin;
+    }
+
+    public function getHttpClient($headers = [])
+    {
+        $agents = [
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
+            'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.9) Gecko/20100508 SeaMonkey/2.0.4',
+            'Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 6.0; en-US)',
+            'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; da-dk) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1'
+        ];
+
+        $headers = array_merge($headers, [
+            'Content-Type' => 'application/x-www-form-urlencoded',
+            'User-Agent' => $agents[rand(0, 3)],
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Headers' => 'x-csrf-uap-admin-token'
+        ]);
+
+        return new \GuzzleHttp\Client([
+            'timeout' => 60,
+            'headers' => $headers
+        ]);
     }
 
     public function register($category, $path, $mainContextId = null)
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
-                $this->setModulesPath();
+                $this->setLogger();
+                $versionDao = DAORegistry::getDAO('VersionDAO');
+                $version    = $versionDao->getCurrentVersion();
+                $version->getVersionString();
+
                 $this->createModulesFolder();
+                // $this->flushCache();
                 $this->registerModules();
-                HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
+                // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
                 HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
+                HookRegistry::register('TemplateManager::display', [$this, 'templateManagerDisplay']);
             }
             return true;
         }
         return false;
+    }
+
+    public static function getErrorLogFile()
+    {
+        return __DIR__ . '/error.log';
+    }
+
+    public function setLogger()
+    {
+        $logger = new Logger('OJTLog');
+        $logger->pushHandler(new StreamHandler(static::getErrorLogFile(), Logger::DEBUG));
+
+        ErrorHandler::register($logger);
+    }
+
+    public function templateManagerDisplay($hookName, $args)
+    {
+        $templateMgr            = $args[0];
+        if ($templateMgr->getTemplateVars('activeTheme')) return;
+
+        $allThemes = PluginRegistry::loadCategory('themes', true);
+        $activeTheme = null;
+        $themePluginPath = $this->getRequest()->getContext()->getData('themePluginPath');
+        foreach ($allThemes as $theme) {
+            if ($themePluginPath === $theme->getDirName() && $theme->getEnabled()) {
+                $activeTheme = $theme;
+                break;
+            }
+        }
+
+        $templateMgr->assign('activeTheme', $activeTheme);
+    }
+
+    public function flushCache()
+    {
+        $templateMgr = TemplateManager::getManager(Application::get()->getRequest());
+        $templateMgr->clearTemplateCache();
+        $templateMgr->clearCssCache();
+
+        $cacheMgr = CacheManager::getManager();
+        $cacheMgr->flush();
     }
 
     public function setupBackendPage($hookName, $args)
@@ -52,53 +132,53 @@ class OjtPlugin extends GenericPlugin
         ];
 
         $templateMgr->setState(['menu' => $menu]);
-
-        // dd($templateMgr->get_template_vars('userRoles'));
     }
 
-    public function setModulesPath()
+    public function getModulesPath($path = '')
     {
-        $this->modulesPath = $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules';
-    }
-
-    public function getModulesPath()
-    {
-        return $this->modulesPath;
+        return $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $path;
     }
 
     public function registerModules()
     {
-        $modulesFolder = getDirs($this->getModulesPath());
+        $modulesFolder = $this->getDirs($this->getModulesPath());
 
         import('lib.pkp.classes.site.VersionCheck');
 
         $plugins = [];
-
+        $fileManager = new FileManager();
         foreach ($modulesFolder as $moduleFolder) {
-            $fileManager = new FileManager();
-            if (!$fileManager->fileExists($this->getModulesPath() . "/$moduleFolder/version.xml") || !$fileManager->fileExists($this->getModulesPath() . "/$moduleFolder/index.php")) {
+            $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
+            $indexFile = $this->getModulesPath(DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php");
+            if (
+                !$fileManager->fileExists($versionFile) ||
+                !$fileManager->fileExists($indexFile)
+            ) {
                 continue;
             }
 
-            $plugin         = include($this->getModulesPath() . "/$moduleFolder/index.php");
+            $plugin         = include($indexFile);
             if (!$plugin && $plugin instanceof Plugin) {
                 continue;
             }
 
-            $version        = VersionCheck::getValidPluginVersionInfo($this->getModulesPath() . "/$moduleFolder/version.xml");
+            $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
+
             $categoryPlugin = explode('.', $version->getData('productType'))[1];
             $categoryDir    = $this->getModulesPath();
-            $pluginDir      = $categoryDir . '/' . $moduleFolder;
+            $pluginDir      = $categoryDir . DIRECTORY_SEPARATOR . $moduleFolder;
             PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
 
             $data                = $version->getAllData();
+            $data['version']     = $version->getVersionString();
             $data['name']        = $plugin->getDisplayName();
+            $data['className']   = $plugin->getName();
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
-
-            if (method_exists($plugin, 'getPage')) {
-                $data['page']        = $plugin->getPage();
-            }
+            $data['open']        = false;
+            $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
+            $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
+            $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
 
             $plugins[] = $data;
         }
@@ -106,6 +186,22 @@ class OjtPlugin extends GenericPlugin
         $this->registeredModule = $plugins;
 
         return $plugins;
+    }
+
+    public function getRegisteredModules()
+    {
+        if (!$this->registeredModule) {
+            return $this->registerModules();
+        }
+
+        return $this->registeredModule;
+    }
+
+    public function getDefaultPluginIcon()
+    {
+        $templateMgr = TemplateManager::getManager(Application::get()->getRequest());
+
+        return $templateMgr->fetch($this->getTemplateResource('defaultIcon.tpl'));
     }
 
     public function createModulesFolder()
@@ -220,7 +316,18 @@ class OjtPlugin extends GenericPlugin
 
     public function getPluginName(): String
     {
-        return strtolower(__CLASS__);
+        return $this->getName();
+    }
+
+    public function getPluginFullUrl($path = '', $withVersion = true)
+    {
+        $fullUrl =  $this->getRequest()->getBaseUrl() . '/'  . $this->getPluginPath() . '/' . $path;
+
+        if ($withVersion) {
+            return $fullUrl . '?v=' . $this->getPluginVersion();
+        }
+
+        return $fullUrl;
     }
 
     public function setPageHandler($hookName, $params)
@@ -283,7 +390,7 @@ class OjtPlugin extends GenericPlugin
             return false;
         }
 
-        return is_dir(getcwd() . '/' . $this->getModulesPath() . $folder);
+        return is_dir(getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath() . $folder);
     }
 
     /**
@@ -292,14 +399,17 @@ class OjtPlugin extends GenericPlugin
      */
     public function uninstallPlugin($plugin)
     {
-        $path    = $this->getModulesPath() . $plugin->folder;
+        $path    = $this->getModulesPath($plugin->product);
 
-        if (!is_dir($path)) {
-            throw new InvalidArgumentException("$plugin->name not Found");
-            return;
+        try {
+            if (!is_dir($path)) {
+                throw new Exception("$plugin->name not Found");
+                return;
+            }
+            return $this->recursiveDelete($path);
+        } catch (\Throwable $th) {
+            throw $th;
         }
-
-        return $this->recursiveDelete($path);
     }
 
     public function recursiveDelete($dirPath, $deleteParent = true)
@@ -307,7 +417,15 @@ class OjtPlugin extends GenericPlugin
         if (empty($dirPath) && !is_dir($dirPath)) {
             return false;
         }
-        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $path) {
+
+        $paths = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+
+        foreach ($paths as $path) {
+            if (!$path->isWritable()) {
+                throw new Exception("Can't remove plugins, please check folder permission.");
+            };
+        }
+        foreach ($paths as $path) {
             $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
         }
         if ($deleteParent) {
@@ -319,39 +437,31 @@ class OjtPlugin extends GenericPlugin
 
     public function getPluginDownloadLink($pluginToken, $license = false, $journalUrl)
     {
-        $payload = [
-            'token' => $pluginToken,
-            'license' => $license,
-            'journal_url' => $journalUrl
-        ];
-
-        $agents = [
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
-            'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.9) Gecko/20100508 SeaMonkey/2.0.4',
-            'Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 6.0; en-US)',
-            'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; da-dk) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1'
-        ];
-
-        $request = app(Http::class)
-            ->withHeaders([
-                'User-Agent' => $agents[rand(0, 3)],
-                'Access-Control-Allow-Origin' => '*',
-                'Access-Control-Allow-Headers' => 'x-csrf-uap-admin-token'
-            ])
-            ->asForm()
-            ->post(
-                static::API . '/product/get_download_link',
-                $payload
-            );
+        try {
+            $payload = [
+                'token' => $pluginToken,
+                'license' => $license,
+                'journal_url' => $journalUrl
+            ];
+            $request = $this->getHttpClient(['Content-Type' => 'application/x-www-form-urlencoded',])
+                ->post(
+                    static::API . '/product/get_download_link',
+                    [
+                        'form_params' => $payload,
+                    ]
+                );
 
 
-        if(! $request->failed()) {
-            $response = $request->object();
-            if(! $response->error) {
-                return $response->data->download_link;
-            }
+            $result = json_decode((string) $request->getBody(), true);
+
+            if (isset($result['error']) && $result['error']) throw new Exception($result['msg']);
+
+            return $result['data']['download_link'];
+        } catch (BadResponseException $e) {
+            throw $e;
+        } catch (Exception $e) {
+            throw $e;
         }
-        return false;        
     }
 
     /**
@@ -390,6 +500,8 @@ class OjtPlugin extends GenericPlugin
         $zip->close();
 
         unlink($file_name);
+
+        return true;
     }
 
     public function getJournalVersion()
@@ -406,5 +518,35 @@ class OjtPlugin extends GenericPlugin
         $pluginSettingsDAO->flushCache();
 
         return true;
+    }
+
+    function getDirs($path, $recursive = false, array $filtered = [])
+    {
+        $this->createModulesFolder();
+
+        if (!is_dir($path)) {
+            throw new RuntimeException("$path does not exist.");
+        }
+
+        $filtered += ['.', '..', '.git', 'pluginTemplate'];
+
+        $dirs = [];
+        $d = dir($path);
+
+        while (($entry = $d->read()) !== false) {
+            if (is_dir("$path/$entry") && !in_array($entry, $filtered)) {
+                $dirs[] = $entry;
+
+                if ($recursive) {
+                    $newDirs = $this->getDirs("$path/$entry");
+                    foreach ($newDirs as $newDir) {
+                        $dirs[] = "$entry/$newDir";
+                    }
+                }
+            }
+        }
+        sort($dirs);
+        // dd($dirs);
+        return $dirs;
     }
 }

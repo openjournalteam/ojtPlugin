@@ -1,80 +1,141 @@
 const colors = require("tailwindcss/colors");
+const colorVariable = require("@mertasan/tailwindcss-variables/colorVariable");
+
+const themes = {
+  primary: {
+    50: colorVariable("var(--colors-primary-50)"),
+    100: colorVariable("var(--colors-primary-100)"),
+    200: colorVariable("var(--colors-primary-200)"),
+    300: colorVariable("var(--colors-primary-300)"),
+    400: colorVariable("var(--colors-primary-400)"),
+    500: colorVariable("var(--colors-primary-500)"),
+    600: colorVariable("var(--colors-primary-600)"),
+    700: colorVariable("var(--colors-primary-700)"),
+    800: colorVariable("var(--colors-primary-800)"),
+    900: colorVariable("var(--colors-primary-900)"),
+  },
+  danger: {
+    50: colorVariable("var(--colors-danger-50)"),
+    100: colorVariable("var(--colors-danger-100)"),
+    200: colorVariable("var(--colors-danger-200)"),
+    300: colorVariable("var(--colors-danger-300)"),
+    400: colorVariable("var(--colors-danger-400)"),
+    500: colorVariable("var(--colors-danger-500)"),
+    600: colorVariable("var(--colors-danger-600)"),
+    700: colorVariable("var(--colors-danger-700)"),
+    800: colorVariable("var(--colors-danger-800)"),
+    900: colorVariable("var(--colors-danger-900)"),
+  },
+  success: {
+    50: colorVariable("var(--colors-success-50)"),
+    100: colorVariable("var(--colors-success-100)"),
+    200: colorVariable("var(--colors-success-200)"),
+    300: colorVariable("var(--colors-success-300)"),
+    400: colorVariable("var(--colors-success-400)"),
+    500: colorVariable("var(--colors-success-500)"),
+    600: colorVariable("var(--colors-success-600)"),
+    700: colorVariable("var(--colors-success-700)"),
+    800: colorVariable("var(--colors-success-800)"),
+    900: colorVariable("var(--colors-success-900)"),
+  },
+  warning: {
+    50: colorVariable("var(--colors-warning-50)"),
+    100: colorVariable("var(--colors-warning-100)"),
+    200: colorVariable("var(--colors-warning-200)"),
+    300: colorVariable("var(--colors-warning-300)"),
+    400: colorVariable("var(--colors-warning-400)"),
+    500: colorVariable("var(--colors-warning-500)"),
+    600: colorVariable("var(--colors-warning-600)"),
+    700: colorVariable("var(--colors-warning-700)"),
+    800: colorVariable("var(--colors-warning-800)"),
+    900: colorVariable("var(--colors-warning-900)"),
+  },
+};
 
 module.exports = {
   content: ["./**/*.tpl", "./assets/**/*.js"],
   prefix: "ojt-",
+  darkMode: "class",
+  // important: "#ojt-plugin",
   theme: {
     extend: {
-      opacity: ["disabled"],
-      height: {
-        min: "min-content",
-      },
-      minHeight: {
-        48: "12rem",
-      },
-      minWidth: {
-        48: "12rem",
-      },
       colors: {
-        light: "var(--light)",
-        dark: "var(--dark)",
-        darker: "var(--darker)",
-        primary: {
-          DEFAULT: "var(--color-primary)",
-          50: "var(--color-primary-50)",
-          100: "var(--color-primary-100)",
-          light: "var(--color-primary-light)",
-          lighter: "var(--color-primary-lighter)",
-          dark: "var(--color-primary-dark)",
-          darker: "var(--color-primary-darker)",
+        primary: themes.primary,
+        danger: themes.danger,
+        success: themes.success,
+        warning: themes.warning,
+      },
+    },
+    variables: {
+      DEFAULT: {
+        colors: {
+          primary: colors.purple,
+          danger: colors.rose,
+          success: colors.green,
+          warning: colors.yellow,
         },
-        secondary: {
-          DEFAULT: colors.fuchsia[600],
-          50: colors.fuchsia[50],
-          100: colors.fuchsia[100],
-          light: colors.fuchsia[500],
-          lighter: colors.fuchsia[400],
-          dark: colors.fuchsia[700],
-          darker: colors.fuchsia[800],
+      },
+      '[data-theme="fuchsia"]': {
+        colors: {
+          primary: colors.fuchsia,
         },
-        success: {
-          DEFAULT: colors.green[600],
-          50: colors.green[50],
-          100: colors.green[100],
-          light: colors.green[500],
-          lighter: colors.green[400],
-          dark: colors.green[700],
-          darker: colors.green[800],
+      },
+      '[data-theme="amber"]': {
+        colors: {
+          primary: colors.amber,
         },
-        warning: {
-          DEFAULT: colors.orange[600],
-          50: colors.orange[50],
-          100: colors.orange[100],
-          light: colors.orange[500],
-          lighter: colors.orange[400],
-          dark: colors.orange[700],
-          darker: colors.orange[800],
+      },
+      '[data-theme="lime"]': {
+        colors: {
+          primary: colors.lime,
         },
-        danger: {
-          DEFAULT: colors.red[600],
-          50: colors.red[50],
-          100: colors.red[100],
-          light: colors.red[500],
-          lighter: colors.red[400],
-          dark: colors.red[700],
-          darker: colors.red[800],
+      },
+      '[data-theme="green"]': {
+        colors: {
+          primary: colors.green,
         },
-        info: {
-          DEFAULT: colors.cyan[600],
-          50: colors.cyan[50],
-          100: colors.cyan[100],
-          light: colors.cyan[500],
-          lighter: colors.cyan[400],
-          dark: colors.cyan[700],
-          darker: colors.cyan[800],
+      },
+      '[data-theme="emerald"]': {
+        colors: {
+          primary: colors.emerald,
+        },
+      },
+      '[data-theme="teal"]': {
+        colors: {
+          primary: colors.teal,
+        },
+      },
+      '[data-theme="cyan"]': {
+        colors: {
+          primary: colors.cyan,
+        },
+      },
+      '[data-theme="pink"]': {
+        colors: {
+          primary: colors.pink,
+        },
+      },
+      '[data-theme="indigo"]': {
+        colors: {
+          primary: colors.indigo,
+        },
+      },
+      '[data-theme="violet"]': {
+        colors: {
+          primary: colors.violet,
+        },
+      },
+      '[data-theme="sky"]': {
+        colors: {
+          primary: colors.sky,
         },
       },
     },
   },
-  plugins: [require("@tailwindcss/forms")],
+  plugins: [
+    require("@tailwindcss/forms"),
+    require("@mertasan/tailwindcss-variables")({
+      colorVariables: true,
+    }),
+  ],
 };

@@ -1,5 +1,6 @@
 <?php
 import('plugins.generic.ojtPlugin.OjtPlugin');
+
 use Illuminate\Http\Client\PendingRequest as Http;
 
 /**
@@ -7,17 +8,17 @@ use Illuminate\Http\Client\PendingRequest as Http;
  * @return array
  * Get the plugin detail information based on product list wordpress
  */
-if(! function_exists('getPluginDetail')) {
+if (!function_exists('getPluginDetail')) {
     function getPluginDetail($plugin)
     {
-        if(! is_object($plugin)) {
+        if (!is_object($plugin)) {
             return [];
         }
         $request = app(Http::class)->get(OjtPlugin::API . '/product/list');
-        if(! $request->failed()) {
+        if (!$request->failed()) {
             $plugins = $request->json();
             $pluginKey = array_search(basename($plugin->getPluginPath()), array_column($plugins, 'folder'));
-            if($pluginKey !== false) {
+            if ($pluginKey !== false) {
                 return $plugins[$pluginKey];
             }
         }
@@ -85,30 +86,9 @@ if (!function_exists('vd')) {
     }
 }
 
-if (!function_exists('getDirs')) {
-    function getDirs($path, $recursive = false, array $filtered = [])
+if (!function_exists('str_contains')) {
+    function str_contains($haystack, $needle)
     {
-        if (!is_dir($path)) {
-            throw new RuntimeException("$path does not exist.");
-        }
-
-        $filtered += ['.', '..', '.git', 'pluginTemplate'];
-
-        $dirs = [];
-        $d = dir($path);
-        while (($entry = $d->read()) !== false) {
-            if (is_dir("$path/$entry") && !in_array($entry, $filtered)) {
-                $dirs[] = $entry;
-
-                if ($recursive) {
-                    $newDirs = getDirs("$path/$entry");
-                    foreach ($newDirs as $newDir) {
-                        $dirs[] = "$entry/$newDir";
-                    }
-                }
-            }
-        }
-
-        return $dirs;
+        return $needle !== '' && mb_strpos($haystack, $needle) !== false;
     }
 }

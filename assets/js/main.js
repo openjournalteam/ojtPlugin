@@ -95,7 +95,7 @@ function ajaxResponse(responseText, statusText, xhr, form) {
   }
 }
 
-function loadAjax(name, dom = false) {
+async function loadAjax(name, dom = false) {
   dom = dom ? dom : $("#main-menu");
 
   dom.html(loading_menu);
