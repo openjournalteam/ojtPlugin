@@ -219,7 +219,7 @@ class OjtPageHandler extends Handler
 
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url, $params);
-            // dd((string) $response->getBody());
+
             $plugins = array_map(function ($plugin) {
                 $ojtplugin = $this->ojtPlugin;
 
@@ -239,7 +239,6 @@ class OjtPageHandler extends Handler
 
                 return $plugin;
             }, json_decode((string) $response->getBody(), true));
-            // dd(json_decode((string) $response->getBody(), true));
             if (!$plugins) throw new Exception("Couldn't connect to Server, please try again.");
 
             return showJson($plugins);
