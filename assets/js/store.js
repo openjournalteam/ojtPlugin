@@ -157,19 +157,12 @@ Spruce.store(
     checkUpdate: async function () {
       try {
         if (!this.isTimeToCheckUpdate()) return;
-        let res = await fetch(
-          "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update",
-          {
-            mode: "cors",
-          }
-        );
+        let res = await fetch(currentUrl + "checkUpdate");
         let ojtPlugin = await res.json();
 
         this.data = ojtPlugin;
 
-        if (ojtPlugin.latest_version > ojtPluginVersion) {
-          this.updateAvailable = true;
-        }
+        this.updateAvailable = ojtPlugin.updateAvailable ? true : false;
 
         this.lastChecked = Date.now();
       } catch (error) {}
@@ -185,8 +178,8 @@ Spruce.store(
 
       return false;
     },
-    doUpdate() {
-      Swal.fire({
+    async doUpdate() {
+      let result = await Swal.fire({
         title: "Are you sure want to Update Plugin?",
         icon: "warning",
         showCancelButton: true,
@@ -210,17 +203,20 @@ Spruce.store(
             });
         },
         allowOutsideClick: () => !Swal.isLoading(),
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // show success message then reload page
-          Swal.fire(result.value.msg).then(() => {
-            if (result.value.error) {
-              return;
-            }
-            location.reload();
-          });
-        }
       });
+
+      this.lastChecked = null;
+      this.updateAvailable = false;
+
+      if (result.isConfirmed) {
+        // show success message then reload page
+        Swal.fire(result.value.msg).then(() => {
+          if (result.value.error) {
+            return;
+          }
+          location.reload();
+        });
+      }
     },
   },
   true

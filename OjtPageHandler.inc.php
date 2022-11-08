@@ -50,7 +50,6 @@ class OjtPageHandler extends Handler
     public function index($args, $request)
     {
         $plugin = $this->ojtPlugin;
-
         $baseUrl = $request->getBaseUrl() . '/';
         $pluginFullUrl          = $baseUrl . $plugin->getPluginPath();
         $templateMgr            = TemplateManager::getManager($request);
@@ -186,6 +185,23 @@ class OjtPageHandler extends Handler
             ]);
         } catch (\Throwable $th) {
             throw $th;
+        }
+    }
+
+    public function checkUpdate($args, $request)
+    {
+        $url = 'https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update';
+        try {
+            $response = $this->ojtPlugin->getHttpClient()->get($url);
+            $json = json_decode((string) $response->getBody(), true);
+            $json['updateAvailable'] = version_compare($this->ojtPlugin->getPluginVersion(), $json['latest_version']) == -1;
+
+            return showJson($json);
+        } catch (\Throwable $th) {
+            return showJson([
+                'error' => 1,
+                'msg' => $th->getMessage()
+            ]);
         }
     }
 
