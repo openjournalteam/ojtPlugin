@@ -212,7 +212,6 @@ class OjtPageHandler extends Handler
         $version    = $versionDao->getCurrentVersion();
 
         $url = $this->ojtPlugin->apiUrl() . '/product/list/ojs';
-
         $params = [
             'ojt_plugin_version' => $this->ojtPlugin->getPluginVersion(),
             'ojs_version' => $version->getVersionString()

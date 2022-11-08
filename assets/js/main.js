@@ -72,7 +72,7 @@ function ajaxResponse(responseText, statusText, xhr, form) {
   if (responseText.error == 1) ajaxError(responseText);
 
   if (responseText.error == 0) {
-    let msg = responseText.msg ? responseText.msg : "Success ...";
+    let msg = responseText?.msg ?? responseText?.message ?? "Success ...";
 
     Toast.fire({
       icon: "success",

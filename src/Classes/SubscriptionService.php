@@ -47,7 +47,7 @@ class SubscriptionService
         $response['quota']
       );
 
-      return true;
+      return $response;
     } catch (\Throwable $th) {
       throw $th;
     }
