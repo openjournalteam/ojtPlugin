@@ -74,6 +74,18 @@ class SubscriptionService
     }
   }
 
+  public function checkRegistered()
+  {
+    $response = $this->apiRequest(
+      'check',
+    );
+    if ($response['error']) {
+      throw new Exception($response['message']);
+    }
+
+    return $response;
+  }
+
   protected function getPlugin()
   {
     return $this->plugin;
