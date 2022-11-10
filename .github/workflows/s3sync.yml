@@ -6,6 +6,7 @@ on:
       - 33
       - 32
       - 31
+      - "update-action"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -44,11 +45,19 @@ jobs:
           rm -rf ./s3_upload/$REPO_NAME/.git*
           rm -rf ./s3_upload/$REPO_NAME/s3_upload
 
-      - name: Zip the repo and Pack to S3_Upload folder before uploading
-        uses: vimtor/action-zip@v1
+      - name: Compress Zip
+        uses: a7ul/tar-action@v1.1.0
         with:
-          files: ./s3_upload
-          dest: ./zipped/${{steps.json_properties.outputs.name}}.zip
+          command: c
+          cwd: ./s3_upload
+          files: .
+          outPath: ./zipped/${{steps.json_properties.outputs.name}}.tar.gz
+
+      # - name: Zip the repo and Pack to S3_Upload folder before uploading
+      #   uses: vimtor/action-zip@v1
+      #   with:
+      #     files: ./s3_upload
+      #     dest: ./zipped/${{steps.json_properties.outputs.name}}.zip
 
       # Copy the version.xml file to the zipped folder
       - name: Copy the version.xml file
