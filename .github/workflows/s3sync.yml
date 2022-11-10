@@ -63,7 +63,7 @@ jobs:
       # Copy the version.xml file to the zipped folder
       - name: Copy the version.xml file
         run: |
-          cp ./ojtPlugin/version.xml ./zipped/version.xml
+          cp ./ojtPlugin/ojtPlugin/version.xml ./zipped/version.xml
 
       #everthing is working now, then upload
       - name: Upload Zip File to S3 Folder ( Version )
