@@ -51,7 +51,7 @@ jobs:
         with:
           command: c
           cwd: .
-          files: ./s3_upload
+          files: ./s3_upload/*
           outPath: ./zipped/${{steps.json_properties.outputs.name}}.tar.gz
 
       # - name: Zip the repo and Pack to S3_Upload folder before uploading
