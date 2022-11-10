@@ -40,7 +40,6 @@ jobs:
 
       - name: Create folder and removing .git and .github dir
         run: |
-          mkdir ./ojtPlugin
           mkdir ./zipped
           rsync -a ./ ./ojtPlugin/$REPO_NAME
           rm -rf ./ojtPlugin/$REPO_NAME/.git*
@@ -50,8 +49,8 @@ jobs:
         uses: a7ul/tar-action@v1.1.0
         with:
           command: c
-          cwd: .
-          files: ./ojtPlugin
+          cwd: ./ojtPlugin
+          files: .
           outPath: ./zipped/${{steps.json_properties.outputs.name}}.tar.gz
 
       # - name: Zip the repo and Pack to S3_Upload folder before uploading
