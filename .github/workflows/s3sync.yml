@@ -51,7 +51,7 @@ jobs:
         with:
           command: c
           cwd: ./ojtPlugin
-          files: .
+          files: ./ojtPlugin
           outPath: ./zipped/${{steps.json_properties.outputs.name}}.tar.gz
 
       # - name: Zip the repo and Pack to S3_Upload folder before uploading
