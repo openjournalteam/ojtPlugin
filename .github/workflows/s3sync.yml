@@ -41,6 +41,7 @@ jobs:
       - name: Create folder and removing .git and .github dir
         run: |
           mkdir ./s3_upload
+          mkdir ./zipped
           rsync -a ./ ./s3_upload/$REPO_NAME
           rm -rf ./s3_upload/$REPO_NAME/.git*
           rm -rf ./s3_upload/$REPO_NAME/s3_upload
