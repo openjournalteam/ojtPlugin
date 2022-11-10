@@ -52,7 +52,7 @@ jobs:
           command: c
           cwd: ./s3_upload
           files: .
-          outPath: ../zipped/${{steps.json_properties.outputs.name}}.tar.gz
+          outPath: ./zipped/${{steps.json_properties.outputs.name}}.tar.gz
 
       # - name: Zip the repo and Pack to S3_Upload folder before uploading
       #   uses: vimtor/action-zip@v1
