@@ -6,6 +6,7 @@ on:
       - 33
       - 32
       - 31
+      - "update-action"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -39,27 +40,36 @@ jobs:
 
       - name: Create folder and removing .git and .github dir
         run: |
-          mkdir ./s3_upload
-          rsync -a ./ ./s3_upload/$REPO_NAME
-          rm -rf ./s3_upload/$REPO_NAME/.git*
-          rm -rf ./s3_upload/$REPO_NAME/s3_upload
+          mkdir ./ojtPlugin
+          mkdir ./zipped
+          rsync -a ./ ./ojtPlugin/$REPO_NAME
+          rm -rf ./ojtPlugin/$REPO_NAME/.git*
+          rm -rf ./ojtPlugin/$REPO_NAME/ojtPlugin
 
-      - name: Zip the repo and Pack to S3_Upload folder before uploading
-        uses: vimtor/action-zip@v1
+      - name: Compress Zip
+        uses: a7ul/tar-action@v1.1.0
         with:
-          files: ./s3_upload
-          dest: ./zipped/${{steps.json_properties.outputs.name}}.zip
+          command: c
+          cwd: ./ojtPlugin
+          files: ./ojtPlugin
+          outPath: ./zipped/${{steps.json_properties.outputs.name}}.tar.gz
+
+      # - name: Zip the repo and Pack to S3_Upload folder before uploading
+      #   uses: vimtor/action-zip@v1
+      #   with:
+      #     files: ./s3_upload
+      #     dest: ./zipped/${{steps.json_properties.outputs.name}}.zip
 
       # Copy the version.xml file to the zipped folder
       - name: Copy the version.xml file
         run: |
-          cp -p ./version.xml ./zipped/version.xml
+          cp ./ojtPlugin/ojtPlugin/version.xml ./zipped/version.xml
 
       #everthing is working now, then upload
       - name: Upload Zip File to S3 Folder ( Version )
         uses: jakejarvis/s3-sync-action@master
         with:
-          args: --acl public-read --follow-symlinks --delete --include '*' --exclude './.git/*' --exclude './.github/*'  --exclude './.vscode/*' --exclude '.gitignore' --exclude './s3_upload/*' --exclude './.gitmodules'
+          args: --acl public-read --follow-symlinks --delete --include '*' --exclude './.git/*' --exclude './.github/*'  --exclude './.vscode/*' --exclude '.gitignore' --exclude './ojtPlugin/*' --exclude './.gitmodules'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
