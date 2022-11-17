@@ -6,7 +6,7 @@ on:
       - 33
       - 32
       - 31
-      - "update-action"
+      - "update-action-2"
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -46,7 +46,7 @@ jobs:
           rm -rf ./ojtPlugin/$REPO_NAME/.git*
           rm -rf ./ojtPlugin/$REPO_NAME/ojtPlugin
 
-      - name: Compress Zip
+      - name: Compress Tar
         uses: a7ul/tar-action@v1.1.0
         with:
           command: c
@@ -54,11 +54,11 @@ jobs:
           files: ./ojtPlugin
           outPath: ./zipped/${{steps.json_properties.outputs.name}}.tar.gz
 
-      # - name: Zip the repo and Pack to S3_Upload folder before uploading
-      #   uses: vimtor/action-zip@v1
-      #   with:
-      #     files: ./s3_upload
-      #     dest: ./zipped/${{steps.json_properties.outputs.name}}.zip
+      - name: Zip the repo and Pack to S3_Upload folder before uploading
+        uses: vimtor/action-zip@v1
+        with:
+          files: ./ojtPlugin
+          dest: ./zipped/${{steps.json_properties.outputs.name}}.zip
 
       # Copy the version.xml file to the zipped folder
       - name: Copy the version.xml file
