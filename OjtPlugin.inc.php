@@ -240,20 +240,23 @@ class OjtPlugin extends GenericPlugin
         $file_name = basename($url);
 
         // place file to root of ojs
-        if (!file_put_contents($file_name, file_get_contents($url))) {
-            throw new Exception('Failed to get Plugin');
+        if (!$file = file_get_contents($url)) {
+            throw new Exception('Failed to download Plugin');
+        }
+        if (!file_put_contents($file_name, $file)) {
+            throw new Exception('Failed to make a temporary plugin file');
         }
 
         $zip = new ZipArchive;
         if (!$zip->open($file_name)) {
             unlink($file_name);
-            throw new Exception('Failed to Open Files');
+            throw new Exception('Failed to Open Files plugin file');
         }
 
         $path    = 'plugins/generic';
         if (!$zip->extractTo($path)) {
             unlink($file_name);
-            throw new Exception('Failed to Extract Plugin, because of folder permission.');
+            throw new Exception('Failed to Extract Plugin,maybe because of folder permission.');
         }
         $zip->close();
 
