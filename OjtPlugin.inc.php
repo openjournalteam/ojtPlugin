@@ -176,6 +176,11 @@ class OjtPlugin extends GenericPlugin
             $pluginDir      = $categoryDir . DIRECTORY_SEPARATOR . $moduleFolder;
             PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
 
+            if ($plugin instanceof ThemePlugin && $plugin->isActive()) {
+                $plugin->init();
+            }
+
+
             $data                = $version->getAllData();
             $data['version']     = $version->getVersionString();
             $data['name']        = $plugin->getDisplayName();
@@ -189,6 +194,9 @@ class OjtPlugin extends GenericPlugin
 
             $plugins[] = $data;
         }
+
+        // HookRegistry::call('PluginRegistry::categoryLoaded::themes');
+
 
         $this->registeredModule = $plugins;
 
