@@ -262,6 +262,31 @@
             </p>
           </div>
         </div>
+        <template id="error-template">
+          <div
+            class="ojt-flex ojt-max-w-2xl ojt-mx-auto ojt-p-4 ojt-mb-4 ojt-text-sm ojt-text-red-700 ojt-bg-red-100 ojt-rounded-lg dark:ojt-bg-red-200 dark:ojt-text-red-800"
+            role="alert">
+            <svg aria-hidden="true" class="ojt-flex-shrink-0 ojt-inline ojt-w-5 ojt-h-5 ojt-mr-3" fill="currentColor"
+              viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd"></path>
+            </svg>
+            <span class="sr-only">Info</span>
+            <div>
+              <span class="ojt-font-medium">Sorry, there's an error happened.</span>
+              <div>Please try again later. If the problem still persist, please <a target="_blank"
+                  href="https://openjournaltheme.com/contact-us" class="ojt-underline"> contact
+                  us</a> or submit the problem <a href="#" @click="menu = 'Plugin'; $store.plugins.page  = 'report_bug'"
+                  class="menu_item ojt-underline" page="ojt/reportBug">here</a>.
+              </div>
+              <div class="ojt-mt-4">
+                <p class="ojt-font-bold">Error message:</p>
+                <p id="error-message"> dsadas</p>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
   </div>
