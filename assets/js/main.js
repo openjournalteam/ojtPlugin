@@ -117,7 +117,16 @@ async function loadAjax(name, dom = false) {
     dom.html(resp.html);
   });
 
-  xhr.fail(ajaxError);
+  xhr.fail((responseText, statusText, xhr, form) => {
+    var temp = document.getElementById("error-template");
+
+    temp.content.getElementById("error-message").innerHTML =
+      responseText.statusText;
+
+    var clon = temp.content.cloneNode(true);
+
+    dom.html(clon);
+  });
 }
 
 // init ajax form
