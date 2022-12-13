@@ -463,7 +463,7 @@ class OjtPlugin extends GenericPlugin
                 'token' => $pluginToken,
                 'license' => $license,
                 'journal_url' => $journalUrl,
-                // 'ojs_version' => $this->getJournalVersion()
+                'ojs_version' => $this->getJournalVersion()
             ];
             $request = $this->getHttpClient(['Content-Type' => 'application/x-www-form-urlencoded',])
                 ->post(
