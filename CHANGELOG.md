@@ -37,3 +37,7 @@
 - Improve Plugin Installed
 - Improve Plugin Gallery
 - Give Feedback or Report Bug directly from OJTPlugin
+
+# 2.0.1.0
+
+- Support for OJS 3.1
