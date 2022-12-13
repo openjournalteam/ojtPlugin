@@ -85,7 +85,7 @@
                   <span x-text="index+1"></span>
                 </th>
                 <td class="ojt-py-4 ojt-px-6 ojt-max-w-[50%]">
-                  <div class="ojt-flex">
+                  <div class="ojt-flex ojt-items-center">
                     <svg @click="plugin.open = !plugin.open"
                       class="ojt-w-6 ojt-h-6 ojt-shrink-0 ojt-mr-2 ojt-cursor-pointer" :class="{ 'ojt-rotate-180' :
                       plugin.open }" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
