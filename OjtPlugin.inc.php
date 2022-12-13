@@ -60,7 +60,7 @@ class OjtPlugin extends GenericPlugin
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
                 static::api();
-                // $this->setLogger();
+                $this->setLogger();
                 $versionDao = DAORegistry::getDAO('VersionDAO');
                 $version    = $versionDao->getCurrentVersion();
                 $version->getVersionString();
@@ -71,10 +71,7 @@ class OjtPlugin extends GenericPlugin
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
                 HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
-
-                // if ($this->getJournalVersion() != 31) {
                 HookRegistry::register('TemplateManager::display', [$this, 'templateManagerDisplay']);
-                // }
             }
             return true;
         }
