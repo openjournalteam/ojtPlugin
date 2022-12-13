@@ -31,6 +31,10 @@ class OjtPlugin extends GenericPlugin
 
     public function getHttpClient($headers = [])
     {
+
+        $versionDao = DAORegistry::getDAO('VersionDAO');
+        $version    = $versionDao->getCurrentVersion();
+
         $agents = [
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
             'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.9) Gecko/20100508 SeaMonkey/2.0.4',
@@ -42,7 +46,10 @@ class OjtPlugin extends GenericPlugin
             'Content-Type' => 'application/x-www-form-urlencoded',
             'User-Agent' => $agents[rand(0, 3)],
             'Access-Control-Allow-Origin' => '*',
-            'Access-Control-Allow-Headers' => 'x-csrf-uap-admin-token'
+            'Access-Control-Allow-Headers' => 'x-csrf-uap-admin-token',
+            'ojt_plugin_version' => $this->getPluginVersion(),
+            'ojs_version' => $this->getJournalVersion(),
+            'ojs_version_detail' => $version->getVersionString(),
         ]);
 
         return new \GuzzleHttp\Client([
@@ -59,7 +66,6 @@ class OjtPlugin extends GenericPlugin
                 $versionDao = DAORegistry::getDAO('VersionDAO');
                 $version    = $versionDao->getCurrentVersion();
                 $version->getVersionString();
-
                 $this->createModulesFolder();
                 $this->flushCache();
                 $this->registerModules();
@@ -124,10 +130,7 @@ class OjtPlugin extends GenericPlugin
         $dispatcher = $request->getDispatcher();
         $router = $request->getRouter();
         $userRoles = (array) $router->getHandler()->getAuthorizedContextObject(ASSOC_TYPE_USER_ROLES);
-        // dd(count(array_intersect([ROLE_ID_MANAGER, ROLE_ID_SITE_ADMIN], $userRoles)));
         if (!$request->getUser() || !count(array_intersect([ROLE_ID_MANAGER, ROLE_ID_SITE_ADMIN], $userRoles))) return;
-
-
 
         $menu = $templateMgr->getState('menu');
         $menu['ojtPlugin'] = [
@@ -459,7 +462,8 @@ class OjtPlugin extends GenericPlugin
             $payload = [
                 'token' => $pluginToken,
                 'license' => $license,
-                'journal_url' => $journalUrl
+                'journal_url' => $journalUrl,
+                'ojs_version' => $this->getJournalVersion()
             ];
             $request = $this->getHttpClient(['Content-Type' => 'application/x-www-form-urlencoded',])
                 ->post(
@@ -468,7 +472,6 @@ class OjtPlugin extends GenericPlugin
                         'form_params' => $payload,
                     ]
                 );
-
 
             $result = json_decode((string) $request->getBody(), true);
 
