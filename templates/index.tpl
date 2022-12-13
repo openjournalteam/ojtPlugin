@@ -32,7 +32,7 @@
               aria-current="page">
               <img width="32" height="37" src="{$ojtPlugin->logo}" class="ojt-mx-auto">
               <span class="site-name ojt-ml-3 ojt-inline-block ojt-text-2xl ojt-tracking-wide">
-                OJT Plugin
+                OJT Control Panel
               </span>
             </a>
           </div>
