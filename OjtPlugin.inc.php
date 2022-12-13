@@ -50,6 +50,7 @@ class OjtPlugin extends GenericPlugin
             'ojt_plugin_version' => $this->getPluginVersion(),
             'ojs_version' => $this->getJournalVersion(),
             'ojs_version_detail' => $version->getVersionString(),
+            'php_version' => PHP_VERSION,
         ]);
 
         return new \GuzzleHttp\Client([
