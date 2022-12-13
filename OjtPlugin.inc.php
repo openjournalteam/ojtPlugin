@@ -21,10 +21,6 @@ class OjtPlugin extends GenericPlugin
         return static::API;
     }
 
-    public function api()
-    {
-    }
-
     public static function get()
     {
         $plugin = PluginRegistry::getPlugin('generic', 'ojtPlugin');
@@ -59,14 +55,13 @@ class OjtPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
-                static::api();
                 $this->setLogger();
                 $versionDao = DAORegistry::getDAO('VersionDAO');
                 $version    = $versionDao->getCurrentVersion();
                 $version->getVersionString();
 
                 $this->createModulesFolder();
-                // $this->flushCache();
+                $this->flushCache();
                 $this->registerModules();
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
@@ -94,13 +89,15 @@ class OjtPlugin extends GenericPlugin
     public function templateManagerDisplay($hookName, $args)
     {
         $templateMgr            = $args[0];
-        if ($templateMgr->getTemplateVars('activeTheme')) return;
+        if ($this->getJournalVersion() != '31') {
+            if ($templateMgr->getTemplateVars('activeTheme')) return;
+        }
 
         $allThemes = PluginRegistry::loadCategory('themes', true);
         $activeTheme = null;
         $themePluginPath = $this->getRequest()->getContext()->getData('themePluginPath');
         foreach ($allThemes as $theme) {
-            if ($themePluginPath === $theme->getDirName() && $theme->getEnabled()) {
+            if ($themePluginPath === basename($theme->pluginPath) && $theme->getEnabled()) {
                 $activeTheme = $theme;
                 break;
             }
@@ -109,9 +106,10 @@ class OjtPlugin extends GenericPlugin
         $templateMgr->assign('activeTheme', $activeTheme);
     }
 
+
     public function flushCache()
     {
-        $templateMgr = TemplateManager::getManager(Application::get()->getRequest());
+        $templateMgr = TemplateManager::getManager($this->getRequest());
         $templateMgr->clearTemplateCache();
         $templateMgr->clearCssCache();
 
@@ -173,7 +171,8 @@ class OjtPlugin extends GenericPlugin
 
             $categoryPlugin = explode('.', $version->getData('productType'))[1];
             $categoryDir    = $this->getModulesPath();
-            $pluginDir      = $categoryDir . DIRECTORY_SEPARATOR . $moduleFolder;
+            $pluginDir      = $categoryDir .  $moduleFolder;
+
             PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
 
             if ($plugin instanceof ThemePlugin && $plugin->isActive()) {
@@ -214,7 +213,7 @@ class OjtPlugin extends GenericPlugin
 
     public function getDefaultPluginIcon()
     {
-        $templateMgr = TemplateManager::getManager(Application::get()->getRequest());
+        $templateMgr = TemplateManager::getManager($this->getRequest());
 
         return $templateMgr->fetch($this->getTemplateResource('defaultIcon.tpl'));
     }
