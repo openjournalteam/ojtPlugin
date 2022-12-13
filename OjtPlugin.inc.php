@@ -21,10 +21,6 @@ class OjtPlugin extends GenericPlugin
         return static::API;
     }
 
-    public function api()
-    {
-    }
-
     public static function get()
     {
         $plugin = PluginRegistry::getPlugin('generic', 'ojtPlugin');
@@ -59,7 +55,6 @@ class OjtPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
-                static::api();
                 $this->setLogger();
                 $versionDao = DAORegistry::getDAO('VersionDAO');
                 $version    = $versionDao->getCurrentVersion();
