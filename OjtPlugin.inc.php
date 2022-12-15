@@ -50,6 +50,7 @@ class OjtPlugin extends GenericPlugin
             'ojt_plugin_version' => $this->getPluginVersion(),
             'ojs_version' => $this->getJournalVersion(),
             'ojs_version_detail' => $version->getVersionString(),
+            'php_version' => PHP_VERSION,
         ]);
 
         return new \GuzzleHttp\Client([
@@ -463,7 +464,7 @@ class OjtPlugin extends GenericPlugin
                 'token' => $pluginToken,
                 'license' => $license,
                 'journal_url' => $journalUrl,
-                // 'ojs_version' => $this->getJournalVersion()
+                'ojs_version' => $this->getJournalVersion()
             ];
             $request = $this->getHttpClient(['Content-Type' => 'application/x-www-form-urlencoded',])
                 ->post(
