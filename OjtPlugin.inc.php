@@ -179,7 +179,7 @@ class OjtPlugin extends GenericPlugin
 
             PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
 
-            if ($plugin instanceof ThemePlugin && $plugin->isActive()) {
+            if ($plugin instanceof ThemePlugin) {
                 $plugin->init();
             }
 
