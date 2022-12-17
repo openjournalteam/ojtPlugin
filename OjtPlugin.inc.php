@@ -68,12 +68,13 @@ class OjtPlugin extends GenericPlugin
                 $version    = $versionDao->getCurrentVersion();
                 $version->getVersionString();
                 $this->createModulesFolder();
-                $this->flushCache();
+                // $this->flushCache();
                 $this->registerModules();
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
                 HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
-                HookRegistry::register('TemplateManager::display', [$this, 'templateManagerDisplay']);
+                HookRegistry::register('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
+                HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
             }
             return true;
         }
@@ -93,7 +94,7 @@ class OjtPlugin extends GenericPlugin
         ErrorHandler::register($logger);
     }
 
-    public function templateManagerDisplay($hookName, $args)
+    public function fixThemeNotLoadedOnFrontend($hookName, $args)
     {
         $templateMgr            = $args[0];
         if ($this->getJournalVersion() != '31') {
@@ -111,6 +112,19 @@ class OjtPlugin extends GenericPlugin
         }
 
         $templateMgr->assign('activeTheme', $activeTheme);
+    }
+
+    function addHeader($hookName, $args)
+    {
+        $templateMgr            = $args[0];
+
+        $templateMgr->addHeader(
+            'generator',
+            '<meta name="ojtcontrolpanel" content="OJT Control Panel Version ' . $this->getPluginVersion() . ' by openjournaltheme.com">',
+            [
+                'contexts' => ['frontend'],
+            ]
+        );
     }
 
 
