@@ -19,9 +19,9 @@ class OjtPageHandler extends Handler
             $request->redirect(null, 'login', null, null);
         }
 
-        $this->ojtPlugin = PluginRegistry::getPlugin('generic', 'ojtPlugin');
+        $this->ojtPlugin = OjtPlugin::get();
 
-        $this->contextId = $request->getContext()->getId();
+        $this->contextId = $this->ojtPlugin->getCurrentContextId();
         $this->baseUrl = $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext());
     }
 
@@ -90,7 +90,7 @@ class OjtPageHandler extends Handler
         ];
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
-        $templateMgr->assign('journal', $request->getContext());
+        $templateMgr->assign('journal', $this->contextId ? $request->getContext() : $request->getSite());
         $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
         $templateMgr->assign('pluginInstalledHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl')));
 

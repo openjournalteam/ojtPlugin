@@ -1,4 +1,6 @@
-{assign var="logoImage" value=$currentContext->getLocalizedData('pageHeaderLogoImage')}
+{if $currentContext}
+  {assign var="logoImage" value=$currentContext->getLocalizedData('pageHeaderLogoImage')}
+{/if}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -137,7 +139,7 @@
             </div>
             <nav aria-label="Secondary" class="ojt-hidden ojt-space-x-2 md:ojt-flex md:ojt-items-center">
               <a class="ojt-flex ojt-items-center ojt-gap-2 ojt-text-primary-700 hover:ojt-text-white ojt-text-black hover:ojt-bg-primary-700 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-primary-300 ojt-font-medium ojt-rounded-lg ojt-text-xs ojt-px-4 ojt-py-2 ojt-text-center"
-                href="{url journal=$journal->getPath() page="submissions"}">
+                href="{url journal=$journal->getData('urlPath') page="submissions"}">
                 <svg class="ojt-h-4 ojt-w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 24" fill="currentColor">
                   <path
                     d="m.511 13.019 16.695 10.836c.656.427 1.461-.136 1.461-1.02v-6.685l11.872 7.705c.656.427 1.461-.136 1.461-1.02v-21.669c0-.884-.805-1.447-1.461-1.02l-11.872 7.704v-6.684c0-.884-.805-1.447-1.461-1.02l-16.695 10.835c-.312.234-.511.604-.511 1.02s.2.785.508 1.017l.003.002z">

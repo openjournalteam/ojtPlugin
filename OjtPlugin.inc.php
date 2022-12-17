@@ -103,7 +103,9 @@ class OjtPlugin extends GenericPlugin
 
         $allThemes = PluginRegistry::loadCategory('themes', true);
         $activeTheme = null;
-        $themePluginPath = $this->getRequest()->getContext()->getData('themePluginPath');
+        $context = $this->getCurrentContextId() ? $this->getRequest()->getContext() : $this->getRequest()->getSite();
+        $themePluginPath = $context->getData('themePluginPath');
+
         foreach ($allThemes as $theme) {
             if ($themePluginPath === basename($theme->pluginPath) && $theme->getEnabled()) {
                 $activeTheme = $theme;
@@ -116,10 +118,10 @@ class OjtPlugin extends GenericPlugin
 
     function addHeader($hookName, $args)
     {
-        $templateMgr            = $args[0];
+        $templateMgr            = &$args[0];
 
         $templateMgr->addHeader(
-            'generator',
+            'ojtcontrolpanel',
             '<meta name="ojtcontrolpanel" content="OJT Control Panel Version ' . $this->getPluginVersion() . ' by openjournaltheme.com">',
             [
                 'contexts' => ['frontend'],
@@ -342,6 +344,8 @@ class OjtPlugin extends GenericPlugin
         return $info[1];
     }
 
+
+
     public function getPluginVersion()
     {
         import('lib.pkp.classes.site.VersionCheck');
@@ -394,7 +398,6 @@ class OjtPlugin extends GenericPlugin
     {
         // Get the existing actions
         $actions = parent::getActions($request, $actionArgs);
-
         // Only add the settings action when the plugin is enabled
         if (!$this->getEnabled()) {
             return $actions;
