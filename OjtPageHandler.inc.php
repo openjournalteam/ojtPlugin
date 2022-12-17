@@ -22,7 +22,7 @@ class OjtPageHandler extends Handler
         $this->ojtPlugin = OjtPlugin::get();
 
         $this->contextId = $this->ojtPlugin->getCurrentContextId();
-        $this->baseUrl = $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext());
+        $this->baseUrl = $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath());
     }
 
     public function updatePanel($args, $request)
