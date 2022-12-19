@@ -134,7 +134,7 @@ class SubscriptionService
   protected function getBaseUrl()
   {
     if (!$this->baseUrl) {
-      $this->baseUrl = $this->getRequest()->getDispatcher()->url($this->getRequest(), ROUTE_PAGE, $this->getRequest()->getContext());
+      $this->baseUrl = $this->getRequest()->getDispatcher()->url($this->getRequest(), ROUTE_PAGE, $this->getRequest()->getContext()->getPath());
     }
     return $this->baseUrl;
   }
