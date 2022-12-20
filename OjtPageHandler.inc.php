@@ -335,6 +335,7 @@ class OjtPageHandler extends Handler
             // trying to install plugin
             $ojtPlugin->installPlugin($downloadLink);
 
+            $this->simulateRegisterModules($pluginToInstall);
 
             if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
 
@@ -353,6 +354,36 @@ class OjtPageHandler extends Handler
             $json['msg']    = $e->getMessage();
             return showJson($json);
         }
+    }
+
+    protected function simulateRegisterModules($pluginToInstall)
+    {
+        $fileManager = new FileManager();
+        $ojtPlugin = $this->ojtPlugin;
+        $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
+
+        if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
+
+        // delete plugin when error occured
+        register_shutdown_function(function () use ($ojtPlugin, $pluginToInstall) {
+            $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $pluginToInstall->folder;
+            try {
+                if (!is_dir($path)) {
+                    throw new \Exception("$path is not directory");
+                    return;
+                }
+                $ojtPlugin->recursiveDelete($path);
+            } catch (\Throwable $th) {
+            }
+
+            return showJson([
+                'error' => 1,
+                'msg' => 'There is a problem with the installed plugin, please contact us.'
+            ]);
+        });
+
+
+        $plugin         = include($indexFile);
     }
 
     public function resetSetting($args, $showJson = true)
