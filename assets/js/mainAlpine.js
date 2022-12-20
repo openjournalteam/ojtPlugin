@@ -371,16 +371,23 @@ function pluginGallery() {
         formData.append("update", isUpdate);
       }
 
-      let response = await fetch(currentUrl + "installPlugin", {
-        method: "POST",
-        body: formData,
-      }).catch(function (error) {
-        this.loading = false;
-        ajaxError(error);
-        return;
-      });
+      try {
+        let response = await fetch(currentUrl + "installPlugin", {
+          method: "POST",
+          body: formData,
+        });
 
-      return await response.json();
+        if (!response.ok)
+          // or check for response.status
+          throw new Error(response.statusText);
+
+        return await response.json();
+      } catch (error) {
+        return {
+          error: 1,
+          msg: "There is a problem with the installed plugin, please contact us.",
+        };
+      }
     },
   };
 }

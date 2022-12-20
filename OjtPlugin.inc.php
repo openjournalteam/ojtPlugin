@@ -543,8 +543,6 @@ class OjtPlugin extends GenericPlugin
 
     public function installPlugin($url)
     {
-        $url = 'http://localhost/ojtRocket.zip';
-
         // Download file
         $file_name = __DIR__ . '/' . basename($url);
 

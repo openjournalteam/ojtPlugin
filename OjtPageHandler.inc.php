@@ -362,10 +362,11 @@ class OjtPageHandler extends Handler
         $ojtPlugin = $this->ojtPlugin;
         $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
 
-        if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
-
         // delete plugin when error occured
         register_shutdown_function(function () use ($ojtPlugin, $pluginToInstall) {
+            $error = error_get_last();
+            if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
+
             $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $pluginToInstall->folder;
             try {
                 if (!is_dir($path)) {
@@ -376,11 +377,14 @@ class OjtPageHandler extends Handler
             } catch (\Throwable $th) {
             }
 
-            return showJson([
-                'error' => 1,
-                'msg' => 'There is a problem with the installed plugin, please contact us.'
-            ]);
+            // return showJson([
+            //     'error' => 1,
+            //     'msg' => 'There is a problem with the installed plugin, please contact us.'
+            // ]);
         });
+
+        if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
+
 
 
         $plugin         = include($indexFile);
