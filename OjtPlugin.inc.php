@@ -64,8 +64,10 @@ class OjtPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
+                register_shutdown_function([$this, 'fatalHandler']);
+
                 $this->init();
-                $this->setLogger();
+                // $this->setLogger();
                 $this->createModulesFolder();
                 // $this->flushCache();
                 $this->registerModules();
@@ -88,6 +90,30 @@ class OjtPlugin extends GenericPlugin
 
     function fatalHandler()
     {
+        $error = error_get_last();
+        // Fatal error, E_ERROR === 1
+        if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
+        if (!str_contains($error['file'], 'ojtPlugin')) {
+            return;
+        }
+
+        $folders = explode('/', $error['file']);
+        $key = array_search('modules', $folders);
+        if (!is_int($key)) {
+            return;
+        }
+
+        $errorPluginFolder = $folders[$key + 1];
+        $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $errorPluginFolder;
+        try {
+            if (!is_dir($path)) {
+                throw new \Exception("$path is not directory");
+                return;
+            }
+            $this->recursiveDelete($path);
+        } catch (\Throwable $th) {
+            dd($th);
+        }
     }
 
     public static function getErrorLogFile()
@@ -99,7 +125,7 @@ class OjtPlugin extends GenericPlugin
     {
         $logger = new Logger('OJTLog');
         $logger->pushHandler(new ServiceHandler());
-        $logger->pushHandler(new StreamHandler(static::getErrorLogFile(), Logger::DEBUG));
+        $logger->pushHandler(new StreamHandler(static::getErrorLogFile()));
         ErrorHandler::register($logger);
     }
 
@@ -207,7 +233,6 @@ class OjtPlugin extends GenericPlugin
             if ($plugin instanceof ThemePlugin) {
                 $plugin->init();
             }
-
 
             $data                = $version->getAllData();
             $data['version']     = $version->getVersionString();
@@ -448,7 +473,6 @@ class OjtPlugin extends GenericPlugin
     public function uninstallPlugin($plugin)
     {
         $path    = $this->getModulesPath($plugin->product);
-
         try {
             if (!is_dir($path)) {
                 throw new Exception("$plugin->name not Found");
