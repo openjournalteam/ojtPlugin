@@ -22,7 +22,7 @@ class ErrorHandler extends MonologErrorHandler
     return false;
   }
 
-  protected function isTimeToDeleteLog($days = 7)
+  protected function isTimeToDeleteLog($days = 3)
   {
     $errorLogFile = OjtPlugin::getErrorLogFile();
 
