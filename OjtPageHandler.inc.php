@@ -356,6 +356,10 @@ class OjtPageHandler extends Handler
         }
     }
 
+    /**
+     * Lakukan pengecekan sewaktu menginstall plugin baru
+     * delete jika ada error
+     */
     protected function simulateRegisterModules($pluginToInstall)
     {
         $fileManager = new FileManager();
@@ -367,6 +371,7 @@ class OjtPageHandler extends Handler
             $error = error_get_last();
             if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
 
+            // Working directory berubah ketika callback ini berjalan, jadi harus mendapatkan fullpath
             $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $pluginToInstall->folder;
             try {
                 if (!is_dir($path)) {
@@ -376,11 +381,6 @@ class OjtPageHandler extends Handler
                 $ojtPlugin->recursiveDelete($path);
             } catch (\Throwable $th) {
             }
-
-            // return showJson([
-            //     'error' => 1,
-            //     'msg' => 'There is a problem with the installed plugin, please contact us.'
-            // ]);
         });
 
         if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
