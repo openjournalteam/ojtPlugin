@@ -1,11 +1,11 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
+        'pretty_version' => 'dev-update',
+        'version' => 'dev-update',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '5780e6bc2e20db3f0a56677afc929942aebcfa52',
+        'reference' => 'fdf3af54c024c2db2025db28a52a8a19ebe63c0e',
         'name' => 'openjournalteam/ojtplugin',
         'dev' => true,
     ),
@@ -47,12 +47,12 @@
             'dev_requirement' => false,
         ),
         'openjournalteam/ojtplugin' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
+            'pretty_version' => 'dev-update',
+            'version' => 'dev-update',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '5780e6bc2e20db3f0a56677afc929942aebcfa52',
+            'reference' => 'fdf3af54c024c2db2025db28a52a8a19ebe63c0e',
             'dev_requirement' => false,
         ),
         'psr/http-client' => array(

@@ -48,7 +48,7 @@ class ServiceHandler extends AbstractProcessingHandler
         'filename' => 'error.log',
         'contents' => file_get_contents($logFile),
         'headers' => [
-          'Content-Type' => mime_content_type($logFile)
+          // 'Content-Type' => mime_content_type($logFile)
         ]
       ];
 

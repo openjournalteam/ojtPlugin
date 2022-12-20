@@ -17,15 +17,20 @@ class ErrorHandler extends MonologErrorHandler
       $this->deleteLogFile();
     };
 
+
     parent::handleError($code, $message, $file, $line, $context);
 
     return false;
   }
 
-  protected function isTimeToDeleteLog($days = 3)
+  protected function deletePluginIfNecessary()
+  {
+  }
+
+  protected function isTimeToDeleteLog($days = 2)
   {
     $errorLogFile = OjtPlugin::getErrorLogFile();
-
+    
     if (!is_file($errorLogFile)) return false;
 
     $dateCreatedFile = filemtime($errorLogFile);

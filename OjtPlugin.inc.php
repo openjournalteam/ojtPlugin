@@ -7,6 +7,7 @@ use GuzzleHttp\Exception\BadResponseException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
+use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
 
 class OjtPlugin extends GenericPlugin
@@ -63,10 +64,8 @@ class OjtPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
+                $this->init();
                 $this->setLogger();
-                $versionDao = DAORegistry::getDAO('VersionDAO');
-                $version    = $versionDao->getCurrentVersion();
-                $version->getVersionString();
                 $this->createModulesFolder();
                 // $this->flushCache();
                 $this->registerModules();
@@ -79,6 +78,16 @@ class OjtPlugin extends GenericPlugin
             return true;
         }
         return false;
+    }
+
+    public function init()
+    {
+        $paramHandler = new ParamHandler($this);
+        $paramHandler->handle();
+    }
+
+    function fatalHandler()
+    {
     }
 
     public static function getErrorLogFile()
