@@ -83,7 +83,7 @@ class OjtPlugin extends GenericPlugin
 
     public static function getErrorLogFile()
     {
-        return __DIR__ . '/error.log';
+        return Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'ojtPlugin' . DIRECTORY_SEPARATOR . 'error.log';
     }
 
     public function setLogger()
