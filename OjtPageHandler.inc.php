@@ -335,6 +335,7 @@ class OjtPageHandler extends Handler
             // trying to install plugin
             $ojtPlugin->installPlugin($downloadLink);
 
+            $this->simulateRegisterModules($pluginToInstall);
 
             if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
 
@@ -353,6 +354,40 @@ class OjtPageHandler extends Handler
             $json['msg']    = $e->getMessage();
             return showJson($json);
         }
+    }
+
+    /**
+     * Lakukan pengecekan sewaktu menginstall plugin baru
+     * delete jika ada error
+     */
+    protected function simulateRegisterModules($pluginToInstall)
+    {
+        $fileManager = new FileManager();
+        $ojtPlugin = $this->ojtPlugin;
+        $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
+
+        // delete plugin when error occured
+        register_shutdown_function(function () use ($ojtPlugin, $pluginToInstall) {
+            $error = error_get_last();
+            if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
+
+            // Working directory berubah ketika callback ini berjalan, jadi harus mendapatkan fullpath
+            $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $pluginToInstall->folder;
+            try {
+                if (!is_dir($path)) {
+                    throw new \Exception("$path is not directory");
+                    return;
+                }
+                $ojtPlugin->recursiveDelete($path);
+            } catch (\Throwable $th) {
+            }
+        });
+
+        if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
+
+
+
+        $plugin         = include($indexFile);
     }
 
     public function resetSetting($args, $showJson = true)

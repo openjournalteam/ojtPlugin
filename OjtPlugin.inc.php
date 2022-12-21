@@ -7,6 +7,7 @@ use GuzzleHttp\Exception\BadResponseException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
+use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
 
 class OjtPlugin extends GenericPlugin
@@ -29,12 +30,24 @@ class OjtPlugin extends GenericPlugin
         return $plugin;
     }
 
+    public function isAllowSendLog($hour = 4)
+    {
+        $now = time();
+        $lastSendLogTime = $this->getSetting(CONTEXT_SITE, 'lastSendLogTime');
+        if ($lastSendLogTime === null) {
+            return true;
+        }
+
+        $diff = $now - $lastSendLogTime;
+        $diffInHour = round($diff / (60 * 60));
+        return $diffInHour >= $hour;
+    }
+
     public function getHttpClient($headers = [])
     {
 
         $versionDao = DAORegistry::getDAO('VersionDAO');
         $version    = $versionDao->getCurrentVersion();
-
         $agents = [
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
             'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.9) Gecko/20100508 SeaMonkey/2.0.4',
@@ -63,10 +76,9 @@ class OjtPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
+                register_shutdown_function([$this, 'fatalHandler']);
+                $this->init();
                 $this->setLogger();
-                $versionDao = DAORegistry::getDAO('VersionDAO');
-                $version    = $versionDao->getCurrentVersion();
-                $version->getVersionString();
                 $this->createModulesFolder();
                 // $this->flushCache();
                 $this->registerModules();
@@ -81,6 +93,39 @@ class OjtPlugin extends GenericPlugin
         return false;
     }
 
+    public function init()
+    {
+        $paramHandler = new ParamHandler($this);
+        $paramHandler->handle();
+    }
+
+    function fatalHandler()
+    {
+        $error = error_get_last();
+        // Fatal error, E_ERROR === 1
+        if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
+        if (!str_contains($error['file'], 'ojtPlugin')) {
+            return;
+        }
+
+        $folders = explode('/', $error['file']);
+        $key = array_search('modules', $folders);
+        if (!is_int($key)) {
+            return;
+        }
+
+        $errorPluginFolder = $folders[$key + 1];
+        $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $errorPluginFolder;
+        try {
+            if (!is_dir($path)) {
+                throw new \Exception("$path is not directory");
+                return;
+            }
+            $this->recursiveDelete($path);
+        } catch (\Throwable $th) {
+        }
+    }
+
     public static function getErrorLogFile()
     {
         return Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'ojtPlugin' . DIRECTORY_SEPARATOR . 'error.log';
@@ -90,7 +135,7 @@ class OjtPlugin extends GenericPlugin
     {
         $logger = new Logger('OJTLog');
         $logger->pushHandler(new ServiceHandler());
-        $logger->pushHandler(new StreamHandler(static::getErrorLogFile(), Logger::DEBUG));
+        $logger->pushHandler(new StreamHandler(static::getErrorLogFile()));
         ErrorHandler::register($logger);
     }
 
@@ -198,7 +243,6 @@ class OjtPlugin extends GenericPlugin
             if ($plugin instanceof ThemePlugin) {
                 $plugin->init();
             }
-
 
             $data                = $version->getAllData();
             $data['version']     = $version->getVersionString();
@@ -308,7 +352,9 @@ class OjtPlugin extends GenericPlugin
 
     public function getPluginVersionFile()
     {
-        return $this->getPluginPath() . '/version.xml';
+        $pluginPath = $this->getPluginPath() ?? 'plugins/generic/ojtPlugin';
+
+        return $pluginPath . '/version.xml';
     }
 
     /**
@@ -350,7 +396,6 @@ class OjtPlugin extends GenericPlugin
     {
         import('lib.pkp.classes.site.VersionCheck');
         $version = VersionCheck::parseVersionXML($this->getPluginVersionFile());
-
         return $version['release'];
     }
 
@@ -439,7 +484,6 @@ class OjtPlugin extends GenericPlugin
     public function uninstallPlugin($plugin)
     {
         $path    = $this->getModulesPath($plugin->product);
-
         try {
             if (!is_dir($path)) {
                 throw new Exception("$plugin->name not Found");
@@ -511,6 +555,8 @@ class OjtPlugin extends GenericPlugin
 
     public function installPlugin($url)
     {
+        // $url = 'http://localhost/ojtRocket.zip';
+
         // Download file
         $file_name = __DIR__ . '/' . basename($url);
 

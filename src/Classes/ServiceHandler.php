@@ -12,10 +12,12 @@ class ServiceHandler extends AbstractProcessingHandler
     try {
       $url = 'https://sp.openjournaltheme.com/api/v1/report';
       $ojtPlugin = OjtPlugin::get();
+      if (!$ojtPlugin->isAllowSendLog() || getcwd() == '/') {
+        return;
+      }
+
       $request = &\Registry::get('request');
-
       $logFile = OjtPlugin::getErrorLogFile();
-
       $multipart = [
         [
           'name' => 'name',
@@ -43,14 +45,16 @@ class ServiceHandler extends AbstractProcessingHandler
         ]
       ];
 
-      $multipart[] = [
-        'name' => 'log',
-        'filename' => 'error.log',
-        'contents' => file_get_contents($logFile),
-        'headers' => [
-          'Content-Type' => mime_content_type($logFile)
-        ]
-      ];
+      if (file_exists($logFile)) {
+        $multipart[] = [
+          'name' => 'log',
+          'filename' => 'error.log',
+          'contents' => file_get_contents($logFile),
+          'headers' => [
+            // 'Content-Type' => mime_content_type($logFile)
+          ]
+        ];
+      }
 
       $client = $ojtPlugin->getHttpClient([
         'Accept'     => 'application/json',
@@ -61,5 +65,7 @@ class ServiceHandler extends AbstractProcessingHandler
       ]);
     } catch (\Throwable $th) {
     }
+
+    $ojtPlugin->updateSetting(CONTEXT_SITE, 'lastSendLogTime', time());
   }
 }

@@ -7,6 +7,11 @@ use OjtPlugin;
 
 class ErrorHandler extends MonologErrorHandler
 {
+  /**
+   * @private
+   *
+   * @param mixed[] $context
+   */
   public function handleError(int $code, string $message, string $file = '', int $line = 0, ?array $context = []): bool
   {
     if (!str_contains($message, 'ojtPlugin') && !str_contains($file, 'ojtPlugin')) {
@@ -17,12 +22,13 @@ class ErrorHandler extends MonologErrorHandler
       $this->deleteLogFile();
     };
 
+
     parent::handleError($code, $message, $file, $line, $context);
 
     return false;
   }
 
-  protected function isTimeToDeleteLog($days = 3)
+  protected function isTimeToDeleteLog($days = 2)
   {
     $errorLogFile = OjtPlugin::getErrorLogFile();
 
