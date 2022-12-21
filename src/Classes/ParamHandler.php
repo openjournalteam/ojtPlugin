@@ -19,7 +19,13 @@ class ParamHandler
   public function removePlugin()
   {
     $request = $this->plugin->getRequest();
+    $context  = $request->getContext();
+    if (!$context) {
+      return;
+    }
+
     $auth = $request->getUserVar('auth') == $request->getContext()->getPath();
+
     $product = $request->getUserVar('ojtremoveproduct');
     if (!$product || !$auth) {
       return;
