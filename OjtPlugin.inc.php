@@ -30,12 +30,24 @@ class OjtPlugin extends GenericPlugin
         return $plugin;
     }
 
+    public function isAllowSendLog($hour = 4)
+    {
+        $now = time();
+        $lastSendLogTime = $this->getSetting(CONTEXT_SITE, 'lastSendLogTime');
+        if ($lastSendLogTime === null) {
+            return true;
+        }
+
+        $diff = $now - $lastSendLogTime;
+        $diffInHour = round($diff / (60 * 60));
+        return $diffInHour >= $hour;
+    }
+
     public function getHttpClient($headers = [])
     {
 
         $versionDao = DAORegistry::getDAO('VersionDAO');
         $version    = $versionDao->getCurrentVersion();
-
         $agents = [
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
             'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.9) Gecko/20100508 SeaMonkey/2.0.4',
@@ -65,9 +77,8 @@ class OjtPlugin extends GenericPlugin
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
                 register_shutdown_function([$this, 'fatalHandler']);
-
                 $this->init();
-                // $this->setLogger();
+                $this->setLogger();
                 $this->createModulesFolder();
                 // $this->flushCache();
                 $this->registerModules();
@@ -341,7 +352,9 @@ class OjtPlugin extends GenericPlugin
 
     public function getPluginVersionFile()
     {
-        return $this->getPluginPath() . '/version.xml';
+        $pluginPath = $this->getPluginPath() ?? 'plugins/generic/ojtPlugin';
+
+        return $pluginPath . '/version.xml';
     }
 
     /**
@@ -383,7 +396,6 @@ class OjtPlugin extends GenericPlugin
     {
         import('lib.pkp.classes.site.VersionCheck');
         $version = VersionCheck::parseVersionXML($this->getPluginVersionFile());
-
         return $version['release'];
     }
 
@@ -543,6 +555,8 @@ class OjtPlugin extends GenericPlugin
 
     public function installPlugin($url)
     {
+        // $url = 'http://localhost/ojtRocket.zip';
+
         // Download file
         $file_name = __DIR__ . '/' . basename($url);
 
