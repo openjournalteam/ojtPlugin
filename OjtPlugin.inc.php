@@ -455,7 +455,7 @@ class OjtPlugin extends GenericPlugin
         import('lib.pkp.classes.linkAction.request.OpenWindowAction');
         $linkAction = new LinkAction(
             'ojt_control_panel',
-            new OpenWindowAction($request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()) . '/ojt'),
+            new OpenWindowAction($request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt'),
             'Control Panel',
             null
         );
