@@ -559,7 +559,7 @@ class OjtPlugin extends GenericPlugin
 
     public function installPlugin($url)
     {
-        // $url = 'http://localhost/ojtRocket.zip';
+        $url = str_replace('https', 'http', $url);
 
         // Download file
         $file_name = __DIR__ . '/' . basename($url);
@@ -635,7 +635,7 @@ class OjtPlugin extends GenericPlugin
             }
         }
         sort($dirs);
-        // dd($dirs);
+
         return $dirs;
     }
 }
