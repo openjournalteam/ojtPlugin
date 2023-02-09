@@ -201,7 +201,7 @@ class OjtPlugin extends GenericPlugin
         $menu = $templateMgr->getState('menu');
         $menu['ojtPlugin'] = [
             'name' => 'OJT Control Panel',
-            'url' => $router->url($request, null, 'ojt'),
+            'url' => $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off',
             "isCurrent" => false
         ];
 
@@ -455,7 +455,7 @@ class OjtPlugin extends GenericPlugin
         import('lib.pkp.classes.linkAction.request.OpenWindowAction');
         $linkAction = new LinkAction(
             'ojt_control_panel',
-            new OpenWindowAction($request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt'),
+            new OpenWindowAction($request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off'),
             'Control Panel',
             null
         );
