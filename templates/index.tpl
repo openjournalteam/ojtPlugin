@@ -234,7 +234,7 @@
                     <button class="ojt-rounded-tr-lg" type="button" role="tab"
                       @click="tab = 'plugin-gallery';alpineComponent('pluginGallery').init();"
                       :class="tab === 'plugin-gallery' ? activeTabClass : inactiveTabClass">
-                      Plugin Gallery
+                      Product Gallery
                     </button>
                   </li>
                 </ul>
