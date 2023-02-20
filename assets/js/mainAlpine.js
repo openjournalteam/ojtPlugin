@@ -465,7 +465,13 @@ function modalPlugin() {
 
       this.close();
 
-      this.$store.plugins.fetchInstalledPlugin();
+      await this.$store.plugins.fetchInstalledPlugin();
+
+      alpineComponent("dashboard").tab = "plugin-installed";
+
+      await this.$nextTick(() => {});
+
+      
     },
     async uninstall(plugin) {
       if (this.loading == true) {

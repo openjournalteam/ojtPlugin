@@ -41,3 +41,11 @@
 # 2.0.1.0
 
 - Support for OJS 3.1
+
+# 2.0.1.3
+
+- Disable cache from Page Speed
+
+# 2.0.1.4
+
+- Change Plugin Gallery to Product Gallery

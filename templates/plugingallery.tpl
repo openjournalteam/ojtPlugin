@@ -85,22 +85,6 @@
                 <div class="ojt-text-xs">Latest Version : <span class="ojt-font-bold" x-text="plugin.version"></span>
                 </div>
               </div>
-              {* <div class="ojt-flex ojt-flex-wrap ojt-px-4 ojt-py-1 ojt-x-auto ojt-border-t ojt-gap-2 ojt-items-center"
-                x-show="plugin.type">
-                <div class="ojt-font-bold ojt-text-sm">Type : </div>
-                <span
-                  class="ojt-bg-primary-100 ojt-text-primary-800 ojt-text-sm ojt-font-medium ojt-px-2.5 ojt-py-0.5 ojt-rounded"
-                  x-text="plugin.type"></span>
-              </div>
-              <div class="ojt-flex ojt-flex-wrap ojt-px-4 ojt-py-1 ojt-x-auto ojt-border-t ojt-gap-2 ojt-items-center"
-                x-show="plugin.tags">
-                <div class="ojt-font-bold ojt-text-sm">Tags : </div>
-                <template x-for="(tag, index) in plugin.tags">
-                  <span
-                    class="ojt-bg-blue-100 ojt-text-blue-800 ojt-text-sm ojt-font-medium ojt-px-2.5 ojt-py-0.5 ojt-rounded"
-                    x-text="tag"></span>
-                </template>
-              </div> *}
               <div class="ojt-border-t ojt-border-gray-300 ojt-h-full">
                 <p class="ojt-px-4 ojt-py-2 ojt-overflow-hidden ojt-text-sm ojt-text-gray-700 dark:ojt-text-light"
                   x-text="plugin.description.trimEllip(200)"></p>

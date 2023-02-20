@@ -19,6 +19,10 @@
     [x-cloak] {
       display: none;
     }
+
+    html {
+      scroll-behavior: smooth;
+    }
   </style>
 </head>
 <div id="moduleCss"></div>
@@ -255,7 +259,7 @@
           <div
             class="ojt-bg-white ojt-mt-4 ojt-flex ojt-flex-col lg:ojt-flex-row lg:ojt-items-center lg:ojt-justify-between ojt-p-2 ojt-border-t ojt-py-4">
             <div>
-              Copyright © 2022 <a href="https://openjournaltheme.com" target="_blank"
+              Copyright © 2021 - present. <a href="https://openjournaltheme.com" target="_blank"
                 class="ojt-font-bold hover:ojt-text-purple-600 hover:ojt-text-underline">Open Journal Theme</a>. All
               rights reserved.
             </div>

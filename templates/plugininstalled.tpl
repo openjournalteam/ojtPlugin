@@ -79,7 +79,7 @@
           </thead>
           <tbody x-ref="tablepluginlist">
             <template x-for="(plugin, index) in $store.plugins.listPlugins" :key="plugin.className">
-              <tr class="ojt-bg-white ojt-border-b ojt-align-top">
+              <tr class="ojt-bg-white ojt-border-b ojt-align-top" :id="plugin.product">
                 <th scope="row"
                   class="ojt-py-4 ojt-px-6 ojt-font-medium ojt-text-gray-900 ojt-whitespace-nowrap ojt-w-[25px]">
                   <span x-text="index+1"></span>

@@ -45,7 +45,6 @@ class OjtPlugin extends GenericPlugin
 
     public function getHttpClient($headers = [])
     {
-
         $versionDao = DAORegistry::getDAO('VersionDAO');
         $version    = $versionDao->getCurrentVersion();
         $agents = [
@@ -177,7 +176,6 @@ class OjtPlugin extends GenericPlugin
             ]
         );
     }
-
 
     public function flushCache()
     {
@@ -393,8 +391,6 @@ class OjtPlugin extends GenericPlugin
 
         return $info[1];
     }
-
-
 
     public function getPluginVersion()
     {
