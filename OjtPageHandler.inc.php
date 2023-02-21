@@ -112,6 +112,14 @@ class OjtPageHandler extends Handler
         return showJson($json);
     }
 
+    public function downloadLog($args, $request)
+    {
+        $file = $this->ojtPlugin->getErrorLogFile();
+
+        $fileManager = new FileManager();
+
+        return $fileManager->downloadByPath($file);
+    }
 
     public function reportBug($args, $request)
     {
@@ -384,8 +392,6 @@ class OjtPageHandler extends Handler
         });
 
         if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
-
-
 
         $plugin         = include($indexFile);
     }
