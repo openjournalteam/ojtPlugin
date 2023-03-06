@@ -75,10 +75,6 @@ class OjtPlugin extends GenericPlugin
     public function register($category, $path, $mainContextId = null)
     {
         if (parent::register($category, $path, $mainContextId)) {
-            if ($this->getCurrentContextId() == 0) {
-                return true;
-            }
-
             if ($this->getEnabled()) {
                 register_shutdown_function([$this, 'fatalHandler']);
                 $this->init();
@@ -92,6 +88,8 @@ class OjtPlugin extends GenericPlugin
                 HookRegistry::register('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
                 HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
             }
+
+
             return true;
         }
         return false;
@@ -421,6 +419,11 @@ class OjtPlugin extends GenericPlugin
 
     public function setPageHandler($hookName, $params)
     {
+        if ($this->getCurrentContextId() == 0) {
+            // Panel tidak support untuk sitewide 
+            return false;
+        }
+
         $page = $params[0];
 
         switch ($page) {
