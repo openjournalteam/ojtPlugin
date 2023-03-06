@@ -14,6 +14,8 @@ class ErrorHandler extends MonologErrorHandler
    */
   public function handleError(int $code, string $message, string $file = '', int $line = 0, ?array $context = []): bool
   {
+    if ($code !== E_ERROR) return true;
+
     if ($this->isTimeToDeleteLog()) {
       OjtPlugin::deleteLogFile();
     };
