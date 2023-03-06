@@ -41,3 +41,8 @@
 # 2.0.1.0
 
 - Support for OJS 3.1
+
+# 2.0.2.0
+
+- Add user preferences
+- Now the license that has been input will appear when installing the plugin
