@@ -102,13 +102,26 @@ class OjtPageHandler extends Handler
         return $this->ojtPlugin->getPluginFullUrl($path, $withVersion);
     }
 
-    public function setting($args, $request)
+    public function settings($args, $request)
     {
         $templateMgr            = TemplateManager::getManager($request);
+        $templateMgr->assign('settings', [
+            'enable_diagnostic' => $this->ojtPlugin->isDiagnosticEnabled()
+        ]);
+
 
         $json['css']  = [];
-        $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('setting.tpl'));
+        $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('settings.tpl'));
         $json['js']   = [];
+        return showJson($json);
+    }
+
+    public function saveSettings($args, $request)
+    {
+        $this->ojtPlugin->updateSetting(CONTEXT_SITE, 'enable_diagnostic', filter_var($request->getUserVar('enable_diagnostic'), FILTER_VALIDATE_BOOLEAN));
+
+        $json['error'] = 0;
+        $json['msg']   = 'Save Success';
         return showJson($json);
     }
 
@@ -181,6 +194,7 @@ class OjtPageHandler extends Handler
 
 
             $result = json_decode((string) $response->getBody(), true);
+
             return showJson([
                 'error' => 0,
                 'msg' => $result['message']

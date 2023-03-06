@@ -14,18 +14,13 @@ class ErrorHandler extends MonologErrorHandler
    */
   public function handleError(int $code, string $message, string $file = '', int $line = 0, ?array $context = []): bool
   {
-    if (!str_contains($message, 'ojtPlugin') && !str_contains($file, 'ojtPlugin')) {
-      return false;
-    }
-
     if ($this->isTimeToDeleteLog()) {
-      $this->deleteLogFile();
+      OjtPlugin::deleteLogFile();
     };
-
 
     parent::handleError($code, $message, $file, $line, $context);
 
-    return false;
+    return true;
   }
 
   protected function isTimeToDeleteLog($days = 2)
@@ -41,14 +36,5 @@ class ErrorHandler extends MonologErrorHandler
     $diffInDays = round($datediff / (60 * 60 * 24));
 
     return $diffInDays > $days;
-  }
-
-  protected function deleteLogFile(): bool
-  {
-    $errorLogFile = OjtPlugin::getErrorLogFile();
-    if (!is_file($errorLogFile)) return false;
-
-
-    return unlink($errorLogFile);
   }
 }

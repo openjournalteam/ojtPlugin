@@ -17,6 +17,34 @@ class OjtPlugin extends GenericPlugin
     const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v2";
     const SERVICE_API = "https://sp.openjournaltheme.com/";
 
+    public function register($category, $path, $mainContextId = null)
+    {
+        if (parent::register($category, $path, $mainContextId)) {
+            if ($this->getEnabled()) {
+                register_shutdown_function([$this, 'fatalHandler']);
+                $this->init();
+                $this->setLogger();
+                $this->createModulesFolder();
+                $this->registerModules();
+                // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
+                HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
+                HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
+                HookRegistry::register('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
+                HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
+            }
+
+
+            return true;
+        }
+        return false;
+    }
+
+    public function init()
+    {
+        $paramHandler = new ParamHandler($this);
+        $paramHandler->handle();
+    }
+
     public function apiUrl()
     {
         return static::API;
@@ -72,35 +100,9 @@ class OjtPlugin extends GenericPlugin
         ]);
     }
 
-    public function register($category, $path, $mainContextId = null)
-    {
-        if (parent::register($category, $path, $mainContextId)) {
-            if ($this->getEnabled()) {
-                register_shutdown_function([$this, 'fatalHandler']);
-                $this->init();
-                $this->setLogger();
-                $this->createModulesFolder();
-                // $this->flushCache();
-                $this->registerModules();
-                // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
-                HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
-                HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
-                HookRegistry::register('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
-                HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
-            }
-
-
-            return true;
-        }
-        return false;
-    }
-
-    public function init()
-    {
-        $paramHandler = new ParamHandler($this);
-        $paramHandler->handle();
-    }
-
+    /**
+     * Remove modules disaat terjadi fatal error 
+     */
     function fatalHandler()
     {
         $error = error_get_last();
@@ -133,11 +135,20 @@ class OjtPlugin extends GenericPlugin
         return Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'ojtPlugin' . DIRECTORY_SEPARATOR . 'error.log';
     }
 
+    public static function deleteLogFile(): bool
+    {
+        $errorLogFile = static::getErrorLogFile();
+        if (!is_file($errorLogFile)) return false;
+
+
+        return unlink($errorLogFile);
+    }
+
     public function setLogger()
     {
         $logger = new Logger('OJTLog');
         $logger->pushHandler(new ServiceHandler());
-        $logger->pushHandler(new StreamHandler(static::getErrorLogFile()));
+        $logger->pushHandler(new StreamHandler(static::getErrorLogFile()), Logger::ERROR);
         ErrorHandler::register($logger);
     }
 
@@ -534,6 +545,7 @@ class OjtPlugin extends GenericPlugin
                 'journal_url' => $journalUrl,
                 'ojs_version' => $this->getJournalVersion()
             ];
+
             $request = $this->getHttpClient(['Content-Type' => 'application/x-www-form-urlencoded',])
                 ->post(
                     static::API . '/product/get_download_link',
@@ -640,5 +652,10 @@ class OjtPlugin extends GenericPlugin
         sort($dirs);
 
         return $dirs;
+    }
+
+    public function isDiagnosticEnabled()
+    {
+        return $this->getSetting(CONTEXT_SITE, 'enable_diagnostic') ?? true;
     }
 }
