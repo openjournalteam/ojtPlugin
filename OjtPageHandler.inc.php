@@ -258,14 +258,15 @@ class OjtPageHandler extends Handler
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url, $params);
 
-            $plugins = array_map(function ($plugin) {
-                $ojtplugin = $this->ojtPlugin;
-
+            $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
+            $ojtplugin = $this->ojtPlugin;
+            $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao) {
                 $pluginFolder = $plugin['folder'];
                 $pluginVersion = $plugin['version'];
                 $targetPlugin = @include($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
 
                 $plugin['update'] = false;
+                $plugin['license'] = $pluginSettingsDao->getSetting($this->ojtPlugin->getCurrentContextId(), $plugin['class'], 'license') ?? null;
 
                 if ($targetPlugin) {
                     import('lib.pkp.classes.site.VersionCheck');
