@@ -146,6 +146,9 @@ class OjtPlugin extends GenericPlugin
 
     public function setLogger()
     {
+        // Jangan simpan log error ketika setting ini didisable
+        if (!$this->isDiagnosticEnabled()) return;
+
         $logger = new Logger('OJTLog');
         $logger->pushHandler(new ServiceHandler());
         $logger->pushHandler(new StreamHandler(static::getErrorLogFile()), Logger::ERROR);
