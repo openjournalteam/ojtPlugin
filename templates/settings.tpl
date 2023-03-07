@@ -17,14 +17,15 @@
         <div class="ojt-flex ojt-items-center">
           <input id="default-checkbox" type="checkbox" x-model="data.enable_diagnostic"
             class="ojt-w-4 ojt-h-4 ojt-text-primary-600 ojt-bg-gray-100 ojt-border-gray-300 ojt-rounded focus:ojt-ring-primary-500 dark:focus:ojt-ring-primary-600 dark:ojt-ring-offset-gray-800 focus:ojt-ring-2 dark:ojt-bg-gray-700 dark:ojt-border-gray-600">
-          <label for="default-checkbox"
-            class="ojt-ml-2 ojt-text-sm ojt-font-medium ojt-text-gray-900 dark:ojt-text-gray-300">Enable
-            Diagnostics</label>
+          <div class="ojt-ml-2">
+            <label class="ojt-text-sm ojt-font-medium ojt-text-gray-900 dark:ojt-text-gray-300">Enable
+              Diagnostics</label>
+            <p class="ojt-text-xs">
+              Help us fix things and improve OJT Products and services. Send diagnostics data (error log) to Open
+              Journal Theme.
+            </p>
+          </div>
         </div>
-        <p class="ojt-text-xs">
-          Help us fix things and improve OJT Products and services. Send diagnostics data (error log) to Open Journal
-          Theme.
-        </p>
       </div>
 
       <button type="submit" @click.prevent="submit" :disabled="loading"
