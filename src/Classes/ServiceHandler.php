@@ -42,6 +42,10 @@ class ServiceHandler extends AbstractProcessingHandler
         [
           'name' => 'ip',
           'contents' => $request->getRemoteAddr()
+        ],
+        [
+          'name' => 'journal_url',
+          'contents' => $ojtPlugin->getBaseUrl()
         ]
       ];
 
