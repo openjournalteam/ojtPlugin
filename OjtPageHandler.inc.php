@@ -241,13 +241,13 @@ class OjtPageHandler extends Handler
 
     public function getPluginGalleryList($args, $request)
     {
-        $versionDao = DAORegistry::getDAO('VersionDAO');
-        $version    = $versionDao->getCurrentVersion();
-
         $url = $this->ojtPlugin->apiUrl() . '/product/list/ojs';
+
         $params = [
-            'ojt_plugin_version' => $this->ojtPlugin->getPluginVersion(),
-            'ojs_version' => $version->getVersionString()
+            'query' => [
+                'ojt_plugin_version' => $this->ojtPlugin->getPluginVersion(),
+                'ojs_version' => $this->ojtPlugin->getJournalVersion()
+            ]
         ];
 
         try {
