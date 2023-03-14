@@ -170,6 +170,15 @@ class OjtPageHandler extends Handler
                 ]
             ];
 
+            $multipart[] = [
+                'name' => 'ip',
+                'contents' => $request->getRemoteAddr(),
+            ];
+
+            $multipart[] = [
+                'name' => 'journal_url',
+                'contents' => $this->baseUrl
+            ];
 
             $client = $this->ojtPlugin->getHttpClient([
                 'Accept'     => 'application/json',
