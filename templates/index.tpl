@@ -70,6 +70,23 @@
           </nav>
 
           <div class="ojt-p-4 ojt-mx-auto ojt-w-full ojt-gap-2 ojt-flex ojt-flex-col ojt-border-t">
+
+            <button @click="menu = 'Plugin'; $store.plugins.page = 'settings'" role="menuitem" :class="{ 
+                      'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50': $store.plugins.page == 'settings',
+                      'ojt-text-gray-500' : $store.plugins.page != 'settings'
+                      }" page="ojt/settings"
+              class="ojt-w-full ojt-flex ojt-text-sm ojt-text-gray-500 ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-4 menu_item ojt-text-left">
+              <svg class="ojt-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                aria-hidden="true">
+                <path
+                  d="M17.004 10.407c.138.435-.216.842-.672.842h-3.465a.75.75 0 01-.65-.375l-1.732-3c-.229-.396-.053-.907.393-1.004a5.252 5.252 0 016.126 3.537zM8.12 8.464c.307-.338.838-.235 1.066.16l1.732 3a.75.75 0 010 .75l-1.732 3.001c-.229.396-.76.498-1.067.16A5.231 5.231 0 016.75 12c0-1.362.519-2.603 1.37-3.536zM10.878 17.13c-.447-.097-.623-.608-.394-1.003l1.733-3.003a.75.75 0 01.65-.375h3.465c.457 0 .81.408.672.843a5.252 5.252 0 01-6.126 3.538z">
+                </path>
+                <path fill-rule="evenodd"
+                  d="M21 12.75a.75.75 0 000-1.5h-.783a8.22 8.22 0 00-.237-1.357l.734-.267a.75.75 0 10-.513-1.41l-.735.268a8.24 8.24 0 00-.689-1.191l.6-.504a.75.75 0 10-.964-1.149l-.6.504a8.3 8.3 0 00-1.054-.885l.391-.678a.75.75 0 10-1.299-.75l-.39.677a8.188 8.188 0 00-1.295-.471l.136-.77a.75.75 0 00-1.477-.26l-.136.77a8.364 8.364 0 00-1.377 0l-.136-.77a.75.75 0 10-1.477.26l.136.77c-.448.121-.88.28-1.294.47l-.39-.676a.75.75 0 00-1.3.75l.392.678a8.29 8.29 0 00-1.054.885l-.6-.504a.75.75 0 00-.965 1.149l.6.503a8.243 8.243 0 00-.689 1.192L3.8 8.217a.75.75 0 10-.513 1.41l.735.267a8.222 8.222 0 00-.238 1.355h-.783a.75.75 0 000 1.5h.783c.042.464.122.917.238 1.356l-.735.268a.75.75 0 10.513 1.41l.735-.268c.197.417.428.816.69 1.192l-.6.504a.75.75 0 10.963 1.149l.601-.505c.326.323.679.62 1.054.885l-.392.68a.75.75 0 101.3.75l.39-.679c.414.192.847.35 1.294.471l-.136.771a.75.75 0 101.477.26l.137-.772a8.376 8.376 0 001.376 0l.136.773a.75.75 0 101.477-.26l-.136-.772a8.19 8.19 0 001.294-.47l.391.677a.75.75 0 101.3-.75l-.393-.679a8.282 8.282 0 001.054-.885l.601.504a.75.75 0 10.964-1.15l-.6-.503a8.24 8.24 0 00.69-1.191l.735.268a.75.75 0 10.512-1.41l-.734-.268c.115-.438.195-.892.237-1.356h.784zm-2.657-3.06a6.744 6.744 0 00-1.19-2.053 6.784 6.784 0 00-1.82-1.51A6.704 6.704 0 0012 5.25a6.801 6.801 0 00-1.225.111 6.7 6.7 0 00-2.15.792 6.784 6.784 0 00-2.952 3.489.758.758 0 01-.036.099A6.74 6.74 0 005.251 12a6.739 6.739 0 003.355 5.835l.01.006.01.005a6.706 6.706 0 002.203.802c.007 0 .014.002.021.004a6.792 6.792 0 002.301 0l.022-.004a6.707 6.707 0 002.228-.816 6.781 6.781 0 001.762-1.483l.009-.01.009-.012a6.744 6.744 0 001.18-2.064c.253-.708.39-1.47.39-2.264a6.74 6.74 0 00-.408-2.308z"
+                  clip-rule="evenodd"></path>
+              </svg>
+              Settings
+            </button>
             <button @click="menu = 'Plugin'; $store.plugins.page  = 'report_bug'" role="menuitem" :class="{ 
                       'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50': $store.plugins.page == 'report_bug',
                       'ojt-text-gray-500' : $store.plugins.page != 'report_bug'
@@ -82,20 +99,6 @@
               </svg>
               Feedback or Report Bug
             </button>
-            {* <button @click="menu = 'Plugin'; $store.plugins.page  = 'report_bug'" role="menuitem" :class="{ 
-                      'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50': $store.plugins.page == 'report_bug',
-                      'ojt-text-gray-500' : $store.plugins.page != 'report_bug'
-                      }" page="ojt/reportBug"
-              class="ojt-w-full ojt-flex ojt-text-gray-500 ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-4 menu_item ojt-text-left">
-              <svg class="ojt-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path
-                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-                </path>
-              </svg>
-              Settings
-            </button> *}
             <a href="https://openjournaltheme.com/docs/ojs/ojs-tutorial" target="_blank"
               class="ojt-w-full ojt-text-sm ojt-flex ojt-text-gray-500 ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-4 ojt-text-left">
               <svg class="ojt-icon" width="48" height="48" viewBox="0 0 48 48" fill="currentColor"
@@ -149,57 +152,6 @@
               </a>
             </nav>
           </div>
-          {* <div class="ojt-border-b md:ojt-hidden" x-show="isMobileMainMenuOpen"
-            @click.away="isMobileMainMenuOpen = false">
-            <nav x-data="pluginMenu()" id="pluginMenuMobile" aria-label="Main"
-              class="ojt-flex-1 ojt-px-2 ojt-py-4 ojt-space-y-2 ojt-overflow-y-hidden hover:ojt-overflow-y-auto">
-              <div>
-                <a @click="page = 'dashboard'; alpineComponent('utama').menu = 'Dashboard'"
-                  :class="{ 'ojt-bg-primary-100' : page == 'dashboard' }" href="#"
-                  class="ojt-flex ojt-items-center ojt-p-2 ojt-text-gray-500 ojt-transition-colors ojt-rounded-md hover:ojt-bg-primary-100"
-                  role="button">
-                  <span aria-hidden="true">
-                    <svg class="ojt-w-5 ojt-h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                  </span>
-                  <span class="ojt-ml-2 ojt-text-sm"> Dashboard </span>
-                </a>
-              </div>
-
-              <div>
-                <template x-if="plugins.length > 0">
-                  <div>
-                    <a href="#" @click="$event.preventDefault();"
-                      class="ojt-flex ojt-items-center ojt-p-2 ojt-text-gray-500 ojt-transition-colors ojt-rounded-md hover:ojt-bg-primary-100 "
-                      role="button" aria-haspopup="true" :aria-expanded="(page == 'dashboard') ? 'true' : 'false'">
-                      <span aria-hidden="true">
-                        <svg class="ojt-w-5 ojt-h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                          stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                        </svg>
-                      </span>
-                      <span class="ojt-ml-2 ojt-text-sm"> Plug-ins </span>
-                    </a>
-                    <div x-show="open" class="ojt-mt-2 ojt-space-y-2 ojt-px-7" role="menu" arial-label="Components">
-                      <template x-for="plugin in plugins">
-                        <a href="javascript:void(0);"
-                          @click="alpineComponent('utama').menu = 'Plugin'; page = plugin.name" role="menuitem"
-                          :class="{ 'ojt-bg-primary-100': page == plugin.name }"
-                          class="ojt-block ojt-p-2 ojt-text-sm ojt-text-gray-400 ojt-transition-colors ojt-duration-200 ojt-rounded-md  hover:ojt-text-gray-700 menu_item"
-                          :page="plugin.page" x-text="plugin.name">
-
-                        </a>
-                      </template>
-                    </div>
-                  </div>
-                </template>
-              </div>
-            </nav>
-          </div> *}
         </header>
         <div class="ojt-h-full ojt-flex ojt-flex-col ojt-justify-between">
           <main class="ojt-space-y-4">

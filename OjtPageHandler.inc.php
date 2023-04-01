@@ -102,13 +102,26 @@ class OjtPageHandler extends Handler
         return $this->ojtPlugin->getPluginFullUrl($path, $withVersion);
     }
 
-    public function setting($args, $request)
+    public function settings($args, $request)
     {
         $templateMgr            = TemplateManager::getManager($request);
+        $templateMgr->assign('settings', [
+            'enable_diagnostic' => $this->ojtPlugin->isDiagnosticEnabled()
+        ]);
+
 
         $json['css']  = [];
-        $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('setting.tpl'));
+        $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('settings.tpl'));
         $json['js']   = [];
+        return showJson($json);
+    }
+
+    public function saveSettings($args, $request)
+    {
+        $this->ojtPlugin->updateSetting(CONTEXT_SITE, 'enable_diagnostic', filter_var($request->getUserVar('enable_diagnostic'), FILTER_VALIDATE_BOOLEAN));
+
+        $json['error'] = 0;
+        $json['msg']   = 'Save Success';
         return showJson($json);
     }
 
@@ -190,6 +203,7 @@ class OjtPageHandler extends Handler
 
 
             $result = json_decode((string) $response->getBody(), true);
+
             return showJson([
                 'error' => 0,
                 'msg' => $result['message']
@@ -253,14 +267,15 @@ class OjtPageHandler extends Handler
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url, $params);
 
-            $plugins = array_map(function ($plugin) {
-                $ojtplugin = $this->ojtPlugin;
-
+            $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
+            $ojtplugin = $this->ojtPlugin;
+            $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao) {
                 $pluginFolder = $plugin['folder'];
                 $pluginVersion = $plugin['version'];
                 $targetPlugin = @include($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
 
                 $plugin['update'] = false;
+                $plugin['license'] = $pluginSettingsDao->getSetting($this->ojtPlugin->getCurrentContextId(), $plugin['class'], 'license') ?? null;
 
                 if ($targetPlugin) {
                     import('lib.pkp.classes.site.VersionCheck');

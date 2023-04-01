@@ -279,6 +279,7 @@ function pluginGallery() {
           title: `Install ${plugin.name} ?`,
           icon: "warning",
           input: input,
+          inputValue: plugin.license,
           inputLabel: inputLabel,
           inputAttributes: inputAttributes,
           inputPlaceholder: "Insert License Key.",
