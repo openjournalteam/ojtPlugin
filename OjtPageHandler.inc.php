@@ -22,7 +22,7 @@ class OjtPageHandler extends Handler
         $this->ojtPlugin = OjtPlugin::get();
 
         $this->contextId = $this->ojtPlugin->getCurrentContextId();
-        $this->baseUrl = $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath());
+        $this->baseUrl = $this->ojtPlugin->getJournalURL();
     }
 
     public function updatePanel($args, $request)
@@ -183,6 +183,15 @@ class OjtPageHandler extends Handler
                 ]
             ];
 
+            $multipart[] = [
+                'name' => 'ip',
+                'contents' => $request->getRemoteAddr(),
+            ];
+
+            $multipart[] = [
+                'name' => 'journal_url',
+                'contents' => $this->baseUrl
+            ];
 
             $client = $this->ojtPlugin->getHttpClient([
                 'Accept'     => 'application/json',
@@ -246,13 +255,13 @@ class OjtPageHandler extends Handler
 
     public function getPluginGalleryList($args, $request)
     {
-        $versionDao = DAORegistry::getDAO('VersionDAO');
-        $version    = $versionDao->getCurrentVersion();
-
         $url = $this->ojtPlugin->apiUrl() . '/product/list/ojs';
+
         $params = [
-            'ojt_plugin_version' => $this->ojtPlugin->getPluginVersion(),
-            'ojs_version' => $version->getVersionString()
+            'query' => [
+                'ojt_plugin_version' => $this->ojtPlugin->getPluginVersion(),
+                'ojs_version' => $this->ojtPlugin->getJournalVersion()
+            ]
         ];
 
         try {

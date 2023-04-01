@@ -539,6 +539,12 @@ class OjtPlugin extends GenericPlugin
         return true;
     }
 
+    public function getJournalURL()
+    {
+        $request = $this->getRequest();
+        return $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath());
+    }
+
     public function getPluginDownloadLink($pluginToken, $license = false, $journalUrl)
     {
         try {
