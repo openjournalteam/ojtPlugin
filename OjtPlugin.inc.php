@@ -204,6 +204,9 @@ class OjtPlugin extends GenericPlugin
     public function setupBackendPage($hookName, $args)
     {
         $request = $this->getRequest();
+
+        if (!$request->getContext()) return;
+
         $templateMgr = TemplateManager::getManager($this->getRequest());
         $dispatcher = $request->getDispatcher();
         $router = $request->getRouter();
