@@ -1,35 +1,13 @@
-# 1.0.0
+### 2.0.2.0 : 6 Februari 2023
 
-- First Release
+- Add user preferences
+- Now the license that has been input will appear when installing the plugin
 
-# 1.1
+### 2.0.1.0 : 13 Januari 2023
 
-- Add about Us
-- Fix menu display
-- Fix menu on mobile
-- Add reset setting for selected plugin
+- Support for OJS 3.1
 
-# 1.2
-
-- Remove when plugin folder notfound on database
-
-# 1.2.0.1
-
-- Fix license is gone when module updated
-
-# 1.2.0.2
-
-- Support OJS 3.1
-
-# 1.2.1.0
-
-- New Feature: Update OJTPlugin directly from OJTPanel
-
-# 1.2.2.0
-
-- Add new API for updating modules
-
-# 2.0.0.0
+### 2.0.0.0 : 12 Januari 2023
 
 - New User Interface.
 - Now support themes
@@ -38,11 +16,35 @@
 - Improve Plugin Gallery
 - Give Feedback or Report Bug directly from OJTPlugin
 
-# 2.0.1.0
+### 1.2.2.0 : 7 Juli 2022
 
-- Support for OJS 3.1
+- Add new API for updating modules
 
-# 2.0.2.0
+### 1.2.1.0 : 16 Juni 2022
 
-- Add user preferences
-- Now the license that has been input will appear when installing the plugin
+- New Feature: Update OJTPlugin directly from OJTPanel
+
+### 1.2.0.2 : 24 Maret 2022
+
+- Support OJS 3.1
+
+### 1.2.0.1 : 1 Maret 2022
+
+- Fix license is gone when module updated
+
+### 1.2 : 17 Februari 2022
+
+- Remove when plugin folder notfound on database
+
+### 1.1 : 12 Januari 2022
+
+- Add about Us
+- Fix menu display
+- Fix menu on mobile
+- Add reset setting for selected plugin
+
+### 1.0.0 : 30 Mei 2021
+
+- First Release
+
+
