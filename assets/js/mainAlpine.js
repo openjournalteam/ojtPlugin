@@ -17,6 +17,21 @@ const utama = () => {
     window.localStorage.setItem("dark", value);
   };
 
+  const updateQueryString = (key, value) => {
+    let url = new URL(window.location.href);
+    url.searchParams.set(key, value);
+    window.history.pushState({}, "", url);
+  };
+
+  const removeQueryString = (key) => {
+    let url = new URL(window.location.href);
+
+    if (!url.searchParams.get(key)) return;
+
+    url.searchParams.delete(key);
+    window.history.pushState({}, "", url);
+  };
+
   return {
     menu: "Dashboard",
     loading: true,
@@ -77,6 +92,15 @@ const utama = () => {
       this.$nextTick(() => {
         this.$refs.mobileMainMenu.focus();
       });
+    },
+    toggleMainMenu(plugin, menu = 'Dashboard') {
+      this.menu = menu;
+      this.$store.plugins.page = plugin.page;
+
+      switch (menu) {
+        case "Plugin": updateQueryString("tab", plugin.page); break;
+        default: removeQueryString("tab"); break;
+      }
     },
     async renderQueryTab() {
       const queryTab = new URLSearchParams(window.location.search).get("tab");
