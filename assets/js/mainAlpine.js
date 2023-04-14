@@ -23,9 +23,9 @@ const utama = () => {
     isDark: false,
     async init() {
       this.$store.checkUpdate.checkUpdate();
-      this.$store.plugins.init();
-
-      await this.$nextTick(() => {
+      await this.$store.plugins.init();
+      
+      this.$nextTick(() => {
         autoAnimate(document.getElementById("plugin-menu-list"));
       });
 
@@ -78,14 +78,17 @@ const utama = () => {
         this.$refs.mobileMainMenu.focus();
       });
     },
-    renderQueryTab() {
+    async renderQueryTab() {
       const queryTab = new URLSearchParams(window.location.search).get("tab");
       
       if (queryTab) {
-        setTimeout(() => {
-          const menuItem = document.querySelector(`#plugin-menu-item-${queryTab}`);
-          if (menuItem) menuItem.click();
-        }, 500);
+        const activePlugins = Object.values(this.$store.plugins.activePlugins);
+
+        if (activePlugins.length >= 1 && activePlugins.find((plugin) => plugin.page == queryTab)) {
+          this.menu = 'Plugin';
+          await loadAjax(queryTab);
+          this.$store.plugins.page = queryTab;
+        }
       }
     },
   };
