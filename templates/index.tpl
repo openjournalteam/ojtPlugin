@@ -56,10 +56,10 @@
             <div x-show="open" class="ojt-gap-2 ojt-flex ojt-flex-col" role="menu" id="plugin-menu-list">
               <template x-for="(plugin, index) in $store.plugins.activePlugins" :key="plugin.className">
                 <button x-show="plugin.enabled && plugin?.page" role="button"
-                  @click="menu = 'Plugin'; $store.plugins.page  = plugin.name" role="menuitem" :class="{ 
-                              'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50': $store.plugins.page == plugin.name,
-                              'ojt-text-gray-500' : $store.plugins.page != plugin.name
-                              }" :page="plugin.page"
+                  @click="menu = 'Plugin'; $store.plugins.page  = plugin.page" role="menuitem" :class="{ 
+                              'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50': $store.plugins.page == plugin.page,
+                              'ojt-text-gray-500' : $store.plugins.page != plugin.page
+                              }" :page="plugin.page" :id="`plugin-menu-item-${ plugin.page }`"
                   class="ojt-w-full ojt-text-sm ojt-flex ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-4 menu_item ojt-text-left">
                   <span aria-hidden="true" class="ojt-min-w-[1.25rem]" x-html="plugin.icon">
                   </span>

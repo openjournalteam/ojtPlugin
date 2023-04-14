@@ -21,12 +21,15 @@ const utama = () => {
     menu: "Dashboard",
     loading: true,
     isDark: false,
-    init() {
+    async init() {
       this.$store.checkUpdate.checkUpdate();
       this.$store.plugins.init();
-      this.$nextTick(() => {
+
+      await this.$nextTick(() => {
         autoAnimate(document.getElementById("plugin-menu-list"));
       });
+
+      this.renderQueryTab();
     },
     toggleTheme() {
       this.isDark = !this.isDark;
@@ -74,6 +77,16 @@ const utama = () => {
       this.$nextTick(() => {
         this.$refs.mobileMainMenu.focus();
       });
+    },
+    renderQueryTab() {
+      const queryTab = new URLSearchParams(window.location.search).get("tab");
+      
+      if (queryTab) {
+        setTimeout(() => {
+          const menuItem = document.querySelector(`#plugin-menu-item-${queryTab}`);
+          if (menuItem) menuItem.click();
+        }, 500);
+      }
     },
   };
 };
