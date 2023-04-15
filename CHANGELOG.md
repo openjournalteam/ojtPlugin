@@ -1,3 +1,7 @@
+### 2.0.3.0 : 14 April 2023
+- Add control panel query string tab
+- Add toggleMainMenu
+
 ### 2.0.2.0 : 6 Februari 2023
 
 - Add user preferences
