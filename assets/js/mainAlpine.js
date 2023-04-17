@@ -17,16 +17,34 @@ const utama = () => {
     window.localStorage.setItem("dark", value);
   };
 
+  const updateQueryString = (key, value) => {
+    let url = new URL(window.location.href);
+    url.searchParams.set(key, value);
+    window.history.pushState({}, "", url);
+  };
+
+  const removeQueryString = (key) => {
+    let url = new URL(window.location.href);
+
+    if (!url.searchParams.get(key)) return;
+
+    url.searchParams.delete(key);
+    window.history.pushState({}, "", url);
+  };
+
   return {
     menu: "Dashboard",
     loading: true,
     isDark: false,
-    init() {
+    async init() {
       this.$store.checkUpdate.checkUpdate();
-      this.$store.plugins.init();
+      await this.$store.plugins.init();
+      
       this.$nextTick(() => {
         autoAnimate(document.getElementById("plugin-menu-list"));
       });
+
+      this.renderQueryTab();
     },
     toggleTheme() {
       this.isDark = !this.isDark;
@@ -74,6 +92,28 @@ const utama = () => {
       this.$nextTick(() => {
         this.$refs.mobileMainMenu.focus();
       });
+    },
+    toggleMainMenu(plugin, menu = 'Dashboard') {
+      this.menu = menu;
+      this.$store.plugins.page = plugin.page;
+
+      switch (menu) {
+        case "Plugin": updateQueryString("tab", plugin.page); break;
+        default: removeQueryString("tab"); break;
+      }
+    },
+    async renderQueryTab() {
+      const queryTab = new URLSearchParams(window.location.search).get("tab");
+      
+      if (queryTab) {
+        const activePlugins = Object.values(this.$store.plugins.activePlugins);
+
+        if (activePlugins.length >= 1 && activePlugins.find((plugin) => plugin.page == queryTab)) {
+          this.menu = 'Plugin';
+          await loadAjax(queryTab);
+          this.$store.plugins.page = queryTab;
+        }
+      }
     },
   };
 };
