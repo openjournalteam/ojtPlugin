@@ -592,7 +592,7 @@ class OjtPlugin extends GenericPlugin
         $file_name = __DIR__ . DIRECTORY_SEPARATOR . 'OJTTemporaryFile.zip';
 
         // place file to root of ojs
-        if (!file_get_contents($url)) {
+        if (!$file = file_get_contents($url)) {
             throw new Exception('Failed to download Plugin');
         }
         if (!file_put_contents($file_name, $file)) {
