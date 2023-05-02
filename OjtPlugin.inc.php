@@ -334,7 +334,7 @@ class OjtPlugin extends GenericPlugin
         }
 
         // Download file
-        $file_name = basename($url);
+        $file_name = "OJTPanel.zip";
 
         // place file to root of ojs
         if (!$file = file_get_contents($url)) {
@@ -589,11 +589,14 @@ class OjtPlugin extends GenericPlugin
         $url = str_replace('https', 'http', $url);
 
         // Download file
-        $file_name = __DIR__ . '/' . basename($url);
+        $file_name = __DIR__ . DIRECTORY_SEPARATOR . 'OJTTemporaryFile.zip';
 
         // place file to root of ojs
-        if (!file_put_contents($file_name, file_get_contents($url))) {
-            throw new Exception('Failed to get Plugin');
+        if (!file_get_contents($url)) {
+            throw new Exception('Failed to download Plugin');
+        }
+        if (!file_put_contents($file_name, $file)) {
+            throw new Exception('Failed to make a temporary plugin file');
         }
 
         // Extract file
