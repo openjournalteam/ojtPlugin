@@ -360,12 +360,16 @@ class OjtPageHandler extends Handler
                 $license = $pluginInstance->getSetting($this->contextId, 'licenseMain');
             }
 
-
             $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
             if (!$downloadLink) throw new Exception("There's a problem on the server, please try again later.");
 
+            // trying to install dependencies
+            foreach ($downloadLink['dependencies'] as $dependency) {
+                $ojtPlugin->installPlugin($dependency);
+            }
+            
             // trying to install plugin
-            $ojtPlugin->installPlugin($downloadLink);
+            $ojtPlugin->installPlugin($downloadLink['product']);
 
             $this->simulateRegisterModules($pluginToInstall);
 

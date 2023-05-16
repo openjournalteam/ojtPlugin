@@ -14,7 +14,7 @@ class OjtPlugin extends GenericPlugin
 {
     public $registeredModule;
 
-    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v2";
+    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
     const SERVICE_API = "https://sp.openjournaltheme.com/";
 
     public function register($category, $path, $mainContextId = null)
@@ -566,11 +566,20 @@ class OjtPlugin extends GenericPlugin
                     ]
                 );
 
-            $result = json_decode((string) $request->getBody(), true);
+            $response = json_decode((string) $request->getBody(), true);
 
-            if (isset($result['error']) && $result['error']) throw new Exception($result['msg']);
+            if (isset($response['error']) && $response['error']) throw new Exception($response['msg']);
 
-            return $result['data']['download_link'];
+            $result['product'] = $response['data']['download_link'];
+
+            $dependencies = [];
+            foreach ($response['data']['dependencies'] as $dependency) {
+                $dependencies[] = $dependency['download_link'];
+            }
+
+            $result['dependencies'] = $dependencies;
+
+            return $result;
         } catch (BadResponseException $e) {
             throw $e;
         } catch (Exception $e) {
