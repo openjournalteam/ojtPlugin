@@ -365,7 +365,13 @@ class OjtPageHandler extends Handler
 
             // trying to install dependencies
             foreach ($downloadLink['dependencies'] as $dependency) {
-                $ojtPlugin->installPlugin($dependency);
+                $indexDependency = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $dependency['folder'] . DIRECTORY_SEPARATOR . "index.php");
+                
+                if (!$fileManager->fileExists($indexDependency)) {
+                    $ojtPlugin->installPlugin($dependency['link']);
+                }
+
+                if (!$fileManager->fileExists($indexDependency)) throw new Exception("Index file dependency not found.");
             }
             
             // trying to install plugin

@@ -574,7 +574,9 @@ class OjtPlugin extends GenericPlugin
 
             $dependencies = [];
             foreach ($response['data']['dependencies'] as $dependency) {
-                $dependencies[] = $dependency['download_link'];
+                $data['link'] = $dependency['download_link']; 
+                $data['folder'] = $dependency['folder']; 
+                $dependencies[] = $data;
             }
 
             $result['dependencies'] = $dependencies;
