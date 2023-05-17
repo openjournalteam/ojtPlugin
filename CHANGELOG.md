@@ -1,3 +1,6 @@
+### 2.0.4.0 : 17 Mei 2023
+- Add modules dependencies
+
 ### 2.0.3.0 : 14 April 2023
 - Add control panel query string tab
 - Add toggleMainMenu
