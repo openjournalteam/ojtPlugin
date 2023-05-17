@@ -360,12 +360,22 @@ class OjtPageHandler extends Handler
                 $license = $pluginInstance->getSetting($this->contextId, 'licenseMain');
             }
 
-
             $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
             if (!$downloadLink) throw new Exception("There's a problem on the server, please try again later.");
 
+            // trying to install dependencies
+            foreach ($downloadLink['dependencies'] as $dependency) {
+                $indexDependency = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $dependency['folder'] . DIRECTORY_SEPARATOR . "index.php");
+                
+                if (!$fileManager->fileExists($indexDependency)) {
+                    $ojtPlugin->installPlugin($dependency['link']);
+                }
+
+                if (!$fileManager->fileExists($indexDependency)) throw new Exception("Index file dependency not found.");
+            }
+            
             // trying to install plugin
-            $ojtPlugin->installPlugin($downloadLink);
+            $ojtPlugin->installPlugin($downloadLink['product']);
 
             $this->simulateRegisterModules($pluginToInstall);
 
