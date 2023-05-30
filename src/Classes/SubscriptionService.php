@@ -62,7 +62,7 @@ class SubscriptionService
   {
     try {
       $response = $this->apiRequest(
-        'quota',
+        'quota'
       );
       if ($response['error']) {
         throw new Exception($response['message']);
@@ -77,7 +77,7 @@ class SubscriptionService
   public function checkRegistered()
   {
     $response = $this->apiRequest(
-      'check',
+      'check'
     );
     if ($response['error']) {
       throw new Exception($response['message']);
