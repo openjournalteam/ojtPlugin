@@ -39,7 +39,7 @@ const utama = () => {
     async init() {
       this.$store.checkUpdate.checkUpdate();
       await this.$store.plugins.init();
-      
+
       this.$nextTick(() => {
         autoAnimate(document.getElementById("plugin-menu-list"));
       });
@@ -93,23 +93,30 @@ const utama = () => {
         this.$refs.mobileMainMenu.focus();
       });
     },
-    toggleMainMenu(plugin, menu = 'Dashboard') {
+    toggleMainMenu(page, menu = "Dashboard") {
       this.menu = menu;
-      this.$store.plugins.page = plugin.page;
+      this.$store.plugins.page = page;
 
       switch (menu) {
-        case "Plugin": updateQueryString("tab", plugin.page); break;
-        default: removeQueryString("tab"); break;
+        case "Plugin":
+          updateQueryString("tab", page);
+          break;
+        default:
+          removeQueryString("tab");
+          break;
       }
     },
     async renderQueryTab() {
       const queryTab = new URLSearchParams(window.location.search).get("tab");
-      
+
       if (queryTab) {
         const activePlugins = Object.values(this.$store.plugins.activePlugins);
 
-        if (activePlugins.length >= 1 && activePlugins.find((plugin) => plugin.page == queryTab)) {
-          this.menu = 'Plugin';
+        if (
+          activePlugins.length >= 1 &&
+          activePlugins.find((plugin) => plugin.page == queryTab)
+        ) {
+          this.menu = "Plugin";
           await loadAjax(queryTab);
           this.$store.plugins.page = queryTab;
         }
