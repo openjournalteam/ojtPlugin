@@ -7,13 +7,19 @@ use OjtPlugin;
 
 class SubscriptionService
 {
+  public const SINGLE_JOURNAL = 'single_journal';
+  public const INSTITUTIONAL = 'institutional';
+
+  public $mode;
+
   protected $plugin;
   protected $baseUrl;
   protected $request;
 
-  public function __construct($plugin)
+  public function __construct($plugin, $mode = null)
   {
     $this->plugin = $plugin;
+    $this->mode = $mode ?? static::SINGLE_JOURNAL;
   }
 
   public function getSubscriptionApi($method = '')
@@ -25,7 +31,6 @@ class SubscriptionService
   {
     return new static($plugin);
   }
-
 
   public function register($token)
   {
@@ -120,7 +125,16 @@ class SubscriptionService
 
   public function getClient()
   {
-    return $this->getOjtPlugin()->getHttpClient();
+    $headers = [
+      'product_name' => $this->plugin->getName(),
+      'subscription_mode' => $this->mode,
+    ];
+
+    if (method_exists($this->plugin, 'getPluginVersion')) {
+      $headers['product_version'] = $this->plugin->getPluginVersion();
+    }
+
+    return $this->getOjtPlugin()->getHttpClient($headers);
   }
 
   protected function &getRequest()
@@ -131,12 +145,26 @@ class SubscriptionService
     return $this->request;
   }
 
+  /**
+   * Ada 2 mode yang akan disediakan untuk system subscription ini.
+   * Disaat SINGLE_JOURNAL mode aktif, maka kuota akan terscope hanya ke single journal tersebut.
+   * Disaat INSTITUTIONAL aktif, maka kuota akan bisa digunakan oleh semua journal yang ada didalam 1 OJS. 
+   * 
+   * Semisal mode SINGLE_JURNAL maka base url yg akan digenerate adalah http://ojs.test/index.php/jcb
+   * Semisal mode INSTITUTIONAL maka base url yg akan digenerate adalah http://ojs.test/index.php
+   */
   protected function getBaseUrl()
   {
-    if (!$this->baseUrl) {
-      $this->baseUrl = $this->getRequest()->getDispatcher()->url($this->getRequest(), ROUTE_PAGE, $this->getRequest()->getContext()->getPath());
+    switch ($this->mode) {
+      case static::SINGLE_JOURNAL:
+        return $this->getRequest()->getDispatcher()->url($this->getRequest(), ROUTE_PAGE, $this->getRequest()->getContext()->getPath());
+        break;
+      case static::INSTITUTIONAL:
+        return $this->getRequest()->getBaseUrl();
+      default:
+        throw new Exception('Unknown subscription mode');
+        break;
     }
-    return $this->baseUrl;
   }
 
   protected function getRequiredPayload()

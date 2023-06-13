@@ -56,7 +56,7 @@
             <div x-show="open" class="ojt-gap-2 ojt-flex ojt-flex-col" role="menu" id="plugin-menu-list">
               <template x-for="(plugin, index) in $store.plugins.activePlugins" :key="plugin.className">
                 <button x-show="plugin.enabled && plugin?.page" role="button"
-                  @click="toggleMainMenu(plugin, 'Plugin')" role="menuitem" :class="{ 
+                  @click="toggleMainMenu(plugin.page, 'Plugin')" role="menuitem" :class="{ 
                               'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50': $store.plugins.page == plugin.page,
                               'ojt-text-gray-500' : $store.plugins.page != plugin.page
                               }" :page="plugin.page" :id="`plugin-menu-item-${ plugin.page }`"
@@ -207,7 +207,7 @@
           <div
             class="ojt-bg-white ojt-mt-4 ojt-flex ojt-flex-col lg:ojt-flex-row lg:ojt-items-center lg:ojt-justify-between ojt-p-2 ojt-border-t ojt-py-4">
             <div>
-              Copyright © 2022 <a href="https://openjournaltheme.com" target="_blank"
+              Copyright © {date('Y')} <a href="https://openjournaltheme.com" target="_blank"
                 class="ojt-font-bold hover:ojt-text-purple-600 hover:ojt-text-underline">Open Journal Theme</a>. All
               rights reserved.
             </div>
