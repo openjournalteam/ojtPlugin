@@ -22,21 +22,35 @@ class SubscriptionService
     $this->mode = $mode ?? static::SINGLE_JOURNAL;
   }
 
+  public function getModeLabel($mode = null)
+  {
+    $mode = $mode ?? $this->mode;
+
+    switch ($mode) {
+      case static::SINGLE_JOURNAL:
+        return 'Single Journal';
+        break;
+      case static::INSTITUTIONAL:
+        return 'Institutional';
+        break;
+    }
+
+    throw new Exception('Unknown subscription mode');
+  }
+
   public function getSubscriptionApi($method = '')
   {
     return OjtPlugin::SERVICE_API . 'api/v2/subscription/' . $method;
   }
 
-  public static function init($plugin)
+  public static function init($plugin, $mode = null)
   {
-    return new static($plugin);
+    return new static($plugin, $mode);
   }
 
   public function register($token)
   {
     try {
-      $plugin = $this->getPlugin();
-
       $response = $this->apiRequest(
         'register',
         ['token' => $token]
@@ -46,8 +60,7 @@ class SubscriptionService
         throw new Exception($response['message']);
       }
 
-      $plugin->updateSetting(
-        $plugin->getCurrentContextId(),
+      $this->updateSetting(
         'quota',
         $response['quota']
       );
@@ -58,6 +71,44 @@ class SubscriptionService
     }
 
     return $response;
+  }
+
+  public function updateSetting($key, $value)
+  {
+    switch ($this->mode) {
+      case static::SINGLE_JOURNAL:
+        $contextId = $this->plugin->getCurrentContextId();
+        break;
+      case static::INSTITUTIONAL:
+        $contextId = CONTEXT_SITE;
+        break;
+      default:
+        throw new Exception('Unknown subscription mode');
+        break;
+    }
+
+    return $this->plugin->updateSetting(
+      $contextId,
+      $key,
+      $value
+    );
+  }
+
+  public function getSetting($key, $default = null)
+  {
+    switch ($this->mode) {
+      case static::SINGLE_JOURNAL:
+        $contextId = $this->plugin->getCurrentContextId();
+        break;
+      case static::INSTITUTIONAL:
+        $contextId = CONTEXT_SITE;
+        break;
+      default:
+        throw new \Exception('Unknown subscription mode');
+        break;
+    }
+
+    return $this->plugin->getSetting($contextId, $key) ?? $default;
   }
 
   /**
@@ -153,7 +204,7 @@ class SubscriptionService
    * Semisal mode SINGLE_JURNAL maka base url yg akan digenerate adalah http://ojs.test/index.php/jcb
    * Semisal mode INSTITUTIONAL maka base url yg akan digenerate adalah http://ojs.test/index.php
    */
-  protected function getBaseUrl()
+  public function getBaseUrl()
   {
     switch ($this->mode) {
       case static::SINGLE_JOURNAL:
