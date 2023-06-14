@@ -65,6 +65,11 @@ class SubscriptionService
         $response['quota']
       );
 
+      $this->updateSetting(
+        'registered',
+        1
+      );
+
       return $response;
     } catch (\Throwable $th) {
       throw $th;
@@ -135,11 +140,27 @@ class SubscriptionService
     $response = $this->apiRequest(
       'check'
     );
+
+
     if ($response['error']) {
       throw new Exception($response['message']);
     }
 
     return $response;
+  }
+
+  public function isRegistered()
+  {
+    if ($this->getSetting('registered')) {
+      return true;
+    }
+
+    $isRegisteredOnSp = $this->checkRegistered()['exists'];
+    if ($isRegisteredOnSp) {
+      $this->updateSetting('registered', $isRegisteredOnSp);
+    }
+
+    return $isRegisteredOnSp;
   }
 
   protected function getPlugin()
