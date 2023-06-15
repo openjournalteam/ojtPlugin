@@ -116,10 +116,7 @@ class SubscriptionService
     return $this->plugin->getSetting($contextId, $key) ?? $default;
   }
 
-  /**
-   * TODO add api to check quota
-   */
-  public function getQuota()
+  public function quota()
   {
     try {
       $response = $this->apiRequest(
@@ -133,6 +130,21 @@ class SubscriptionService
     } catch (\Throwable $th) {
       throw $th;
     }
+  }
+
+  public function refreshQuota()
+  {
+    $response = $this->quota();
+    $this->updateSetting('quota', $response['quota']);
+  }
+
+  public function getQuota($refreshQuota = false)
+  {
+    if ($refreshQuota) {
+      $this->refreshQuota();
+    }
+
+    return $this->getSetting('quota');
   }
 
   public function checkRegistered()
@@ -155,12 +167,14 @@ class SubscriptionService
       return true;
     }
 
-    $isRegisteredOnSp = $this->checkRegistered()['exists'];
-    if ($isRegisteredOnSp) {
-      $this->updateSetting('registered', $isRegisteredOnSp);
+    $response = $this->checkRegistered();
+    $isRegisteredOnServer = $response['exists'];
+    if ($isRegisteredOnServer) {
+      $this->updateSetting('registered', $isRegisteredOnServer);
+      $this->updateSetting('quota', $response['quota']);
     }
 
-    return $isRegisteredOnSp;
+    return $isRegisteredOnServer;
   }
 
   protected function getPlugin()
