@@ -1,7 +1,15 @@
+### 2.0.5.0 : 15 Juni 2023
+
+- Change color theme in Setting Page
+- New API Subscription Service
+- Fix bug side bar navigation not active on the right plugin
+
 ### 2.0.4.0 : 17 Mei 2023
+
 - Add modules dependencies
 
 ### 2.0.3.0 : 14 April 2023
+
 - Add control panel query string tab
 - Add toggleMainMenu
 
@@ -53,5 +61,3 @@
 ### 1.0.0 : 30 Mei 2021
 
 - First Release
-
-
