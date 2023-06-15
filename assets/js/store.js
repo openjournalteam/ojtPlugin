@@ -225,9 +225,9 @@ Spruce.store(
 Spruce.store(
   "themes",
   {
-    active: "default",
+    active: "purple",
     list: {
-      default: "#a855f7",
+      purple: "#a855f7",
       amber: "#f59e0b",
       lime: "#84cc16",
       green: "#22c55e",

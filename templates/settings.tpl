@@ -1,5 +1,4 @@
 <div class="ojt-w-auto ojt-max-w-screen-lg 2xl:ojt-mx-auto ojt-bg-white ojt-rounded-lg ojt-border ojt-shadow-md">
-
   <div id="ojt-settings" class="ojt-p-4 ojt-bg-white ojt-rounded-lg md:ojt-p-8">
     <div class="ojt-flex ojt-items-center ojt-justify-between ojt-mb-6">
       <h2
@@ -12,27 +11,95 @@
         Settings
       </h2>
     </div>
-    <form x-data='settingForm({$settings|@json_encode})' method="POST">
-      <div class="ojt-mb-6">
-        <div class="ojt-flex ojt-items-center">
-          <input id="default-checkbox" type="checkbox" x-model="data.enable_diagnostic"
-            class="ojt-w-4 ojt-h-4 ojt-text-primary-600 ojt-bg-gray-100 ojt-border-gray-300 ojt-rounded focus:ojt-ring-primary-500 dark:focus:ojt-ring-primary-600 dark:ojt-ring-offset-gray-800 focus:ojt-ring-2 dark:ojt-bg-gray-700 dark:ojt-border-gray-600">
-          <div class="ojt-ml-2">
-            <label class="ojt-text-sm ojt-font-medium ojt-text-gray-900 dark:ojt-text-gray-300">Enable
-              Diagnostics</label>
-            <p class="ojt-text-xs">
-              Help us fix things and improve OJT Products and services. Send diagnostics data (error log) to Open
-              Journal Theme.
-            </p>
+    <section>
+      <div class="ojt-items-center">
+        <div class="ojt-justify-center ojt-w-full">
+          <div class="ojt-justify-start ojt-w-full ojt-text-left">
+            <div x-data="{ tab: 'tab1' }">
+              <ul class="ojt-flex ojt-gap-3 ojt-mt-6 ojt-space-x-4 ojt-text-gray-600 ojt-border-b" id="settings-tab">
+                <li class="ojt--mb-px">
+                  <!-- event handler set state to 'tab1' and add conditional :class for active state -->
+                  <a @click.prevent="tab = 'tab1'" href="#"
+                    class="ojt-inline-block ojt-py-2 ojt-font-medium ojt-bg-white ojt-text-primary-500 ojt-border-b-2 ojt-border-primary-500 ojt-gap-4"
+                    :class="{ ' ojt-bg-white ojt-text-primary-500 ojt-border-b-2 ojt-border-primary-500' : tab === 'tab1' }">
+                    <span>General</span>
+                  </a>
+                </li>
+                <li class="ojt--mb-px">
+                  <!-- event handler set state to 'tab1' and add conditional :class for active state -->
+                  <a @click.prevent="tab = 'tab2'" href="#"
+                    class="ojt-inline-block ojt-py-2 ojt-font-medium ojt-bg-white ojt-text-primary-500 ojt-border-b-2 ojt-border-primary-500 ojt-gap-4"
+                    :class="{ ' ojt-bg-white ojt-text-primary-500 ojt-border-b-2 ojt-border-primary-500' : tab === 'tab2' }">
+                    <span>Theme</span>
+                  </a>
+                </li>
+              </ul>
+              <div class="ojt-py-4 ojt-pt-4 ojt-text-left ojt-bg-white ojt-content" id="settings-tab-content">
+                {* <!-- show tab1 only -->
+                <div x-show="tab==='tab1'" class="ojt-text-gray-500">
+                  <main>
+                    <!-- === Remove and replace with your own content... === -->
+                    Content
+                    <!-- === End ===  -->
+                  </main>
+                </div> *}
+                <!-- show tab1 only -->
+                <div x-show="tab==='tab1'" class="ojt-text-gray-500">
+                  <main>
+                    <!-- === Remove and replace with your own content... === -->
+                    <form x-data='settingForm({$settings|@json_encode})' method="POST">
+                      <div class="ojt-mb-6">
+                        <div class="ojt-flex ojt-items-center">
+                          <input id="default-checkbox" type="checkbox" x-model="data.enable_diagnostic"
+                            class="ojt-w-4 ojt-h-4 ojt-text-primary-600 ojt-bg-gray-100 ojt-border-gray-300 ojt-rounded focus:ojt-ring-primary-500 dark:focus:ojt-ring-primary-600 dark:ojt-ring-offset-gray-800 focus:ojt-ring-2 dark:ojt-bg-gray-700 dark:ojt-border-gray-600">
+                          <div class="ojt-ml-2">
+                            <label class="ojt-text-sm ojt-font-medium ojt-text-gray-900 dark:ojt-text-gray-300">Enable
+                              Diagnostics</label>
+                            <p class="ojt-text-xs">
+                              Help us fix things and improve OJT Products and services. Send diagnostics data (error
+                              log) to Open
+                              Journal Theme.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button type="submit" @click.prevent="submit" :disabled="loading"
+                        class="ojt-text-white ojt-bg-primary-700 hover:ojt-bg-primary-800 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-primary-300 ojt-font-medium ojt-rounded-lg ojt-text-sm ojt-w-full sm:ojt-w-auto ojt-px-4 ojt-py-2 ojt-text-center disabled:ojt-opacity-75">
+                        Submit
+                      </button>
+                    </form>
+                    <!-- === End ===  -->
+                  </main>
+                </div>
+                <div x-show="tab==='tab2'" class="ojt-text-gray-500">
+                  <main>
+                    <ul class="ojt-grid ojt-w-full ojt-gap-6 md:ojt-grid-cols-4">
+                      <template x-for="(color, index) in Object.keys($store.themes.list)" :key="index">
+                        <li :data-theme="color">
+                          <input type="radio" :id="'color-' + color" name="color" :value="color"
+                            x-model="$store.themes.active" class="ojt-hidden ojt-peer" required>
+                          <label :for="'color-' + color"
+                            class="ojt-inline-flex ojt-items-center ojt-justify-between ojt-w-full ojt-p-5 ojt-text-primary-500 ojt-bg-white ojt-border ojt-border-gray-200 ojt-rounded-lg ojt-cursor-pointer peer-checked:ojt-bg-primary-600 peer-checked:ojt-text-white hover:ojt-text-primary-600 hover:ojt-bg-primary-100 hover:ojt-border-primary-400 ojt-transition-all">
+                            <div class="ojt-block">
+                              <div class="ojt-w-full ojt-text-lg ojt-font-semibold ojt-capitalize" x-text="color"></div>
+                            </div>
+                          </label>
+                        </li>
+                      </template>
+
+                    </ul>
+
+                  </main>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+    </section>
 
-      <button type="submit" @click.prevent="submit" :disabled="loading"
-        class="ojt-text-white ojt-bg-primary-700 hover:ojt-bg-primary-800 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-primary-300 ojt-font-medium ojt-rounded-lg ojt-text-sm ojt-w-full sm:ojt-w-auto ojt-px-4 ojt-py-2 ojt-text-center disabled:ojt-opacity-75">
-        Submit
-      </button>
-    </form>
+
   </div>
 </div>
 

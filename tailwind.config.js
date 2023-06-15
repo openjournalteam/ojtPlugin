@@ -130,6 +130,11 @@ module.exports = {
           primary: colors.sky,
         },
       },
+      '[data-theme="purple"]': {
+        colors: {
+          primary: colors.purple,
+        },
+      },
     },
   },
   plugins: [
