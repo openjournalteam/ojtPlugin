@@ -1,12 +1,14 @@
 {
-    "name": "openjournalteam/ojtplugin",
+    "name": "openjournalteam/ojtcontrolpanel",
     "autoload": {
+        "files": [
+            "helpers/helper.php"
+        ],
         "psr-4": {
             "Openjournalteam\\OjtPlugin\\": "src/"
         }
     },
     "require": {
-        "guzzlehttp/guzzle": "^7.5",
         "monolog/monolog": "^2.8"
     },
     "optimize-autoloader": true
