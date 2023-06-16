@@ -1,6 +1,6 @@
 <?php
-import('plugins.generic.ojtPlugin.OjtPlugin');
 
+use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
 use Illuminate\Http\Client\PendingRequest as Http;
 
 /**
@@ -14,7 +14,7 @@ if (!function_exists('getPluginDetail')) {
         if (!is_object($plugin)) {
             return [];
         }
-        $request = app(Http::class)->get(OjtPlugin::API . '/product/list');
+        $request =  app(Http::class)->get(OjtControlPanelPlugin::API . '/product/list');
         if (!$request->failed()) {
             $plugins = $request->json();
             $pluginKey = array_search(basename($plugin->getPluginPath()), array_column($plugins, 'folder'));

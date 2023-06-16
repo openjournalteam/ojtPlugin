@@ -1,9 +1,11 @@
 <?php
 
-namespace Openjournalteam\OjtPlugin\Classes;
+namespace APP\plugins\generic\ojtControlPanel\classes;
 
+use APP\core\Application;
+use APP\core\Request;
+use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
 use Exception;
-use OjtPlugin;
 
 class SubscriptionService
 {
@@ -40,7 +42,7 @@ class SubscriptionService
 
   public function getSubscriptionApi($method = '')
   {
-    return OjtPlugin::SERVICE_API . 'api/v2/subscription/' . $method;
+    return OjtControlPanelPlugin::SERVICE_API . 'api/v2/subscription/' . $method;
   }
 
   public static function init($plugin, $mode = null)
@@ -85,7 +87,7 @@ class SubscriptionService
         $contextId = $this->plugin->getCurrentContextId();
         break;
       case static::INSTITUTIONAL:
-        $contextId = CONTEXT_SITE;
+        $contextId = Application::CONTEXT_SITE;
         break;
       default:
         throw new Exception('Unknown subscription mode');
@@ -106,7 +108,7 @@ class SubscriptionService
         $contextId = $this->plugin->getCurrentContextId();
         break;
       case static::INSTITUTIONAL:
-        $contextId = CONTEXT_SITE;
+        $contextId = Application::CONTEXT_SITE;
         break;
       default:
         throw new \Exception('Unknown subscription mode');
@@ -182,9 +184,9 @@ class SubscriptionService
     return $this->plugin;
   }
 
-  protected function getOjtPlugin()
+  protected function getOjtControlPanelPlugin(): OjtControlPanelPlugin
   {
-    return \OjtPlugin::get();
+    return OjtControlPanelPlugin::get();
   }
 
   protected function apiRequest($method, $payload = [], $asJson = true)
@@ -220,15 +222,12 @@ class SubscriptionService
       $headers['product_version'] = $this->plugin->getPluginVersion();
     }
 
-    return $this->getOjtPlugin()->getHttpClient($headers);
+    return $this->getOjtControlPanelPlugin()->getHttpClient($headers);
   }
 
-  protected function &getRequest()
+  protected function &getRequest(): Request
   {
-    if (!$this->request) {
-      $this->request = &\Registry::get('request');
-    }
-    return $this->request;
+    return Application::get()->getRequest();
   }
 
   /**
@@ -243,7 +242,7 @@ class SubscriptionService
   {
     switch ($this->mode) {
       case static::SINGLE_JOURNAL:
-        return $this->getRequest()->getDispatcher()->url($this->getRequest(), ROUTE_PAGE, $this->getRequest()->getContext()->getPath());
+        return $this->getRequest()->getDispatcher()->url($this->getRequest(), Application::ROUTE_PAGE, $this->getRequest()->getContext()->getPath());
         break;
       case static::INSTITUTIONAL:
         return $this->getRequest()->getBaseUrl();

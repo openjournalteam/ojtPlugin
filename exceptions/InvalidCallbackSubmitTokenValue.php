@@ -1,6 +1,6 @@
 <?php
 
-namespace Openjournalteam\OjtPlugin\Exceptions;
+namespace APP\plugins\generic\ojtControlPanel\exceptions;
 
 class InvalidCallbackSubmitTokenValue extends \Exception
 {

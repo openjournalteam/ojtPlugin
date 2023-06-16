@@ -1,3 +1,8 @@
+### 3.0.0.0 : 17 Juni 2023
+
+- Support for OJS 3.4.x.x
+- Removed support for OJS 3.3.x.x and below
+
 ### 2.0.5.0 : 15 Juni 2023
 
 - Change color theme in Setting Page

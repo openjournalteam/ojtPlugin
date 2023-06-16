@@ -1,6 +1,6 @@
 <?php
 
-namespace Openjournalteam\OjtPlugin\Classes;
+namespace APP\plugins\generic\ojtControlPanel\classes;
 
 class ParamHandler
 {

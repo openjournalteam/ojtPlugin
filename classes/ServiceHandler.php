@@ -1,9 +1,10 @@
 <?php
 
-namespace Openjournalteam\OjtPlugin\Classes;
+namespace APP\plugins\generic\ojtControlPanel\classes;
 
+use APP\core\Application;
+use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
 use Monolog\Handler\AbstractProcessingHandler;
-use OjtPlugin;
 
 class ServiceHandler extends AbstractProcessingHandler
 {
@@ -12,14 +13,14 @@ class ServiceHandler extends AbstractProcessingHandler
 
     try {
       $url = 'https://sp.openjournaltheme.com/api/v1/report';
-      $ojtPlugin = OjtPlugin::get();
+      $ojtPlugin = OjtControlPanelPlugin::get();
       if (!$ojtPlugin->isAllowSendLog() || getcwd() == '/') {
         // if (false || getcwd() == '/') {
         return;
       }
 
-      $request = &\Registry::get('request');
-      $logFile = OjtPlugin::getErrorLogFile();
+      $request = Application::get()->getRequest();
+      $logFile = OjtControlPanelPlugin::getErrorLogFile();
       $multipart = [
         [
           'name' => 'name',
@@ -47,7 +48,7 @@ class ServiceHandler extends AbstractProcessingHandler
         ],
         [
           'name' => 'journal_url',
-          'contents' => $ojtPlugin->getBaseUrl()
+          'contents' => $request->getBaseUrl()
         ]
       ];
 
@@ -72,10 +73,10 @@ class ServiceHandler extends AbstractProcessingHandler
 
 
 
-      OjtPlugin::deleteLogFile();
+      OjtControlPanelPlugin::deleteLogFile();
     } catch (\Throwable $th) {
     }
 
-    $ojtPlugin->updateSetting(CONTEXT_SITE, 'lastSendLogTime', time());
+    $ojtPlugin->updateSetting(Application::CONTEXT_SITE, 'lastSendLogTime', time());
   }
 }

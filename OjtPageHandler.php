@@ -1,15 +1,22 @@
 <?php
 
-use GuzzleHttp\Exception\BadResponseException;
+namespace APP\plugins\generic\ojtControlPanel;
 
-import('classes.handler.Handler');
-import('plugins.generic.ojtPlugin.helpers.OJTHelper');
-import('lib.pkp.classes.plugins.Plugin');
+use APP\core\Application;
+use APP\file\PublicFileManager;
+use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
+use GuzzleHttp\Exception\BadResponseException;
+use APP\handler\Handler;
+use APP\template\TemplateManager;
+use PKP\db\DAORegistry;
+use PKP\file\FileManager;
+use PKP\plugins\Plugin;
+use PKP\plugins\PluginSettingsDAO;
+use PKP\site\VersionCheck;
 
 class OjtPageHandler extends Handler
 {
-    /** @var OjtPlugin  */
-    public $ojtPlugin;
+    public OjtControlPanelPlugin $ojtPlugin;
     public $contextId;
     public $baseUrl;
 
@@ -19,8 +26,7 @@ class OjtPageHandler extends Handler
             $request->redirect(null, 'login', null, null);
         }
 
-        $this->ojtPlugin = OjtPlugin::get();
-
+        $this->ojtPlugin = OjtControlPanelPlugin::get();
         $this->contextId = $this->ojtPlugin->getCurrentContextId();
         $this->baseUrl = $this->ojtPlugin->getJournalURL();
     }
@@ -35,7 +41,7 @@ class OjtPageHandler extends Handler
         // trying to install plugin
         try {
             $plugin->updatePanel($url);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
             return showJson($json);
@@ -55,10 +61,9 @@ class OjtPageHandler extends Handler
         $templateMgr            = TemplateManager::getManager($request);
 
         $publicFileManager = new PublicFileManager();
-
         $publicFolder      = ($plugin->getJournalVersion() > '31')
             ? $baseUrl . $publicFileManager->getContextFilesPath($this->contextId) . '/'
-            : $baseUrl . $publicFileManager->getContextFilesPath(ASSOC_TYPE_JOURNAL, $this->contextId) . '/';
+            : $baseUrl . $publicFileManager->getContextFilesPath(Application::ASSOC_TYPE_JOURNAL, $this->contextId) . '/';
 
         $ojtPlugin                                  = new \stdClass;
         $ojtPlugin->api                             = $plugin->apiUrl() . '/product/';
@@ -73,7 +78,6 @@ class OjtPageHandler extends Handler
         $ojtPlugin->fontAwesomeCss                  = $this->getPluginFullUrl('assets/vendors/font-awesome-5/css/all.min.css');
         $ojtPlugin->sweetAlertCss                   = $this->getPluginFullUrl('assets/vendors/sweetalert/sweetalert2.min.css');
         $ojtPlugin->pageName                        = 'ojt';
-
         $ojtPlugin->javascript  = [
             $request->getBaseUrl() . '/lib/pkp/lib/vendor/components/jquery/jquery.min.js',
             $this->getPluginFullUrl('assets/vendors/sweetalert/sweetalert2.all.min.js'),
@@ -91,6 +95,7 @@ class OjtPageHandler extends Handler
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
         $templateMgr->assign('journal', $this->contextId ? $request->getContext() : $request->getSite());
+
         $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
         $templateMgr->assign('pluginInstalledHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl')));
 
@@ -118,7 +123,7 @@ class OjtPageHandler extends Handler
 
     public function saveSettings($args, $request)
     {
-        $this->ojtPlugin->updateSetting(CONTEXT_SITE, 'enable_diagnostic', filter_var($request->getUserVar('enable_diagnostic'), FILTER_VALIDATE_BOOLEAN));
+        $this->ojtPlugin->updateSetting(Application::CONTEXT_SITE, 'enable_diagnostic', filter_var($request->getUserVar('enable_diagnostic'), FILTER_VALIDATE_BOOLEAN));
 
         $json['error'] = 0;
         $json['msg']   = 'Save Success';
@@ -129,9 +134,24 @@ class OjtPageHandler extends Handler
     {
         $file = $this->ojtPlugin->getErrorLogFile();
 
+        if (!file_exists($file)) {
+            // create empty file
+            file_put_contents($file, '');
+        }
+
         $fileManager = new FileManager();
 
         return $fileManager->downloadByPath($file);
+    }
+
+    public function clearLog($args, $request)
+    {
+        $this->ojtPlugin->deleteLogFile();
+
+        return showJson([
+            'error' => 0,
+            'msg' => 'Log file has been deleted.'
+        ]);
     }
 
     public function reportBug($args, $request)
@@ -152,7 +172,7 @@ class OjtPageHandler extends Handler
 
             $params = $request->getUserVars();
             $files = $this->reArrayFiles($_FILES['pictures']);
-            $logFile = OjtPlugin::getErrorLogFile();
+            $logFile = OjtControlPanelPlugin::getErrorLogFile();
             $multipart = [];
             foreach ($params as $key => $value) {
                 $multipart[] = [
@@ -225,8 +245,7 @@ class OjtPageHandler extends Handler
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url);
             $json = json_decode((string) $response->getBody(), true);
-            $json['updateAvailable'] = version_compare($this->ojtPlugin->getPluginVersion(), $json['latest_version']) == -1;
-
+            $json['updateAvailable'] = version_compare($this->ojtPlugin->getPluginVersion(), $json['latest_version'], '<');
             return showJson($json);
         } catch (\Throwable $th) {
             return showJson([
@@ -268,6 +287,8 @@ class OjtPageHandler extends Handler
             $response = $this->ojtPlugin->getHttpClient()->get($url, $params);
 
             $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
+            /** @var PluginSettingsDAO $pluginSettingsDao */
+
             $ojtplugin = $this->ojtPlugin;
             $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao) {
                 $pluginFolder = $plugin['folder'];
@@ -287,7 +308,7 @@ class OjtPageHandler extends Handler
 
                 return $plugin;
             }, json_decode((string) $response->getBody(), true));
-            if (!$plugins) throw new Exception("Couldn't connect to Server, please try again.");
+            if (!$plugins) throw new \Exception("Couldn't connect to Server, please try again.");
 
             return showJson($plugins);
         } catch (\Throwable $th) {
@@ -309,7 +330,7 @@ class OjtPageHandler extends Handler
         }
 
         $json['error']  = 0;
-        $json['msg']    = 'Sukses';
+        $json['msg']    = 'Success Updating Settings.';
         return showJson($json);
     }
 
@@ -361,25 +382,25 @@ class OjtPageHandler extends Handler
             }
 
             $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
-            if (!$downloadLink) throw new Exception("There's a problem on the server, please try again later.");
+            if (!$downloadLink) throw new \Exception("There's a problem on the server, please try again later.");
 
             // trying to install dependencies
             foreach ($downloadLink['dependencies'] as $dependency) {
                 $indexDependency = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $dependency['folder'] . DIRECTORY_SEPARATOR . "index.php");
-                
+
                 if (!$fileManager->fileExists($indexDependency)) {
                     $ojtPlugin->installPlugin($dependency['link']);
                 }
 
-                if (!$fileManager->fileExists($indexDependency)) throw new Exception("Index file dependency not found.");
+                if (!$fileManager->fileExists($indexDependency)) throw new \Exception("Index file dependency not found.");
             }
-            
+
             // trying to install plugin
             $ojtPlugin->installPlugin($downloadLink['product']);
 
             $this->simulateRegisterModules($pluginToInstall);
 
-            if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
+            if (!$fileManager->fileExists($indexFile)) throw new \Exception("Index file not found.");
 
             $pluginInstance         = $pluginInstance ?? include($indexFile);
             // Applying input license to plugin setting  
@@ -391,7 +412,7 @@ class OjtPageHandler extends Handler
             $json['error']  = 0;
             $json['msg']    =  !$update ? 'Plugin Installed' : 'Plugin Updated';
             return showJson($json);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
             return showJson($json);
@@ -425,7 +446,7 @@ class OjtPageHandler extends Handler
             }
         });
 
-        if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
+        if (!$fileManager->fileExists($indexFile)) throw new \Exception("Index file not found.");
 
         $plugin         = include($indexFile);
     }
@@ -434,7 +455,8 @@ class OjtPageHandler extends Handler
     {
         $pluginName = is_array($args) ? $args[0] : $args;
 
-        $pluginSettingsDao = \DAORegistry::getDAO('PluginSettingsDAO');
+        $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
+        /** @var PluginSettingsDAO $pluginSettingsDao */
         $pluginName = strtolower_codesafe($pluginName);
 
         $cache = $pluginSettingsDao->_getCache($this->contextId, $pluginName);
@@ -467,7 +489,7 @@ class OjtPageHandler extends Handler
         // trying to remove plugin
         try {
             $plugin->uninstallPlugin($removePlugin);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
             showJson($json);

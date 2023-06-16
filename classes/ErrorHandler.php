@@ -1,9 +1,9 @@
 <?php
 
-namespace Openjournalteam\OjtPlugin\Classes;
+namespace APP\plugins\generic\ojtControlPanel\classes;
 
+use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
 use Monolog\ErrorHandler as MonologErrorHandler;
-use OjtPlugin;
 
 class ErrorHandler extends MonologErrorHandler
 {
@@ -17,7 +17,7 @@ class ErrorHandler extends MonologErrorHandler
     if ($code !== E_ERROR) return true;
 
     if ($this->isTimeToDeleteLog()) {
-      OjtPlugin::deleteLogFile();
+      OjtControlPanelPlugin::deleteLogFile();
     };
 
     parent::handleError($code, $message, $file, $line, $context);
@@ -27,7 +27,7 @@ class ErrorHandler extends MonologErrorHandler
 
   protected function isTimeToDeleteLog($days = 2)
   {
-    $errorLogFile = OjtPlugin::getErrorLogFile();
+    $errorLogFile = OjtControlPanelPlugin::getErrorLogFile();
 
     if (!is_file($errorLogFile)) return false;
 

@@ -1,16 +1,39 @@
 <?php
 
-import('lib.pkp.classes.plugins.GenericPlugin');
-import('plugins.generic.ojtPlugin.helpers.OJTHelper');
+namespace APP\plugins\generic\ojtControlPanel;
 
+use APP\core\Application;
+use APP\plugins\generic\ojtControlPanel\classes\ErrorHandler;
+use APP\plugins\generic\ojtControlPanel\classes\ParamHandler;
+use APP\plugins\generic\ojtControlPanel\classes\ServiceHandler;
+use APP\template\TemplateManager;
+use Exception;
+use FilesystemIterator;
 use GuzzleHttp\Exception\BadResponseException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
-use Openjournalteam\OjtPlugin\Classes\ParamHandler;
-use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
+use PKP\cache\CacheManager;
+use PKP\config\Config;
+use PKP\db\DAORegistry;
+use PKP\file\FileManager;
+use PKP\linkAction\LinkAction;
+use PKP\linkAction\request\OpenWindowAction;
+use PKP\plugins\GenericPlugin;
+use PKP\plugins\Hook;
+use PKP\plugins\Plugin;
+use PKP\plugins\PluginRegistry;
+use PKP\plugins\ThemePlugin;
+use PKP\security\Role;
+use PKP\site\VersionCheck;
+use PKP\site\VersionDAO;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use RuntimeException;
+use ZipArchive;
 
-class OjtPlugin extends GenericPlugin
+require_once(dirname(__FILE__) . '/vendor/autoload.php');
+
+class OjtControlPanelPlugin extends GenericPlugin
 {
     public $registeredModule;
 
@@ -27,12 +50,11 @@ class OjtPlugin extends GenericPlugin
                 $this->createModulesFolder();
                 $this->registerModules();
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
-                HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
-                HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
-                HookRegistry::register('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
-                HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
+                Hook::add('LoadHandler', [$this, 'setPageHandler']);
+                Hook::add('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
+                Hook::add('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
+                Hook::add('TemplateManager::display', [$this, 'addHeader']);
             }
-
 
             return true;
         }
@@ -52,7 +74,7 @@ class OjtPlugin extends GenericPlugin
 
     public static function get()
     {
-        $plugin = PluginRegistry::getPlugin('generic', 'ojtPlugin');
+        $plugin = PluginRegistry::getPlugin('generic', 'OjtControlPanelPlugin');
         if (!$plugin) return new static();
 
         return $plugin;
@@ -61,7 +83,7 @@ class OjtPlugin extends GenericPlugin
     public function isAllowSendLog($hour = 4)
     {
         $now = time();
-        $lastSendLogTime = $this->getSetting(CONTEXT_SITE, 'lastSendLogTime');
+        $lastSendLogTime = $this->getSetting(Application::CONTEXT_SITE, 'lastSendLogTime');
         if ($lastSendLogTime === null) {
             return true;
         }
@@ -75,6 +97,7 @@ class OjtPlugin extends GenericPlugin
     {
 
         $versionDao = DAORegistry::getDAO('VersionDAO');
+        /** @var VersionDAO $versionDao */
         $version    = $versionDao->getCurrentVersion();
         $agents = [
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
@@ -122,7 +145,7 @@ class OjtPlugin extends GenericPlugin
         $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $errorPluginFolder;
         try {
             if (!is_dir($path)) {
-                throw new \Exception("$path is not directory");
+                throw new Exception("$path is not directory");
                 return;
             }
             $this->recursiveDelete($path);
@@ -210,13 +233,13 @@ class OjtPlugin extends GenericPlugin
         $templateMgr = TemplateManager::getManager($this->getRequest());
         $dispatcher = $request->getDispatcher();
         $router = $request->getRouter();
-        $userRoles = (array) $router->getHandler()->getAuthorizedContextObject(ASSOC_TYPE_USER_ROLES);
-        if (!$request->getUser() || !count(array_intersect([ROLE_ID_MANAGER, ROLE_ID_SITE_ADMIN], $userRoles))) return;
+        $userRoles = (array) $router->getHandler()->getAuthorizedContextObject(Application::ASSOC_TYPE_USER_ROLES);
+        if (!$request->getUser() || !count(array_intersect([Role::ROLE_ID_MANAGER, Role::ROLE_ID_SITE_ADMIN], $userRoles))) return;
 
         $menu = $templateMgr->getState('menu');
         $menu['ojtPlugin'] = [
             'name' => 'OJT Control Panel',
-            'url' => $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off',
+            'url' => $request->getDispatcher()->url($request, Application::ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off',
             "isCurrent" => false
         ];
 
@@ -313,7 +336,7 @@ class OjtPlugin extends GenericPlugin
     // Show available update on Setting -> Website
     function settingsWebsite($hookName, $args)
     {
-        if (!$this->getSetting(CONTEXT_SITE, 'isNewVersionAvailable')) {
+        if (!$this->getSetting(Application::CONTEXT_SITE, 'isNewVersionAvailable')) {
             return false;
         }
 
@@ -344,13 +367,13 @@ class OjtPlugin extends GenericPlugin
             throw new Exception('Failed to make a temporary plugin file');
         }
 
-        $zip = new ZipArchive;
+        $zip = new \ZipArchive;
         if (!$zip->open($file_name)) {
             unlink($file_name);
             throw new Exception('Failed to Open Files plugin file');
         }
 
-        $path    = 'plugins/generic';
+        $path    = 'plugins' . DIRECTORY_SEPARATOR . 'generic';
         if (!$zip->extractTo($path)) {
             unlink($file_name);
             throw new Exception('Failed to Extract Plugin,maybe because of folder permission.');
@@ -371,8 +394,7 @@ class OjtPlugin extends GenericPlugin
 
     public function getPluginVersionFile()
     {
-        $pluginPath = $this->getPluginPath() ?? 'plugins/generic/ojtPlugin';
-
+        $pluginPath = $this->getPluginPath() ?? 'plugins/generic/ojtControlPanel';
         return $pluginPath . '/version.xml';
     }
 
@@ -386,14 +408,6 @@ class OjtPlugin extends GenericPlugin
     }
 
     /**
-     * @copydoc Plugin::getName()
-     */
-    function getName()
-    {
-        return 'ojtPlugin';
-    }
-
-    /**
      * Get a description of the plugin.
      */
     public function getDescription()
@@ -403,17 +417,18 @@ class OjtPlugin extends GenericPlugin
 
     public function getPluginType()
     {
-        import('lib.pkp.classes.site.VersionCheck');
         $info = VersionCheck::getValidPluginVersionInfo($this->getPluginVersionFile());
 
         return $info[1];
     }
 
-
+    public function getName()
+    {
+        return 'OjtControlPanelPlugin';
+    }
 
     public function getPluginVersion()
     {
-        import('lib.pkp.classes.site.VersionCheck');
         $version = VersionCheck::parseVersionXML($this->getPluginVersionFile());
         return $version['release'];
     }
@@ -436,6 +451,7 @@ class OjtPlugin extends GenericPlugin
 
     public function setPageHandler($hookName, $params)
     {
+        $handler = &$params[3];
         if ($this->getCurrentContextId() == 0) {
             // Panel tidak support untuk sitewide 
             return false;
@@ -445,8 +461,7 @@ class OjtPlugin extends GenericPlugin
 
         switch ($page) {
             case 'ojt':
-                define('HANDLER_CLASS', 'OjtPageHandler');
-                $this->import('OjtPageHandler');
+                $handler = new OjtPageHandler($this->getRequest());
 
                 return true;
                 break;
@@ -475,7 +490,7 @@ class OjtPlugin extends GenericPlugin
         import('lib.pkp.classes.linkAction.request.OpenWindowAction');
         $linkAction = new LinkAction(
             'ojt_control_panel',
-            new OpenWindowAction($request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off'),
+            new OpenWindowAction($request->getDispatcher()->url($request, Application::ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off'),
             'Control Panel',
             null
         );
@@ -545,16 +560,16 @@ class OjtPlugin extends GenericPlugin
     public function getJournalURL()
     {
         $request = $this->getRequest();
-        return $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath());
+        return $request->getDispatcher()->url($request, Application::ROUTE_PAGE, $request->getContext()->getPath());
     }
 
-    public function getPluginDownloadLink($pluginToken, $license = false, $journalUrl)
+    public function getPluginDownloadLink($pluginToken, $license = false)
     {
         try {
             $payload = [
                 'token' => $pluginToken,
                 'license' => $license,
-                'journal_url' => $journalUrl,
+                'journal_url' => $this->getJournalURL(),
                 'ojs_version' => $this->getJournalVersion()
             ];
 
@@ -574,8 +589,8 @@ class OjtPlugin extends GenericPlugin
 
             $dependencies = [];
             foreach ($response['data']['dependencies'] as $dependency) {
-                $data['link'] = $dependency['download_link']; 
-                $data['folder'] = $dependency['folder']; 
+                $data['link'] = $dependency['download_link'];
+                $data['folder'] = $dependency['folder'];
                 $dependencies[] = $data;
             }
 
@@ -637,6 +652,7 @@ class OjtPlugin extends GenericPlugin
     public function getJournalVersion()
     {
         $versionDao = DAORegistry::getDAO('VersionDAO');
+        /** @var VersionDAO $versionDao */
         $version    = $versionDao->getCurrentVersion();
         $data       = $version->_data;
         return $data['major'] . $data['minor'];
@@ -664,13 +680,13 @@ class OjtPlugin extends GenericPlugin
         $d = dir($path);
 
         while (($entry = $d->read()) !== false) {
-            if (is_dir("$path/$entry") && !in_array($entry, $filtered)) {
+            if (is_dir("$path" . DIRECTORY_SEPARATOR . "$entry") && !in_array($entry, $filtered)) {
                 $dirs[] = $entry;
 
                 if ($recursive) {
-                    $newDirs = $this->getDirs("$path/$entry");
+                    $newDirs = $this->getDirs("$path" . DIRECTORY_SEPARATOR . "$entry");
                     foreach ($newDirs as $newDir) {
-                        $dirs[] = "$entry/$newDir";
+                        $dirs[] = "$path" . DIRECTORY_SEPARATOR . "$entry";
                     }
                 }
             }
@@ -682,6 +698,6 @@ class OjtPlugin extends GenericPlugin
 
     public function isDiagnosticEnabled()
     {
-        return $this->getSetting(CONTEXT_SITE, 'enable_diagnostic') ?? true;
+        return $this->getSetting(Application::CONTEXT_SITE, 'enable_diagnostic') ?? true;
     }
 }

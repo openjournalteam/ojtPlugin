@@ -1,18 +1,19 @@
 <?php
 
-namespace Openjournalteam\OjtPlugin\Traits;
+namespace APP\plugins\generic\ojtControlPanel\traits;
 
-import('plugins.generic.ojtPlugin.helpers.OJTHelper');
-import('lib.pkp.classes.site.VersionCheck');
+use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
+use PKP\plugins\PluginRegistry;
+use PKP\site\VersionCheck;
 
 trait PluginUpdater
 {
     abstract protected function getPlugin();
     abstract protected function getBaseUrl();
 
-    protected function getOjtPlugin()
+    protected function getOjtControlPanelPlugin(): OjtControlPanelPlugin
     {
-        return \PluginRegistry::getPlugin('generic', 'ojtPlugin');
+        return PluginRegistry::getPlugin('generic', 'ojtPlugin');
     }
 
     public function check_update()
@@ -27,7 +28,7 @@ trait PluginUpdater
                 'msg' => "Failed to check update"
             ]);
         }
-        $pluginVersion = \VersionCheck::parseVersionXML($plugin->getPluginPath() . '/version.xml');
+        $pluginVersion = VersionCheck::parseVersionXML($plugin->getPluginPath() . '/version.xml');
         $updateAvailable = version_compare($pluginVersion['release'], $pluginDetail['version'], '<');
         return showJson([
             'error' => 0,
@@ -39,7 +40,7 @@ trait PluginUpdater
     public function update()
     {
         $plugin = $this->getPlugin();
-        $ojtPlugin = $this->getOjtPlugin();
+        $ojtPlugin = $this->getOjtControlPanelPlugin();
         $pluginDetail = getPluginDetail($plugin);
 
         if (!$pluginDetail) {
