@@ -293,7 +293,7 @@ class OjtPageHandler extends Handler
             $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao) {
                 $pluginFolder = $plugin['folder'];
                 $pluginVersion = $plugin['version'];
-                $targetPlugin = @include($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
+                $targetPlugin = $this->ojtPlugin->instatiatePlugin($pluginFolder);
 
                 $plugin['update'] = false;
                 $plugin['license'] = $pluginSettingsDao->getSetting($this->ojtPlugin->getCurrentContextId(), $plugin['class'], 'license') ?? null;
@@ -341,27 +341,31 @@ class OjtPageHandler extends Handler
 
     public function toggleInstalledPlugin($args, $request)
     {
-        $plugin = $this->ojtPlugin;
+        try {
+            $ojtPlugin      = $this->ojtPlugin;
 
-        $pluginFolder = $request->getUserVar('pluginFolder');
-        $isEnabled    = ($request->getUserVar('enabled') == 'true') ? true : false;
+            $pluginFolder   = $request->getUserVar('pluginFolder');
+            $plugin         = $ojtPlugin->instatiatePlugin($pluginFolder);
+            $isEnabled      = ($request->getUserVar('enabled') == 'true') ? true : false;
 
-        $targetPlugin         = include($plugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
+            if (!$plugin && !$plugin instanceof Plugin) {
+                throw new \Exception("Plugin is Invalid");
+            }
 
-        if (!$targetPlugin && !is_object($targetPlugin)) {
-            $json['error'] = 1;
-            $json['msg']   = 'Plugin is Invalid';
-            showJson($json);
-            return;
+            $plugin->setEnabled($isEnabled);
+
+            $enabledMessage = ($isEnabled) ? ' has been enabled.' : ' has been disabled.';
+        } catch (\Throwable $th) {
+            $json['error']  = 1;
+            $json['msg']    = $th->getMessage();
+            $json['enabled'] = false;
+            return showJson($json);
         }
 
-        $targetPlugin->setEnabled($isEnabled);
-
-        $enabledMessage = ($isEnabled) ? ' has been enabled.' : ' has been disabled.';
 
 
         $json['error']  = 0;
-        $json['msg']    = 'The plugin ' . $targetPlugin->getDisplayName() . $enabledMessage;
+        $json['msg']    = 'The plugin ' . $plugin->getDisplayName() . $enabledMessage;
         $json['enabled'] = $isEnabled;
         return showJson($json);
     }
@@ -375,10 +379,10 @@ class OjtPageHandler extends Handler
             $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
             $license = $request->getUserVar('license') ?? false;
             $update = $request->getUserVar('update');
-            if ($update && $fileManager->fileExists($indexFile)) {
-                $pluginInstance = include($indexFile);
+            if ($update) {
+                $pluginInstance = $ojtPlugin->instatiatePlugin($pluginToInstall->folder);
 
-                $license = $pluginInstance->getSetting($this->contextId, 'licenseMain');
+                $license = $pluginInstance?->getSetting($this->contextId, 'licenseMain');
             }
 
             $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
@@ -400,9 +404,7 @@ class OjtPageHandler extends Handler
 
             $this->simulateRegisterModules($pluginToInstall);
 
-            if (!$fileManager->fileExists($indexFile)) throw new \Exception("Index file not found.");
-
-            $pluginInstance         = $pluginInstance ?? include($indexFile);
+            $pluginInstance         = $pluginInstance ?? $ojtPlugin->instatiatePlugin($pluginToInstall->folder);
             // Applying input license to plugin setting  
             if ($pluginInstance instanceof Plugin && $license && !$update) {
                 $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
@@ -425,9 +427,7 @@ class OjtPageHandler extends Handler
      */
     protected function simulateRegisterModules($pluginToInstall)
     {
-        $fileManager = new FileManager();
         $ojtPlugin = $this->ojtPlugin;
-        $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
 
         // delete plugin when error occured
         register_shutdown_function(function () use ($ojtPlugin, $pluginToInstall) {
@@ -446,9 +446,8 @@ class OjtPageHandler extends Handler
             }
         });
 
-        if (!$fileManager->fileExists($indexFile)) throw new \Exception("Index file not found.");
 
-        $plugin         = include($indexFile);
+        if (!$ojtPlugin->instatiatePlugin($pluginToInstall->folder)) throw new \Exception("Plugin error");
     }
 
     public function resetSetting($args, $showJson = true)
@@ -504,18 +503,18 @@ class OjtPageHandler extends Handler
 
     public function checkPluginInstalled($args, $request)
     {
-        $plugin = $this->ojtPlugin;
+        $ojtPlugin = $this->ojtPlugin;
 
-        $pluginFolder = $_POST['pluginFolder'];
-        $pluginVersion = $_POST['pluginVersion'];
+        $pluginFolder = $request->getUserVar('pluginFolder');
+        $pluginVersion = $request->getUserVar('pluginVersion');
 
-        $targetPlugin = @include($plugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
+        $targetPlugin = $ojtPlugin->instatiatePlugin($pluginFolder);
 
         $json['update'] = false;
 
         if ($targetPlugin) {
             import('lib.pkp.classes.site.VersionCheck');
-            $version = VersionCheck::parseVersionXML($plugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
+            $version = VersionCheck::parseVersionXML($ojtPlugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
             $json['update'] = version_compare($version['release'], $pluginVersion, '<');
         }
 

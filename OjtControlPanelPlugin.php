@@ -2,34 +2,32 @@
 
 namespace APP\plugins\generic\ojtControlPanel;
 
+use Exception;
+use ZipArchive;
+use Monolog\Logger;
+use PKP\plugins\Hook;
+use RuntimeException;
+use PKP\config\Config;
+use PKP\security\Role;
+use PKP\db\DAORegistry;
+use PKP\plugins\Plugin;
+use PKP\site\VersionDAO;
 use APP\core\Application;
+use PKP\file\FileManager;
+use PKP\site\VersionCheck;
+use PKP\cache\CacheManager;
+use PKP\plugins\ThemePlugin;
+use PKP\linkAction\LinkAction;
+use PKP\plugins\GenericPlugin;
+use PKP\plugins\PluginRegistry;
+use APP\template\TemplateManager;
+use Monolog\Handler\StreamHandler;
+use PKP\linkAction\request\OpenWindowAction;
+use GuzzleHttp\Exception\BadResponseException;
 use APP\plugins\generic\ojtControlPanel\classes\ErrorHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ParamHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ServiceHandler;
-use APP\template\TemplateManager;
-use Exception;
-use FilesystemIterator;
-use GuzzleHttp\Exception\BadResponseException;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
-use PKP\cache\CacheManager;
-use PKP\config\Config;
-use PKP\db\DAORegistry;
-use PKP\file\FileManager;
-use PKP\linkAction\LinkAction;
-use PKP\linkAction\request\OpenWindowAction;
-use PKP\plugins\GenericPlugin;
-use PKP\plugins\Hook;
-use PKP\plugins\Plugin;
-use PKP\plugins\PluginRegistry;
-use PKP\plugins\ThemePlugin;
-use PKP\security\Role;
-use PKP\site\VersionCheck;
-use PKP\site\VersionDAO;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use RuntimeException;
-use ZipArchive;
+use PKP\plugins\LazyLoadPlugin;
 
 require_once(dirname(__FILE__) . '/vendor/autoload.php');
 
@@ -251,11 +249,44 @@ class OjtControlPanelPlugin extends GenericPlugin
         return $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $path;
     }
 
-    public function registerModules()
+    public function registerModules(): void
     {
         $modulesFolder = $this->getDirs($this->getModulesPath());
 
-        import('lib.pkp.classes.site.VersionCheck');
+        $plugins = [];
+        foreach ($modulesFolder as $moduleFolder) {
+            $plugin = $this->instatiatePlugin($moduleFolder);
+            $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
+            $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
+
+            $categoryPlugin = explode('.', $version->getData('productType'))[1];
+            $categoryDir    = $this->getModulesPath();
+            $pluginDir      = $categoryDir .  $moduleFolder;
+
+            PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
+            if ($plugin instanceof ThemePlugin) {
+                $plugin->init();
+            }
+
+            $data                = $version->getAllData();
+            $data['version']     = $version->getVersionString();
+            $data['name']        = $plugin->getDisplayName();
+            $data['className']   = $plugin->getName();
+            $data['description'] = $plugin->getDescription();
+            $data['enabled']     = $plugin->getEnabled();
+            $data['open']        = false;
+            $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
+            $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
+            $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
+
+            $plugins[] = $data;
+        }
+
+        $this->registeredModule = $plugins;
+    }
+    public function registerModulesOld()
+    {
+        $modulesFolder = $this->getDirs($this->getModulesPath());
 
         $plugins = [];
         $fileManager = new FileManager();
@@ -300,8 +331,6 @@ class OjtControlPanelPlugin extends GenericPlugin
             $plugins[] = $data;
         }
 
-        // HookRegistry::call('PluginRegistry::categoryLoaded::themes');
-
 
         $this->registeredModule = $plugins;
 
@@ -311,7 +340,7 @@ class OjtControlPanelPlugin extends GenericPlugin
     public function getRegisteredModules()
     {
         if (!$this->registeredModule) {
-            return $this->registerModules();
+            $this->registerModules();
         }
 
         return $this->registeredModule;
@@ -536,23 +565,9 @@ class OjtControlPanelPlugin extends GenericPlugin
 
     public function recursiveDelete($dirPath, $deleteParent = true)
     {
-        if (empty($dirPath) && !is_dir($dirPath)) {
-            return false;
-        }
+        $fileManager = new FileManager();
 
-        $paths = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
-
-        foreach ($paths as $path) {
-            if (!$path->isWritable()) {
-                throw new Exception("Can't remove plugins, please check folder permission.");
-            };
-        }
-        foreach ($paths as $path) {
-            $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
-        }
-        if ($deleteParent) {
-            rmdir($dirPath);
-        }
+        $fileManager->rmtree($dirPath);
 
         return true;
     }
@@ -678,7 +693,6 @@ class OjtControlPanelPlugin extends GenericPlugin
 
         $dirs = [];
         $d = dir($path);
-
         while (($entry = $d->read()) !== false) {
             if (is_dir("$path" . DIRECTORY_SEPARATOR . "$entry") && !in_array($entry, $filtered)) {
                 $dirs[] = $entry;
@@ -699,5 +713,36 @@ class OjtControlPanelPlugin extends GenericPlugin
     public function isDiagnosticEnabled()
     {
         return $this->getSetting(Application::CONTEXT_SITE, 'enable_diagnostic') ?? true;
+    }
+
+    public function instatiatePlugin($moduleFolder): ?LazyLoadPlugin
+    {
+        $fileManager = new FileManager();
+        $plugin = null;
+        $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
+        if (
+            !$fileManager->fileExists($versionFile)
+        ) {
+            return null;
+        }
+
+        $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
+        $pluginClassName = __NAMESPACE__ . "\\modules\\{$moduleFolder}\\" .  $version->getProductClassName();
+
+        if (!class_exists($pluginClassName)) {
+            $indexFile = $this->getModulesPath(DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php");
+            if (!$fileManager->fileExists($indexFile)) {
+                return null;
+            }
+            $plugin = include($indexFile);
+        }
+
+
+        $plugin         = $plugin ?? new $pluginClassName();
+        if (!$plugin && $plugin instanceof Plugin) {
+            return null;
+        }
+
+        return $plugin;
     }
 }
