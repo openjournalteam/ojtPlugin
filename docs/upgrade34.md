@@ -182,3 +182,9 @@ public function setPageHandler($hookName, $params)
     return false;
 }
 ```
+
+## DAO
+
+Penggunaan DAO sudah tidak dianjurkan lagi, jika terdapat class `Repository` yang terkait dengan entity yang ingin diakses, maka gunakan `Repository` tersebut. Jika tidak ada, maka gunakan `DAO` yang terkait dengan entity tersebut. [Baca Catatan Rilis](https://docs.pkp.sfu.ca/dev/release-notebooks/en/3.4-release-notebook#repositories)
+
+`CategoryDAO` sudah tidak digunakan lagi, sebagai gantinya gunakan `Repo::category()`. Silahkan pelajari cara penggunakan `Repo` di [sini](https://docs.pkp.sfu.ca/dev/documentation/en/architecture-repositories)
