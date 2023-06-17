@@ -264,7 +264,7 @@ class OjtControlPanelPlugin extends GenericPlugin
             $pluginDir      = $categoryDir .  $moduleFolder;
 
             PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
-            if ($plugin instanceof ThemePlugin) {
+            if ($plugin instanceof ThemePlugin && $plugin->getEnabled()) {
                 $plugin->init();
             }
 
@@ -283,58 +283,6 @@ class OjtControlPanelPlugin extends GenericPlugin
         }
 
         $this->registeredModule = $plugins;
-    }
-    public function registerModulesOld()
-    {
-        $modulesFolder = $this->getDirs($this->getModulesPath());
-
-        $plugins = [];
-        $fileManager = new FileManager();
-        foreach ($modulesFolder as $moduleFolder) {
-            $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
-            $indexFile = $this->getModulesPath(DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php");
-            if (
-                !$fileManager->fileExists($versionFile) ||
-                !$fileManager->fileExists($indexFile)
-            ) {
-                continue;
-            }
-
-            $plugin         = include($indexFile);
-            if (!$plugin && $plugin instanceof Plugin) {
-                continue;
-            }
-
-            $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
-
-            $categoryPlugin = explode('.', $version->getData('productType'))[1];
-            $categoryDir    = $this->getModulesPath();
-            $pluginDir      = $categoryDir .  $moduleFolder;
-
-            PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
-
-            if ($plugin instanceof ThemePlugin) {
-                $plugin->init();
-            }
-
-            $data                = $version->getAllData();
-            $data['version']     = $version->getVersionString();
-            $data['name']        = $plugin->getDisplayName();
-            $data['className']   = $plugin->getName();
-            $data['description'] = $plugin->getDescription();
-            $data['enabled']     = $plugin->getEnabled();
-            $data['open']        = false;
-            $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
-            $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
-            $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
-
-            $plugins[] = $data;
-        }
-
-
-        $this->registeredModule = $plugins;
-
-        return $plugins;
     }
 
     public function getRegisteredModules()
