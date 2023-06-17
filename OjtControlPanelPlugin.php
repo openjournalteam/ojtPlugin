@@ -27,6 +27,7 @@ use GuzzleHttp\Exception\BadResponseException;
 use APP\plugins\generic\ojtControlPanel\classes\ErrorHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ParamHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ServiceHandler;
+use Illuminate\Database\DatabaseManager;
 use PKP\plugins\LazyLoadPlugin;
 
 require_once(dirname(__FILE__) . '/vendor/autoload.php');
@@ -43,8 +44,8 @@ class OjtControlPanelPlugin extends GenericPlugin
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
                 register_shutdown_function([$this, 'fatalHandler']);
-                $this->init();
-                $this->setLogger();
+                // $this->init();
+                // $this->setLogger();
                 $this->createModulesFolder();
                 $this->registerModules();
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
@@ -182,7 +183,6 @@ class OjtControlPanelPlugin extends GenericPlugin
         if ($this->getJournalVersion() != '31') {
             if ($templateMgr->getTemplateVars('activeTheme')) return;
         }
-
         $allThemes = PluginRegistry::loadCategory('themes', true);
         $activeTheme = null;
         $context = $this->getCurrentContextId() ? $this->getRequest()->getContext() : $this->getRequest()->getSite();
