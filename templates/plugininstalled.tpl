@@ -121,7 +121,7 @@
                 </td>
                 <td class="ojt-py-4 ojt-px-6">
                   <div class="ojt-flex ojt-place-items-center">
-                    <div class="lg:ojt-mx-auto">
+                    <div class="">
                       <input type="checkbox" x-model="plugin.enabled" x-on:click.prevent class="cbx ojt-hidden"
                         style="display: none;" />
                       <label for="cbx" class="toggle" @click="$store.plugins.togglePlugin(plugin);"
