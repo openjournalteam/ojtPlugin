@@ -11,15 +11,27 @@
         </svg>
         Feedback or Report Bug
       </h2>
-      <a href="ojt/downloadLog"
-        class="ojt-flex ojt-text-sm ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-2 menu_item ojt-text-left ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50">
-        <svg class="ojt-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
-          <path
-            d="M6 10.5C6 10.2239 6.22386 10 6.5 10C6.77614 10 7 10.2239 7 10.5C7 10.7761 6.77614 11 6.5 11C6.22386 11 6 10.7761 6 10.5ZM6.5 12C6.22386 12 6 12.2239 6 12.5C6 12.7761 6.22386 13 6.5 13C6.77614 13 7 12.7761 7 12.5C7 12.2239 6.77614 12 6.5 12ZM6 14.5C6 14.2239 6.22386 14 6.5 14C6.77614 14 7 14.2239 7 14.5C7 14.7761 6.77614 15 6.5 15C6.22386 15 6 14.7761 6 14.5ZM8.5 10C8.22386 10 8 10.2239 8 10.5C8 10.7761 8.22386 11 8.5 11H13.5C13.7761 11 14 10.7761 14 10.5C14 10.2239 13.7761 10 13.5 10H8.5ZM8 12.5C8 12.2239 8.22386 12 8.5 12H13.5C13.7761 12 14 12.2239 14 12.5C14 12.7761 13.7761 13 13.5 13H8.5C8.22386 13 8 12.7761 8 12.5ZM8.5 14C8.22386 14 8 14.2239 8 14.5C8 14.7761 8.22386 15 8.5 15H13.5C13.7761 15 14 14.7761 14 14.5C14 14.2239 13.7761 14 13.5 14H8.5ZM6 2C4.89543 2 4 2.89543 4 4V16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V7.41421C16 7.01639 15.842 6.63486 15.5607 6.35355L11.6464 2.43934C11.3651 2.15804 10.9836 2 10.5858 2H6ZM5 4C5 3.44772 5.44772 3 6 3H10V6.5C10 7.32843 10.6716 8 11.5 8H15V16C15 16.5523 14.5523 17 14 17H6C5.44772 17 5 16.5523 5 16V4ZM14.7929 7H11.5C11.2239 7 11 6.77614 11 6.5V3.20711L14.7929 7Z"
-            fill="currentColor"></path>
-        </svg>
-        Download Log
-      </a>
+      <div class="ojt-flex ojt-items-center ojt-gap-4">
+        <a href="ojt/downloadLog"
+          class="ojt-flex ojt-text-sm ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-2 ojt-text-left ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50">
+          <svg class="ojt-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+            <path
+              d="M6 10.5C6 10.2239 6.22386 10 6.5 10C6.77614 10 7 10.2239 7 10.5C7 10.7761 6.77614 11 6.5 11C6.22386 11 6 10.7761 6 10.5ZM6.5 12C6.22386 12 6 12.2239 6 12.5C6 12.7761 6.22386 13 6.5 13C6.77614 13 7 12.7761 7 12.5C7 12.2239 6.77614 12 6.5 12ZM6 14.5C6 14.2239 6.22386 14 6.5 14C6.77614 14 7 14.2239 7 14.5C7 14.7761 6.77614 15 6.5 15C6.22386 15 6 14.7761 6 14.5ZM8.5 10C8.22386 10 8 10.2239 8 10.5C8 10.7761 8.22386 11 8.5 11H13.5C13.7761 11 14 10.7761 14 10.5C14 10.2239 13.7761 10 13.5 10H8.5ZM8 12.5C8 12.2239 8.22386 12 8.5 12H13.5C13.7761 12 14 12.2239 14 12.5C14 12.7761 13.7761 13 13.5 13H8.5C8.22386 13 8 12.7761 8 12.5ZM8.5 14C8.22386 14 8 14.2239 8 14.5C8 14.7761 8.22386 15 8.5 15H13.5C13.7761 15 14 14.7761 14 14.5C14 14.2239 13.7761 14 13.5 14H8.5ZM6 2C4.89543 2 4 2.89543 4 4V16C4 17.1046 4.89543 18 6 18H14C15.1046 18 16 17.1046 16 16V7.41421C16 7.01639 15.842 6.63486 15.5607 6.35355L11.6464 2.43934C11.3651 2.15804 10.9836 2 10.5858 2H6ZM5 4C5 3.44772 5.44772 3 6 3H10V6.5C10 7.32843 10.6716 8 11.5 8H15V16C15 16.5523 14.5523 17 14 17H6C5.44772 17 5 16.5523 5 16V4ZM14.7929 7H11.5C11.2239 7 11 6.77614 11 6.5V3.20711L14.7929 7Z"
+              fill="currentColor"></path>
+          </svg>
+          Download Log
+        </a>
+        <button type="button" onclick="clearLog()"
+          class="ojt-flex ojt-text-sm ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-red-500 ojt-via-red-600 ojt-to-red-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-2 ojt-text-left ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-red-500/50">
+          <svg class="ojt-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+            aria-hidden="true">
+            <path fill-rule="evenodd"
+              d="M16.5 4.478v.227a48.816 48.816 0 013.878.512.75.75 0 11-.256 1.478l-.209-.035-1.005 13.07a3 3 0 01-2.991 2.77H8.084a3 3 0 01-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 01-.256-1.478A48.567 48.567 0 017.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 013.369 0c1.603.051 2.815 1.387 2.815 2.951zm-6.136-1.452a51.196 51.196 0 013.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 00-6 0v-.113c0-.794.609-1.428 1.364-1.452zm-.355 5.945a.75.75 0 10-1.5.058l.347 9a.75.75 0 101.499-.058l-.346-9zm5.48.058a.75.75 0 10-1.498-.058l-.347 9a.75.75 0 001.5.058l.345-9z"
+              clip-rule="evenodd"></path>
+          </svg>
+          Clear Log
+        </button>
+      </div>
     </div>
     <form x-data="reportBugForm()" method="POST">
       <div class="ojt-mb-6">
@@ -139,6 +151,44 @@
             this.$refs.pictures.value = null;
           }
         }
+      }
+
+      function clearLog() {
+        console.log('clear log')
+        Swal.fire({
+          title: 'Are you sure?',
+          text: "You won't be able to revert this!",
+          icon: 'warning',
+          customClass: {
+            confirmButton: 'ojt-bg-gradient-to-l ojt-from-red-500 ojt-via-red-600 ojt-to-red-700'
+          },
+          showCancelButton: true,
+          confirmButtonText: 'Yes, clear it!',
+          cancelButtonText: 'No, cancel!',
+          reverseButtons: true
+        }).then((result) => {
+          if (result.isConfirmed) {
+            fetch(baseUrl + '/ojt/clearLog', { method: "POST" })
+              .then(response => response.json())
+              .then(data => {
+                if (data.error) {
+                  throw data.msg;
+                  return;
+                }
+
+                Swal.fire({
+                  title: data.msg,
+                  icon: 'success',
+                  customClass: {
+                    confirmButton: 'ojt-bg-gradient-to-l ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700'
+                  }
+                });
+              })
+              .catch(error => {
+                console.log(error);
+              });
+          }
+        })
       }
     </script>
   </div>
