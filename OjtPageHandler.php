@@ -293,7 +293,12 @@ class OjtPageHandler extends Handler
             $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao) {
                 $pluginFolder = $plugin['folder'];
                 $pluginVersion = $plugin['version'];
-                $targetPlugin = $this->ojtPlugin->instatiatePlugin($pluginFolder);
+                try {
+                    $targetPlugin = $this->ojtPlugin->instatiatePlugin($pluginFolder);
+                } catch (\Throwable $th) {
+                    $targetPlugin = null;
+                }
+
 
                 $plugin['update'] = false;
                 $plugin['license'] = $pluginSettingsDao->getSetting($this->ojtPlugin->getCurrentContextId(), $plugin['class'], 'license') ?? null;
