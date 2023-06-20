@@ -19,6 +19,7 @@ use PKP\cache\CacheManager;
 use PKP\plugins\ThemePlugin;
 use PKP\linkAction\LinkAction;
 use PKP\plugins\GenericPlugin;
+use PKP\plugins\LazyLoadPlugin;
 use PKP\plugins\PluginRegistry;
 use APP\template\TemplateManager;
 use Monolog\Handler\StreamHandler;
@@ -27,8 +28,6 @@ use GuzzleHttp\Exception\BadResponseException;
 use APP\plugins\generic\ojtControlPanel\classes\ErrorHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ParamHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ServiceHandler;
-use Illuminate\Database\DatabaseManager;
-use PKP\plugins\LazyLoadPlugin;
 
 require_once(dirname(__FILE__) . '/vendor/autoload.php');
 
@@ -256,6 +255,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         $plugins = [];
         foreach ($modulesFolder as $moduleFolder) {
             $plugin = $this->instatiatePlugin($moduleFolder);
+
             $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
             $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
 
@@ -663,7 +663,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         return $this->getSetting(Application::CONTEXT_SITE, 'enable_diagnostic') ?? true;
     }
 
-    public function instatiatePlugin($moduleFolder): ?LazyLoadPlugin
+    public function instatiatePlugin($moduleFolder): LazyLoadPlugin
     {
         $fileManager = new FileManager();
         $plugin = null;
@@ -671,7 +671,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         if (
             !$fileManager->fileExists($versionFile)
         ) {
-            return null;
+            throw new Exception("Plugin $moduleFolder not found");
         }
 
         $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
@@ -680,7 +680,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         if (!class_exists($pluginClassName)) {
             $indexFile = $this->getModulesPath(DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php");
             if (!$fileManager->fileExists($indexFile)) {
-                return null;
+                throw new Exception("Plugin with classname : $pluginClassName not found");
             }
             $plugin = include($indexFile);
         }
@@ -688,7 +688,7 @@ class OjtControlPanelPlugin extends GenericPlugin
 
         $plugin         = $plugin ?? new $pluginClassName();
         if (!$plugin && $plugin instanceof Plugin) {
-            return null;
+            throw new Exception("Plugin with classname : $pluginClassName not found");
         }
 
         return $plugin;

@@ -115,6 +115,9 @@ $smarty.const.STATUS_PUBLISHED
 
 $smarty.const.CONTEXT_ID_NONE
 \PKP\core\PKPApplication::CONTEXT_ID_NONE
+
+$smarty.const.ROUTE_PAGE
+\PKP\core\PKPApplication::ROUTE_PAGE
 ```
 
 ### Submission
@@ -188,3 +191,26 @@ public function setPageHandler($hookName, $params)
 Penggunaan DAO sudah tidak dianjurkan lagi, jika terdapat class `Repository` yang terkait dengan entity yang ingin diakses, maka gunakan `Repository` tersebut. Jika tidak ada, maka gunakan `DAO` yang terkait dengan entity tersebut. [Baca Catatan Rilis](https://docs.pkp.sfu.ca/dev/release-notebooks/en/3.4-release-notebook#repositories)
 
 `CategoryDAO` sudah tidak digunakan lagi, sebagai gantinya gunakan `Repo::category()`. Silahkan pelajari cara penggunakan `Repo` di [sini](https://docs.pkp.sfu.ca/dev/documentation/en/architecture-repositories)
+
+## LOCALE
+
+Perubahan pada country code, seperti `en_US` menjadi `en`.
+
+`PKPLocale` dan `AppLocale` diganti dengan class facade baru `PKP\facades\Locale`, baca detailnya [disini](https://docs.pkp.sfu.ca/dev/release-notebooks/en/3.4-release-notebook#localization)
+
+Mendapatkan direction locale:
+Sebelum 3.4:
+
+```php
+$locale = AppLocale::getLocale();
+AppLocale::getLocaleDirection($locale); // hasil 'rtl' atau 'ltr'
+```
+
+Sesudah 3.4:
+
+```php
+use PKP\facades\Locale;
+
+$locale = Locale::getLocale();
+Locale::getMetadata($locale)?->isRightToLeft(); // hasil berupa boolean apakah locale tersebut rtl atau ltr
+```
