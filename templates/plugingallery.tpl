@@ -13,12 +13,7 @@
       </div>
     </div>
   </div>
-  <div x-show="plugins.length < 1 && !loading && !error">
-    <div class="empty ojt-flex ojt-flex-col">
-      <div class="empty-icon ojt-my-2 ojt-text-gray-600 ojt-mx-auto"><i class="fas fa-box-open fa-5x"></i></div>
-      <p class="empty-title ojt-my-2 ojt-text-gray-600 ojt-mx-auto">There is no plugin Available for now</p>
-    </div>
-  </div>
+
   <div x-show="plugins && !loading && !error">
     <div>
       <div class="ojt-flex ojt-flex-wrap ojt-items-center ojt-my-2 ojt-gap-2">
@@ -143,6 +138,12 @@
           </div>
         </template>
       </section>
+    </div>
+  </div>
+  <div x-show="plugins.length < 1 && !loading && !error">
+    <div class="empty ojt-flex ojt-flex-col">
+      <div class="empty-icon ojt-my-2 ojt-text-gray-600 ojt-mx-auto"><i class="fas fa-box-open fa-5x"></i></div>
+      <p class="empty-title ojt-my-2 ojt-text-gray-600 ojt-mx-auto">There is no plugin Available for now</p>
     </div>
   </div>
   <template x-if="error">

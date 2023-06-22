@@ -115,6 +115,7 @@ class OjtPageHandler extends Handler
         ]);
 
 
+
         $json['css']  = [];
         $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('settings.tpl'));
         $json['js']   = [];
@@ -171,7 +172,7 @@ class OjtPageHandler extends Handler
             $url = 'https://sp.openjournaltheme.com/api/v1/report';
 
             $params = $request->getUserVars();
-            $files = $this->reArrayFiles($_FILES['pictures']);
+            $files = $this->reArrayFiles($request->getUserVar('pictures'));
             $logFile = OjtControlPanelPlugin::getErrorLogFile();
             $multipart = [];
             foreach ($params as $key => $value) {
@@ -290,6 +291,7 @@ class OjtPageHandler extends Handler
             /** @var PluginSettingsDAO $pluginSettingsDao */
 
             $ojtplugin = $this->ojtPlugin;
+
             $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao) {
                 $pluginFolder = $plugin['folder'];
                 $pluginVersion = $plugin['version'];
@@ -313,7 +315,6 @@ class OjtPageHandler extends Handler
 
                 return $plugin;
             }, json_decode((string) $response->getBody(), true));
-            if (!$plugins) throw new \Exception("Couldn't connect to Server, please try again.");
 
             return showJson($plugins);
         } catch (\Throwable $th) {
