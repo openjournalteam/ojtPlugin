@@ -263,10 +263,13 @@ class OjtControlPanelPlugin extends GenericPlugin
             $categoryDir    = $this->getModulesPath();
             $pluginDir      = $categoryDir .  $moduleFolder;
 
-            PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
-            if ($plugin instanceof ThemePlugin && $plugin->getEnabled()) {
-                $plugin->init();
+            if ($plugin->getEnabled()) {
+                PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
+                if ($plugin instanceof ThemePlugin) {
+                    $plugin->init();
+                }
             }
+
 
             $data                = $version->getAllData();
             $data['version']     = $version->getVersionString();
