@@ -214,3 +214,11 @@ use PKP\facades\Locale;
 $locale = Locale::getLocale();
 Locale::getMetadata($locale)?->isRightToLeft(); // hasil berupa boolean apakah locale tersebut rtl atau ltr
 ```
+
+## Fix Citation Style tidak bekerja di Tema
+
+Tambahkan priority saat meload jquery
+
+```php
+$this->addScript('jQuery', $jquery, ['baseUrl' => '', 'priority' => TemplateManager::STYLE_SEQUENCE_CORE]);
+```

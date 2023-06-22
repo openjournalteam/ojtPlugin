@@ -268,6 +268,10 @@ class OjtControlPanelPlugin extends GenericPlugin
                 if ($plugin instanceof ThemePlugin) {
                     $plugin->init();
                 }
+            } else {
+                // load locale data for disabled plugins
+                $plugin->pluginPath = $pluginDir;
+                $plugin->addLocaleData();
             }
 
 
