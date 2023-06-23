@@ -30,7 +30,6 @@ use APP\plugins\generic\ojtControlPanel\classes\ParamHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ServiceHandler;
 
 require_once(dirname(__FILE__) . '/vendor/autoload.php');
-
 class OjtControlPanelPlugin extends GenericPlugin
 {
     public $registeredModule;
@@ -70,7 +69,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         return static::API;
     }
 
-    public static function get()
+    public static function get(): OjtControlPanelPlugin
     {
         $plugin = PluginRegistry::getPlugin('generic', 'OjtControlPanelPlugin');
         if (!$plugin) return new static();
@@ -78,7 +77,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         return $plugin;
     }
 
-    public function isAllowSendLog($hour = 4)
+    public function isAllowSendLog($hour = 4): bool
     {
         $now = time();
         $lastSendLogTime = $this->getSetting(Application::CONTEXT_SITE, 'lastSendLogTime');
@@ -151,7 +150,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         }
     }
 
-    public static function getErrorLogFile()
+    public static function getErrorLogFile(): string
     {
         return Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'ojtPlugin' . DIRECTORY_SEPARATOR . 'error.log';
     }
@@ -371,12 +370,12 @@ class OjtControlPanelPlugin extends GenericPlugin
      * Install default settings on journal creation.
      * @return string
      */
-    public function getContextSpecificPluginSettingsFile()
+    public function getContextSpecificPluginSettingsFile(): string
     {
         return $this->getPluginPath() . '/settings.xml';
     }
 
-    public function getPluginVersionFile()
+    public function getPluginVersionFile(): string
     {
         $pluginPath = $this->getPluginPath() ?? 'plugins/generic/ojtControlPanel';
         return $pluginPath . '/version.xml';
@@ -386,7 +385,7 @@ class OjtControlPanelPlugin extends GenericPlugin
      * Get the display name of this plugin.
      * @return String
      */
-    public function getDisplayName()
+    public function getDisplayName(): string
     {
         return 'OJT Control Panel';
     }
@@ -394,7 +393,7 @@ class OjtControlPanelPlugin extends GenericPlugin
     /**
      * Get a description of the plugin.
      */
-    public function getDescription()
+    public function getDescription(): string
     {
         return 'Control Panel Service Plugin From OpenJournalTheme.com';
     }
@@ -504,13 +503,12 @@ class OjtControlPanelPlugin extends GenericPlugin
      * Removing plugin folder
      * @return bool - true if success.
      */
-    public function uninstallPlugin($plugin)
+    public function uninstallPlugin($plugin): bool
     {
         $path    = $this->getModulesPath($plugin->product);
         try {
             if (!is_dir($path)) {
                 throw new Exception("$plugin->name not Found");
-                return;
             }
             return $this->recursiveDelete($path);
         } catch (\Throwable $th) {
@@ -518,22 +516,20 @@ class OjtControlPanelPlugin extends GenericPlugin
         }
     }
 
-    public function recursiveDelete($dirPath, $deleteParent = true)
+    public function recursiveDelete($dirPath, $deleteParent = true): bool
     {
         $fileManager = new FileManager();
 
-        $fileManager->rmtree($dirPath);
-
-        return true;
+        return $fileManager->rmtree($dirPath);
     }
 
-    public function getJournalURL()
+    public function getJournalURL(): string
     {
         $request = $this->getRequest();
         return $request->getDispatcher()->url($request, Application::ROUTE_PAGE, $request->getContext()->getPath());
     }
 
-    public function getPluginDownloadLink($pluginToken, $license = false)
+    public function getPluginDownloadLink($pluginToken, $license = false): array
     {
         try {
             $payload = [
