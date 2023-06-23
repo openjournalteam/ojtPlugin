@@ -8,8 +8,6 @@
             "Openjournalteam\\OjtPlugin\\": "src/"
         }
     },
-    "require": {
-        "monolog/monolog": "^2.8"
-    },
+    "require": {},
     "optimize-autoloader": true
 }
