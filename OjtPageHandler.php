@@ -10,6 +10,7 @@ use APP\handler\Handler;
 use APP\template\TemplateManager;
 use PKP\db\DAORegistry;
 use PKP\file\FileManager;
+use PKP\plugins\Hook;
 use PKP\plugins\Plugin;
 use PKP\plugins\PluginSettingsDAO;
 use PKP\site\VersionCheck;
@@ -306,7 +307,6 @@ class OjtPageHandler extends Handler
                 $plugin['license'] = $pluginSettingsDao->getSetting($this->ojtPlugin->getCurrentContextId(), $plugin['class'], 'license') ?? null;
 
                 if ($targetPlugin) {
-                    import('lib.pkp.classes.site.VersionCheck');
                     $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
                     $plugin['update'] = version_compare($version['release'], $pluginVersion, '<');
                 }
@@ -380,15 +380,13 @@ class OjtPageHandler extends Handler
     {
         try {
             $ojtPlugin = $this->ojtPlugin;
-            $fileManager = new FileManager();
             $pluginToInstall = json_decode($request->getUserVar('plugin'));
-            $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
             $license = $request->getUserVar('license') ?? false;
             $update = $request->getUserVar('update');
-            if ($update) {
-                $pluginInstance = $ojtPlugin->instatiatePlugin($pluginToInstall->folder);
+            $pluginInstance = $ojtPlugin->instatiatePlugin($pluginToInstall->folder);
+            if ($update && $pluginInstance) {
 
-                $license = $pluginInstance?->getSetting($this->contextId, 'licenseMain');
+                $license = $pluginInstance?->getSetting($this->contextId, 'license');
             }
 
             $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
@@ -396,13 +394,7 @@ class OjtPageHandler extends Handler
 
             // trying to install dependencies
             foreach ($downloadLink['dependencies'] as $dependency) {
-                $indexDependency = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $dependency['folder'] . DIRECTORY_SEPARATOR . "index.php");
-
-                if (!$fileManager->fileExists($indexDependency)) {
-                    $ojtPlugin->installPlugin($dependency['link']);
-                }
-
-                if (!$fileManager->fileExists($indexDependency)) throw new \Exception("Index file dependency not found.");
+                $ojtPlugin->installPlugin($dependency['link']);
             }
 
             // trying to install plugin
@@ -410,10 +402,12 @@ class OjtPageHandler extends Handler
 
             $this->simulateRegisterModules($pluginToInstall);
 
-            $pluginInstance         = $pluginInstance ?? $ojtPlugin->instatiatePlugin($pluginToInstall->folder);
             // Applying input license to plugin setting  
-            if ($pluginInstance instanceof Plugin && $license && !$update) {
-                $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
+            if ($pluginInstance instanceof Plugin) {
+                if ($license && !$update) {
+                    $pluginInstance->updateSetting($this->contextId, 'license', $license);
+                }
+                Hook::call('OJT::pluginInstalled', array($pluginInstance));
             }
 
 
