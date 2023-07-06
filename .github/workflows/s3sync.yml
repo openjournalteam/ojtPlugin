@@ -3,6 +3,7 @@ name: SyncToS3-IDrive
 on:
   push:
     branches:
+      - 34
       - 33
       - 32
       - 31

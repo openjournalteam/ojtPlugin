@@ -1,12 +1,5 @@
 # Upgrade Plugin OJS untuk Support Versi OJS 3.4
 
-## TODO
-
-### Upgrade Plugins dan Tema
-
-- [ ] Novelty
-- [ ] OJT Plus
-
 Silahkan baca [catatan release](https://docs.pkp.sfu.ca/dev/release-notebooks/en/3.4-release-notebook) oleh PKP terlebih dahulu untuk memahami perubahan apa saja yang ada di OJS versi 3.4
 
 ## Namespaces and Constant
@@ -221,4 +214,26 @@ Tambahkan priority saat meload jquery
 
 ```php
 $this->addScript('jQuery', $jquery, ['baseUrl' => '', 'priority' => TemplateManager::STYLE_SEQUENCE_CORE]);
+```
+
+## DOI
+
+Struktur DOI berubah di versi 3.4 ini, untuk menyesuaikan dengan DOI yang baru, maka perlu dilakukan perubahan pada kode plugin.
+Untuk mendapatkan doi dipublication bisa langsung menggunakan method `getDoi()` :
+
+```php
+$publication->getDoi();
+```
+
+Untuk mendapatkan object `DOI` bisa menggunakan method `getData('doiObject')` :
+
+```php
+$article->getCurrentPublication()->getData('doiObject');
+```
+
+Untuk mendapatkan doi url :
+
+```php
+$doiObject = $article->getCurrentPublication()->getData('doiObject');
+$doiUrl = $doiObject->getData('resolvingUrl');
 ```

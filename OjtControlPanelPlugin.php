@@ -236,7 +236,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         $menu['ojtPlugin'] = [
             'name' => 'OJT Control Panel',
             'url' => $request->getDispatcher()->url($request, Application::ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off',
-            "isCurrent" => false
+            "isCurrent" => false,
         ];
 
         $templateMgr->setState(['menu' => $menu]);
