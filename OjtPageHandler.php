@@ -2,18 +2,19 @@
 
 namespace APP\plugins\generic\ojtControlPanel;
 
-use APP\core\Application;
-use APP\file\PublicFileManager;
-use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
-use GuzzleHttp\Exception\BadResponseException;
-use APP\handler\Handler;
-use APP\template\TemplateManager;
-use PKP\db\DAORegistry;
-use PKP\file\FileManager;
 use PKP\plugins\Hook;
+use PKP\db\DAORegistry;
 use PKP\plugins\Plugin;
-use PKP\plugins\PluginSettingsDAO;
+use APP\handler\Handler;
+use APP\core\Application;
+use PKP\file\FileManager;
 use PKP\site\VersionCheck;
+use Illuminate\Support\Str;
+use APP\file\PublicFileManager;
+use APP\template\TemplateManager;
+use PKP\plugins\PluginSettingsDAO;
+use GuzzleHttp\Exception\BadResponseException;
+use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
 
 class OjtPageHandler extends Handler
 {
@@ -383,13 +384,14 @@ class OjtPageHandler extends Handler
             $pluginToInstall = json_decode($request->getUserVar('plugin'));
             $license = $request->getUserVar('license') ?? false;
             $update = $request->getUserVar('update');
-            $pluginInstance = $ojtPlugin->instatiatePlugin($pluginToInstall->folder);
+            $pluginFolder = Str::camel($pluginToInstall->folder);
+            $pluginInstance = $ojtPlugin->instatiantePluginWithoutThrow($pluginFolder);
             if ($update && $pluginInstance) {
 
                 $license = $pluginInstance?->getSetting($this->contextId, 'license');
             }
 
-            $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
+            $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license);
             if (!$downloadLink) throw new \Exception("There's a problem on the server, please try again later.");
 
             // trying to install dependencies
@@ -401,6 +403,9 @@ class OjtPageHandler extends Handler
             $ojtPlugin->installPlugin($downloadLink['product']);
 
             $this->simulateRegisterModules($pluginToInstall);
+
+            // try to instantiate a plugin again
+            $pluginInstance = $ojtPlugin->instatiantePluginWithoutThrow($pluginFolder);
 
             // Applying input license to plugin setting  
             if ($pluginInstance instanceof Plugin) {
@@ -421,6 +426,11 @@ class OjtPageHandler extends Handler
         }
     }
 
+    protected function toSnakeCase($string)
+    {
+        return Str::snake($string);
+    }
+
     /**
      * Lakukan pengecekan sewaktu menginstall plugin baru
      * delete jika ada error
@@ -428,14 +438,14 @@ class OjtPageHandler extends Handler
     protected function simulateRegisterModules($pluginToInstall)
     {
         $ojtPlugin = $this->ojtPlugin;
-
+        $pluginFolder = Str::camel($pluginToInstall->folder);
         // delete plugin when error occured
-        register_shutdown_function(function () use ($ojtPlugin, $pluginToInstall) {
+        register_shutdown_function(function () use ($ojtPlugin, $pluginToInstall, $pluginFolder) {
             $error = error_get_last();
             if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
 
             // Working directory berubah ketika callback ini berjalan, jadi harus mendapatkan fullpath
-            $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $pluginToInstall->folder;
+            $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $pluginFolder;
             try {
                 if (!is_dir($path)) {
                     throw new \Exception("$path is not directory");
@@ -447,7 +457,7 @@ class OjtPageHandler extends Handler
         });
 
 
-        if (!$ojtPlugin->instatiatePlugin($pluginToInstall->folder)) throw new \Exception("Plugin error");
+        if (!$ojtPlugin->instatiatePlugin($pluginFolder)) throw new \Exception("Plugin error");
     }
 
     public function resetSetting($args, $showJson = true)

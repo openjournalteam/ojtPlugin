@@ -178,9 +178,9 @@ class OjtControlPanelPlugin extends GenericPlugin
     public function fixThemeNotLoadedOnFrontend($hookName, $args)
     {
         $templateMgr            = $args[0];
-        if ($this->getJournalVersion() != '31') {
-            if ($templateMgr->getTemplateVars('activeTheme')) return;
-        }
+
+        if ($templateMgr->getTemplateVars('activeTheme')) return;
+
         $allThemes = PluginRegistry::loadCategory('themes', true);
         $activeTheme = null;
         $context = $this->getCurrentContextId() ? $this->getRequest()->getContext() : $this->getRequest()->getSite();
@@ -268,7 +268,7 @@ class OjtControlPanelPlugin extends GenericPlugin
                     $plugin->init();
                 }
             } else {
-                // load locale data for disabled plugins
+                // manually load locale data for disabled plugins
                 $plugin->pluginPath = $pluginDir;
                 $plugin->addLocaleData();
             }
@@ -538,7 +538,6 @@ class OjtControlPanelPlugin extends GenericPlugin
                 'journal_url' => $this->getJournalURL(),
                 'ojs_version' => $this->getJournalVersion()
             ];
-
             $request = $this->getHttpClient(['Content-Type' => 'application/x-www-form-urlencoded',])
                 ->post(
                     static::API . '/product/get_download_link',
@@ -575,7 +574,6 @@ class OjtControlPanelPlugin extends GenericPlugin
      * throw error if there is something wrong
      * @return bool - true if success.
      */
-
     public function installPlugin($url)
     {
         $url = str_replace('https', 'http', $url);
@@ -679,7 +677,6 @@ class OjtControlPanelPlugin extends GenericPlugin
 
         $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
         $pluginClassName = __NAMESPACE__ . "\\modules\\{$moduleFolder}\\" .  $version->getProductClassName();
-
         if (!class_exists($pluginClassName)) {
             $indexFile = $this->getModulesPath(DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php");
             if (!$fileManager->fileExists($indexFile)) {
@@ -695,5 +692,14 @@ class OjtControlPanelPlugin extends GenericPlugin
         }
 
         return $plugin;
+    }
+
+    public function instatiantePluginWithoutThrow($moduleFolder): ?LazyLoadPlugin
+    {
+        try {
+            return $this->instatiatePlugin($moduleFolder);
+        } catch (\Throwable $th) {
+            return null;
+        }
     }
 }
