@@ -289,23 +289,17 @@ class OjtPageHandler extends Handler
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url, $params);
 
-            $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
-            /** @var PluginSettingsDAO $pluginSettingsDao */
-
             $ojtplugin = $this->ojtPlugin;
 
-            $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao) {
-                $pluginFolder = $plugin['folder'];
+            $plugins = array_map(function ($plugin) use ($ojtplugin) {
+                $plugin['folder'] = $pluginFolder = Str::camel($plugin['folder']);
                 $pluginVersion = $plugin['version'];
-                try {
-                    $targetPlugin = $this->ojtPlugin->instatiatePlugin($pluginFolder);
-                } catch (\Throwable $th) {
-                    $targetPlugin = null;
-                }
+
+                $targetPlugin = $this->ojtPlugin->instatiantePluginWithoutThrow($pluginFolder);
 
 
                 $plugin['update'] = false;
-                $plugin['license'] = $pluginSettingsDao->getSetting($this->ojtPlugin->getCurrentContextId(), $plugin['class'], 'license') ?? null;
+                $plugin['license'] = $targetPlugin?->getSetting($this->contextId, 'license') ?? null;
 
                 if ($targetPlugin) {
                     $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
@@ -402,7 +396,8 @@ class OjtPageHandler extends Handler
             // trying to install plugin
             $ojtPlugin->installPlugin($downloadLink['product']);
 
-            $this->simulateRegisterModules($pluginToInstall);
+            // FIXME: Disabled for now as when new plugin installed, the class is not autoloaded yet, trying to figure out how to autoload it
+            // $this->simulateRegisterModules($pluginToInstall);
 
             // try to instantiate a plugin again
             $pluginInstance = $ojtPlugin->instatiantePluginWithoutThrow($pluginFolder);
@@ -455,7 +450,6 @@ class OjtPageHandler extends Handler
             } catch (\Throwable $th) {
             }
         });
-
 
         if (!$ojtPlugin->instatiatePlugin($pluginFolder)) throw new \Exception("Plugin error");
     }
