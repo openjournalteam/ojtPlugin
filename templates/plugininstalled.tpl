@@ -98,7 +98,7 @@
                         <span x-text="plugin.name" :class="{ 'ojt-font-bold' : plugin.enabled }"></span>
                       </template>
                       <template x-if="plugin.enabled && plugin?.page">
-                        <a href="#" @click="alpineComponent('utama').menu = 'Plugin'; $store.plugins.page = plugin.name"
+                        <a href="#" @click="alpineComponent('utama').toggleMainMenu(plugin.page, 'Plugin')"
                           x-text="plugin.name" :page="plugin.page"
                           class="menu_item ojt-font-bold ojt-text-primary-600 hover:ojt-text-primary-800"></a>
                       </template>

@@ -7,13 +7,35 @@ use OjtPlugin;
 
 class SubscriptionService
 {
+  public const SINGLE_JOURNAL = 'single_journal';
+  public const INSTITUTIONAL = 'institutional';
+
+  public $mode;
+
   protected $plugin;
   protected $baseUrl;
   protected $request;
 
-  public function __construct($plugin)
+  public function __construct($plugin, $mode = null)
   {
     $this->plugin = $plugin;
+    $this->mode = $mode ?? static::SINGLE_JOURNAL;
+  }
+
+  public function getModeLabel($mode = null)
+  {
+    $mode = $mode ?? $this->mode;
+
+    switch ($mode) {
+      case static::SINGLE_JOURNAL:
+        return 'Single Journal';
+        break;
+      case static::INSTITUTIONAL:
+        return 'Institutional';
+        break;
+    }
+
+    throw new Exception('Unknown subscription mode');
   }
 
   public function getSubscriptionApi($method = '')
@@ -21,17 +43,14 @@ class SubscriptionService
     return OjtPlugin::SERVICE_API . 'api/v2/subscription/' . $method;
   }
 
-  public static function init($plugin)
+  public static function init($plugin, $mode = null)
   {
-    return new static($plugin);
+    return new static($plugin, $mode);
   }
-
 
   public function register($token)
   {
     try {
-      $plugin = $this->getPlugin();
-
       $response = $this->apiRequest(
         'register',
         ['token' => $token]
@@ -41,10 +60,14 @@ class SubscriptionService
         throw new Exception($response['message']);
       }
 
-      $plugin->updateSetting(
-        $plugin->getCurrentContextId(),
+      $this->updateSetting(
         'quota',
         $response['quota']
+      );
+
+      $this->updateSetting(
+        'registered',
+        1
       );
 
       return $response;
@@ -55,10 +78,45 @@ class SubscriptionService
     return $response;
   }
 
-  /**
-   * TODO add api to check quota
-   */
-  public function getQuota()
+  public function updateSetting($key, $value)
+  {
+    switch ($this->mode) {
+      case static::SINGLE_JOURNAL:
+        $contextId = $this->plugin->getCurrentContextId();
+        break;
+      case static::INSTITUTIONAL:
+        $contextId = CONTEXT_SITE;
+        break;
+      default:
+        throw new Exception('Unknown subscription mode');
+        break;
+    }
+
+    return $this->plugin->updateSetting(
+      $contextId,
+      $key,
+      $value
+    );
+  }
+
+  public function getSetting($key, $default = null)
+  {
+    switch ($this->mode) {
+      case static::SINGLE_JOURNAL:
+        $contextId = $this->plugin->getCurrentContextId();
+        break;
+      case static::INSTITUTIONAL:
+        $contextId = CONTEXT_SITE;
+        break;
+      default:
+        throw new \Exception('Unknown subscription mode');
+        break;
+    }
+
+    return $this->plugin->getSetting($contextId, $key) ?? $default;
+  }
+
+  public function quota()
   {
     try {
       $response = $this->apiRequest(
@@ -74,16 +132,49 @@ class SubscriptionService
     }
   }
 
+  public function refreshQuota()
+  {
+    $response = $this->quota();
+    $this->updateSetting('quota', $response['quota']);
+  }
+
+  public function getQuota($refreshQuota = false)
+  {
+    if ($refreshQuota) {
+      $this->refreshQuota();
+    }
+
+    return $this->getSetting('quota');
+  }
+
   public function checkRegistered()
   {
     $response = $this->apiRequest(
       'check'
     );
+
+
     if ($response['error']) {
       throw new Exception($response['message']);
     }
 
     return $response;
+  }
+
+  public function isRegistered()
+  {
+    if ($this->getSetting('registered')) {
+      return true;
+    }
+
+    $response = $this->checkRegistered();
+    $isRegisteredOnServer = $response['exists'];
+    if ($isRegisteredOnServer) {
+      $this->updateSetting('registered', $isRegisteredOnServer);
+      $this->updateSetting('quota', $response['quota']);
+    }
+
+    return $isRegisteredOnServer;
   }
 
   protected function getPlugin()
@@ -120,7 +211,16 @@ class SubscriptionService
 
   public function getClient()
   {
-    return $this->getOjtPlugin()->getHttpClient();
+    $headers = [
+      'product_name' => $this->plugin->getName(),
+      'subscription_mode' => $this->mode,
+    ];
+
+    if (method_exists($this->plugin, 'getPluginVersion')) {
+      $headers['product_version'] = $this->plugin->getPluginVersion();
+    }
+
+    return $this->getOjtPlugin()->getHttpClient($headers);
   }
 
   protected function &getRequest()
@@ -131,12 +231,26 @@ class SubscriptionService
     return $this->request;
   }
 
-  protected function getBaseUrl()
+  /**
+   * Ada 2 mode yang akan disediakan untuk system subscription ini.
+   * Disaat SINGLE_JOURNAL mode aktif, maka kuota akan terscope hanya ke single journal tersebut.
+   * Disaat INSTITUTIONAL aktif, maka kuota akan bisa digunakan oleh semua journal yang ada didalam 1 OJS. 
+   * 
+   * Semisal mode SINGLE_JURNAL maka base url yg akan digenerate adalah http://ojs.test/index.php/jcb
+   * Semisal mode INSTITUTIONAL maka base url yg akan digenerate adalah http://ojs.test/index.php
+   */
+  public function getBaseUrl()
   {
-    if (!$this->baseUrl) {
-      $this->baseUrl = $this->getRequest()->getDispatcher()->url($this->getRequest(), ROUTE_PAGE, $this->getRequest()->getContext()->getPath());
+    switch ($this->mode) {
+      case static::SINGLE_JOURNAL:
+        return $this->getRequest()->getDispatcher()->url($this->getRequest(), ROUTE_PAGE, $this->getRequest()->getContext()->getPath());
+        break;
+      case static::INSTITUTIONAL:
+        return $this->getRequest()->getBaseUrl();
+      default:
+        throw new Exception('Unknown subscription mode');
+        break;
     }
-    return $this->baseUrl;
   }
 
   protected function getRequiredPayload()
