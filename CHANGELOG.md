@@ -1,3 +1,8 @@
+### 2.0.6.0 : 15 Juli 2023
+
+- Fix logging error by OJTPlugin make error reporting not working
+- Replace download plugin implementation using GuzzleHttp because in some server, file_get_contents is not working
+
 ### 2.0.5.0 : 15 Juni 2023
 
 - Change color theme in Setting Page
