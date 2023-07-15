@@ -626,14 +626,9 @@ class OjtControlPanelPlugin extends GenericPlugin
 
         // Download file
         $file_name = __DIR__ . DIRECTORY_SEPARATOR . 'OJTTemporaryFile.zip';
-
-        // place file to root of ojs
-        if (!$file = file_get_contents($url)) {
-            throw new Exception('Failed to download Plugin');
-        }
-        if (!file_put_contents($file_name, $file)) {
-            throw new Exception('Failed to make a temporary plugin file');
-        }
+        $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
+        $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
+        $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
 
         // Extract file
         if (!class_exists('ZipArchive')) {
