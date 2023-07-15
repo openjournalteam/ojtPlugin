@@ -28,8 +28,12 @@ use GuzzleHttp\Exception\BadResponseException;
 use APP\plugins\generic\ojtControlPanel\classes\ErrorHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ParamHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ServiceHandler;
+use Monolog\Utils;
+use Psr\Log\LogLevel;
+use Throwable;
 
 require_once(dirname(__FILE__) . '/vendor/autoload.php');
+
 class OjtControlPanelPlugin extends GenericPlugin
 {
     public $registeredModule;
@@ -41,9 +45,9 @@ class OjtControlPanelPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
-                register_shutdown_function([$this, 'fatalHandler']);
-                // $this->init();
-                // $this->setLogger();
+                // register_shutdown_function([$this, 'fatalHandler']);
+                $this->init();
+                $this->setLogger();
                 $this->createModulesFolder();
                 $this->registerModules();
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
@@ -128,17 +132,20 @@ class OjtControlPanelPlugin extends GenericPlugin
         $error = error_get_last();
         // Fatal error, E_ERROR === 1
         if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
-        if (!str_contains($error['file'], 'ojtPlugin')) {
+        if (!str_contains($error['file'], 'ojtControlPanel')) {
             return;
         }
 
+        /**
+         * Get folder name from error file
+         */
         $folders = explode('/', $error['file']);
         $key = array_search('modules', $folders);
         if (!is_int($key)) {
             return;
         }
-
         $errorPluginFolder = $folders[$key + 1];
+
         $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $errorPluginFolder;
         try {
             if (!is_dir($path)) {
@@ -164,15 +171,55 @@ class OjtControlPanelPlugin extends GenericPlugin
         return unlink($errorLogFile);
     }
 
+    public function isTimeToDeleteLog($days = 2)
+    {
+        $errorLogFile = static::getErrorLogFile();
+
+        if (!is_file($errorLogFile)) return false;
+
+        $dateCreatedFile = filemtime($errorLogFile);
+
+        $now = time();
+        $datediff = $now - $dateCreatedFile;
+        $diffInDays = round($datediff / (60 * 60 * 24));
+
+        return $diffInDays > $days;
+    }
+
     public function setLogger()
     {
         // Jangan simpan log error ketika setting ini didisable
         if (!$this->isDiagnosticEnabled()) return;
 
         $logger = new Logger('OJTLog');
+        $logger->pushHandler(new StreamHandler(static::getErrorLogFile()));
         $logger->pushHandler(new ServiceHandler());
-        $logger->pushHandler(new StreamHandler(static::getErrorLogFile()), Logger::ERROR);
-        ErrorHandler::register($logger);
+
+        set_exception_handler(function (Throwable $e) use ($logger): void {
+            if ($this->isTimeToDeleteLog()) {
+                static::deleteLogFile();
+            };
+
+            $logger->log(
+                LogLevel::ERROR,
+                sprintf('Uncaught Exception %s: "%s" at %s line %s', Utils::getClass($e), $e->getMessage(), $e->getFile(), $e->getLine()),
+                ['exception' => $e]
+            );
+
+            throw $e;
+        });
+
+        set_error_handler(function (int $code, string $message, string $file = '', int $line = 0, ?array $context = []) use ($logger): bool {
+            if ($code !== E_ERROR) return false;
+
+            if ($this->isTimeToDeleteLog()) {
+                static::deleteLogFile();
+            };
+
+
+            $logger->log(LogLevel::CRITICAL, 'E_ERROR: ' . $message, ['code' => $code, 'message' => $message, 'file' => $file, 'line' => $line]);
+            return false;
+        });
     }
 
     public function fixThemeNotLoadedOnFrontend($hookName, $args)
@@ -262,7 +309,7 @@ class OjtControlPanelPlugin extends GenericPlugin
             $categoryDir    = $this->getModulesPath();
             $pluginDir      = $categoryDir .  $moduleFolder;
 
-            if ($plugin->getEnabled()) {
+            if ($plugin->getEnabled() || $this->getCurrentContextId() == Application::CONTEXT_SITE) {
                 PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
                 if ($plugin instanceof ThemePlugin) {
                     $plugin->init();
@@ -560,7 +607,6 @@ class OjtControlPanelPlugin extends GenericPlugin
             }
 
             $result['dependencies'] = $dependencies;
-
             return $result;
         } catch (BadResponseException $e) {
             throw $e;
@@ -682,7 +728,7 @@ class OjtControlPanelPlugin extends GenericPlugin
             if (!$fileManager->fileExists($indexFile)) {
                 throw new Exception("Plugin with classname : $pluginClassName not found");
             }
-            $plugin = include($indexFile);
+            $plugin = @include($indexFile);
         }
 
 
