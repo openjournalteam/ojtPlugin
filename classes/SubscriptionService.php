@@ -26,18 +26,13 @@ class SubscriptionService
 
   public function getModeLabel($mode = null)
   {
-    $mode = $mode ?? $this->mode;
+    $mode ??= $this->mode;
 
-    switch ($mode) {
-      case static::SINGLE_JOURNAL:
-        return 'Single Journal';
-        break;
-      case static::INSTITUTIONAL:
-        return 'Institutional';
-        break;
-    }
-
-    throw new Exception('Unknown subscription mode');
+    return match ($mode) {
+      static::SINGLE_JOURNAL => 'Single Journal',
+      static::INSTITUTIONAL => 'Institutional',
+      default => throw new Exception('Unknown subscription mode'),
+    };
   }
 
   public function getSubscriptionApi($method = '')
@@ -240,16 +235,11 @@ class SubscriptionService
    */
   public function getBaseUrl()
   {
-    switch ($this->mode) {
-      case static::SINGLE_JOURNAL:
-        return $this->getRequest()->getDispatcher()->url($this->getRequest(), Application::ROUTE_PAGE, $this->getRequest()->getContext()->getPath());
-        break;
-      case static::INSTITUTIONAL:
-        return $this->getRequest()->getBaseUrl();
-      default:
-        throw new Exception('Unknown subscription mode');
-        break;
-    }
+    return match ($this->mode) {
+      static::SINGLE_JOURNAL => $this->getRequest()->getDispatcher()->url($this->getRequest(), Application::ROUTE_PAGE, $this->getRequest()->getContext()->getPath()),
+      static::INSTITUTIONAL => $this->getRequest()->getBaseUrl(),
+      default => throw new Exception('Unknown subscription mode'),
+    };
   }
 
   protected function getRequiredPayload()
@@ -258,6 +248,7 @@ class SubscriptionService
     return [
       'product' => $plugin->getName(),
       'journal_url' => $this->getBaseUrl(),
+      'subscription_mode' => $this->mode
     ];
   }
 }
