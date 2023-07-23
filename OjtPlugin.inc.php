@@ -90,10 +90,10 @@ class OjtPlugin extends GenericPlugin
             'User-Agent' => $agents[rand(0, 3)],
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Headers' => 'x-csrf-uap-admin-token',
-            'ojt_plugin_version' => $this->getPluginVersion(),
-            'ojs_version' => $this->getJournalVersion(),
-            'ojs_version_detail' => $version->getVersionString(),
-            'php_version' => PHP_VERSION,
+            'ojt-plugin-version' => $this->getPluginVersion(),
+            'ojs-version' => $this->getJournalVersion(),
+            'ojs-version-detail' => $version->getVersionString(),
+            'php-version' => PHP_VERSION,
         ]);
 
         return new \GuzzleHttp\Client([
