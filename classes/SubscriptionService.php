@@ -225,9 +225,13 @@ class SubscriptionService
     return $this->getOjtControlPanelPlugin()->getHttpClient($headers);
   }
 
-  protected function &getRequest(): Request
+  protected function getRequest(): Request
   {
-    return Application::get()->getRequest();
+    if (!$this->request) {
+      $this->request = Application::get()->getRequest();
+    }
+
+    return $this->request;
   }
 
   /**
