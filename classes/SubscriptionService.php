@@ -262,6 +262,7 @@ class SubscriptionService
     return [
       'product' => $plugin->getName(),
       'journal_url' => $this->getBaseUrl(),
+      'subscription_mode' => $this->mode
     ];
   }
 }
