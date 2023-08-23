@@ -225,7 +225,7 @@ class OjtPageHandler extends Handler
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url);
             $json = json_decode((string) $response->getBody(), true);
-            $json['updateAvailable'] = version_compare($this->ojtPlugin->getPluginVersion(), $json['latest_version']) == -1;
+            $json['updateAvailable'] = version_compare($this->ojtPlugin->getPluginVersion(), $json['latest_version'], '<'); 
 
             return showJson($json);
         } catch (\Throwable $th) {

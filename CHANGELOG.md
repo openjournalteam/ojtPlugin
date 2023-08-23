@@ -1,3 +1,6 @@
+### 2.0.6.3 : 23 Aug 2023
+- Fix false update notification.
+
 ### 2.0.6.0 : 15 Juli 2023
 
 - Fix logging error by OJTPlugin make error reporting not working
