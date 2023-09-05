@@ -1,3 +1,6 @@
+### 3.0.0.4 : 05 Sep 2023
+- Fix showing log by PluginRegistry on Modules Plugin 
+
 ### 3.0.0.0 : 17 Juni 2023
 
 - Support for OJS 3.4.x.x

@@ -304,6 +304,9 @@ class OjtControlPanelPlugin extends GenericPlugin
 
             $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
             $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
+            
+            $versionDao = DAORegistry::getDAO('VersionDAO');
+            $versionDao->disableVersion($version->getData('productType'), $version->getData('product'));
 
             $categoryPlugin = explode('.', $version->getData('productType'))[1];
             $categoryDir    = $this->getModulesPath();
