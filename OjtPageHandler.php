@@ -104,6 +104,24 @@ class OjtPageHandler extends Handler
         return $templateMgr->display($this->ojtPlugin->getTemplateResource('index.tpl'));
     }
 
+    public function support($args, $request)
+    {
+        $user           = $request->getUser();
+        $journalName    = $request->getContext()->getLocalizedName();
+        $params         = [
+            $user->getEmail(),
+            time(),
+            $user->getLocalizedGivenName(),
+            $user->getLocalizedFamilyName(),
+            $journalName
+        ];
+        $url            = 'https://ticketing.openjournaltheme.com/login/' . base64_encode(implode('+', $params));
+
+        header('Location: ' . $url, true, 302);
+
+        return;
+    }
+
     protected function getPluginFullUrl($path = '', $withVersion = true)
     {
         return $this->ojtPlugin->getPluginFullUrl($path, $withVersion);
@@ -113,7 +131,8 @@ class OjtPageHandler extends Handler
     {
         $templateMgr            = TemplateManager::getManager($request);
         $templateMgr->assign('settings', [
-            'enable_diagnostic' => $this->ojtPlugin->isDiagnosticEnabled()
+            'enable_diagnostic' => $this->ojtPlugin->isDiagnosticEnabled(),
+            'show_support_link_ojs' => $this->ojtPlugin->getSetting($this->contextId, 'show_support_link_ojs') ?? true,
         ]);
 
 
@@ -127,7 +146,8 @@ class OjtPageHandler extends Handler
     public function saveSettings($args, $request)
     {
         $this->ojtPlugin->updateSetting(Application::CONTEXT_SITE, 'enable_diagnostic', filter_var($request->getUserVar('enable_diagnostic'), FILTER_VALIDATE_BOOLEAN));
-
+        $this->ojtPlugin->updateSetting($this->contextId, 'show_support_link_ojs', filter_var($request->getUserVar('show_support_link_ojs'), FILTER_VALIDATE_BOOLEAN));
+        
         $json['error'] = 0;
         $json['msg']   = 'Save Success';
         return showJson($json);

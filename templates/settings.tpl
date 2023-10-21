@@ -48,26 +48,38 @@
                   <main>
                     <!-- === Remove and replace with your own content... === -->
                     <form x-data='settingForm({$settings|@json_encode})' method="POST">
-                      <div class="ojt-mb-6">
-                        <div class="ojt-flex ojt-items-center">
-                          <input id="default-checkbox" type="checkbox" x-model="data.enable_diagnostic"
-                            class="ojt-w-4 ojt-h-4 ojt-text-primary-600 ojt-bg-gray-100 ojt-border-gray-300 ojt-rounded focus:ojt-ring-primary-500 dark:focus:ojt-ring-primary-600 dark:ojt-ring-offset-gray-800 focus:ojt-ring-2 dark:ojt-bg-gray-700 dark:ojt-border-gray-600">
-                          <div class="ojt-ml-2">
-                            <label class="ojt-text-sm ojt-font-medium ojt-text-gray-900 dark:ojt-text-gray-300">Enable
-                              Diagnostics</label>
-                            <p class="ojt-text-xs">
-                              Help us fix things and improve OJT Products and services. Send diagnostics data (error
-                              log) to Open
-                              Journal Theme.
-                            </p>
-                          </div>
+                        <div class="ojt-mb-6">
+                            <div class="ojt-flex ojt-items-center">
+                            <input id="default-checkbox" type="checkbox" x-model="data.enable_diagnostic"
+                                class="ojt-w-4 ojt-h-4 ojt-text-primary-600 ojt-bg-gray-100 ojt-border-gray-300 ojt-rounded focus:ojt-ring-primary-500 dark:focus:ojt-ring-primary-600 dark:ojt-ring-offset-gray-800 focus:ojt-ring-2 dark:ojt-bg-gray-700 dark:ojt-border-gray-600">
+                            <div class="ojt-ml-2">
+                                <label class="ojt-text-sm ojt-font-medium ojt-text-gray-900 dark:ojt-text-gray-300">Enable
+                                Diagnostics</label>
+                                <p class="ojt-text-xs">
+                                Help us fix things and improve OJT Products and services. Send diagnostics data (error
+                                log) to Open
+                                Journal Theme.
+                                </p>
+                            </div>
+                            </div>
                         </div>
-                      </div>
+                        <div class="ojt-mb-6">
+                            <div class="ojt-flex ojt-items-center">
+                            <input id="default-checkbox" type="checkbox" x-model="data.show_support_link_ojs"
+                                class="ojt-w-4 ojt-h-4 ojt-text-primary-600 ojt-bg-gray-100 ojt-border-gray-300 ojt-rounded focus:ojt-ring-primary-500 dark:focus:ojt-ring-primary-600 dark:ojt-ring-offset-gray-800 focus:ojt-ring-2 dark:ojt-bg-gray-700 dark:ojt-border-gray-600">
+                            <div class="ojt-ml-2">
+                                <label class="ojt-text-sm ojt-font-medium ojt-text-gray-900 dark:ojt-text-gray-300">Show Get Support Link on OJS Dashboard</label>
+                                <p class="ojt-text-xs">
+                                Allow plugin to show Get Support Link on OJS Dashboard.
+                                </p>
+                            </div>
+                            </div>
+                        </div>
 
-                      <button type="submit" @click.prevent="submit" :disabled="loading"
-                        class="ojt-text-white ojt-bg-primary-700 hover:ojt-bg-primary-800 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-primary-300 ojt-font-medium ojt-rounded-lg ojt-text-sm ojt-w-full sm:ojt-w-auto ojt-px-4 ojt-py-2 ojt-text-center disabled:ojt-opacity-75">
-                        Submit
-                      </button>
+                        <button type="submit" @click.prevent="submit" :disabled="loading"
+                            class="ojt-text-white ojt-bg-primary-700 hover:ojt-bg-primary-800 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-primary-300 ojt-font-medium ojt-rounded-lg ojt-text-sm ojt-w-full sm:ojt-w-auto ojt-px-4 ojt-py-2 ojt-text-center disabled:ojt-opacity-75">
+                            Submit
+                        </button>
                     </form>
                     <!-- === End ===  -->
                   </main>
