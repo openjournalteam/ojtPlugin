@@ -267,13 +267,12 @@ class OjtPlugin extends GenericPlugin
 
     public function getModulesPath($path = '')
     {
-        return $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $path;
+        return $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $this->getCurrentContextId() . DIRECTORY_SEPARATOR . $path;
     }
 
     public function registerModules()
     {
         $modulesFolder = $this->getDirs($this->getModulesPath());
-
         import('lib.pkp.classes.site.VersionCheck');
 
         $plugins = [];
@@ -349,7 +348,7 @@ class OjtPlugin extends GenericPlugin
             return;
         }
 
-        mkdir(getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath());
+        mkdir(getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath(), 0755, true);
     }
 
     // Show available update on Setting -> Website
