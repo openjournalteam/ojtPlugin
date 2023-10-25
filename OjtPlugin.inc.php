@@ -22,6 +22,7 @@ class OjtPlugin extends GenericPlugin
     public function register($category, $path, $mainContextId = null)
     {
         if (parent::register($category, $path, $mainContextId)) {
+            // dd($encryption_key = openssl_digest(php_uname(), 'MD5', TRUE));
             if ($this->getEnabled()) {
                 register_shutdown_function([$this, 'fatalHandler']);
                 $this->init();
@@ -477,13 +478,12 @@ class OjtPlugin extends GenericPlugin
 
     public function setPageHandler($hookName, $params)
     {
-        if ($this->getCurrentContextId() == 0) {
-            // Panel tidak support untuk sitewide 
-            return false;
-        }
+        // if ($this->getCurrentContextId() == 0) {
+        //     // Panel tidak support untuk sitewide 
+        //     return false;
+        // }
 
         $page = $params[0];
-
         switch ($page) {
             case 'ojt':
                 define('HANDLER_CLASS', 'OjtPageHandler');
@@ -513,10 +513,12 @@ class OjtPlugin extends GenericPlugin
             return $actions;
         }
 
+        $path = $this->getCurrentContextId() ? $request->getContext()->getPath() : 'index';
+
         import('lib.pkp.classes.linkAction.request.OpenWindowAction');
         $linkAction = new LinkAction(
             'ojt_control_panel',
-            new OpenWindowAction($request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off'),
+            new OpenWindowAction($request->getDispatcher()->url($request, ROUTE_PAGE, $path) . '/ojt?PageSpeed=off'),
             'Control Panel',
             null
         );
@@ -586,7 +588,12 @@ class OjtPlugin extends GenericPlugin
     public function getJournalURL()
     {
         $request = $this->getRequest();
-        return $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath());
+
+        if($this->getCurrentContextId()){
+            return $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath());
+        }
+
+        return $request->getDispatcher()->url($request, ROUTE_PAGE, 'index');
     }
 
     public function getPluginDownloadLink($pluginToken, $license = false, $journalUrl)
@@ -720,4 +727,26 @@ class OjtPlugin extends GenericPlugin
     {
         return $this->getSetting(CONTEXT_SITE, 'enable_diagnostic') ?? true;
     }
+
+    public function getPublicFilesJournalUrl()
+    {
+        $publicFileManager  = new PublicFileManager();
+        $baseUrl            = $this->getRequest()->getBaseUrl() . '/';
+        $contextId          = $this->getCurrentContextId();
+
+        if ($this->getJournalVersion() == '31') {
+            return $baseUrl . $publicFileManager->getContextFilesPath(ASSOC_TYPE_JOURNAL, $this->getCurrentContextId()) . '/';
+        }
+        
+        if($contextId == CONTEXT_SITE){
+            return $baseUrl . $publicFileManager->getSiteFilesPath() . '/';
+        }
+
+        return $baseUrl . $publicFileManager->getContextFilesPath($this->getCurrentContextId()) . '/';
+    }
+
+    function isSitePlugin() {
+		return !Application::get()->getRequest()->getContext();
+	}
 }
+

@@ -53,12 +53,9 @@ class OjtPageHandler extends Handler
         $baseUrl = $request->getBaseUrl() . '/';
         $pluginFullUrl          = $baseUrl . $plugin->getPluginPath();
         $templateMgr            = TemplateManager::getManager($request);
+        $journal                = $this->contextId ? $request->getContext() : $request->getSite();
 
-        $publicFileManager = new PublicFileManager();
-
-        $publicFolder      = ($plugin->getJournalVersion() > '31')
-            ? $baseUrl . $publicFileManager->getContextFilesPath($this->contextId) . '/'
-            : $baseUrl . $publicFileManager->getContextFilesPath(ASSOC_TYPE_JOURNAL, $this->contextId) . '/';
+        $publicFolder      = $plugin->getPublicFilesJournalUrl();
 
         $ojtPlugin                                  = new \stdClass;
         $ojtPlugin->api                             = $plugin->apiUrl() . '/product/';
@@ -90,7 +87,8 @@ class OjtPageHandler extends Handler
         ];
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
-        $templateMgr->assign('journal', $this->contextId ? $request->getContext() : $request->getSite());
+        $templateMgr->assign('journal', $journal);
+        $templateMgr->assign('logoImage', $this->contextId ? $journal->getLocalizedData('pageHeaderLogoImage') : $journal->getLocalizedData('pageHeaderTitleImage'));
         $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
         $templateMgr->assign('pluginInstalledHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl')));
 
