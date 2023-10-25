@@ -1,3 +1,6 @@
+### 2.0.7.0 : 21 Oct 2023
+- Integration with OJT Support platform
+
 ### 2.0.6.3 : 23 Aug 2023
 - Fix false update notification.
 

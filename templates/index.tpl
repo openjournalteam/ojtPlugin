@@ -70,7 +70,6 @@
           </nav>
 
           <div class="ojt-p-4 ojt-mx-auto ojt-w-full ojt-gap-2 ojt-flex ojt-flex-col ojt-border-t">
-
             <button @click="menu = 'Plugin'; $store.plugins.page = 'settings'" role="menuitem" :class="{ 
                       'ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50': $store.plugins.page == 'settings',
                       'ojt-text-gray-500' : $store.plugins.page != 'settings'
@@ -108,6 +107,11 @@
                 </path>
               </svg>
               <span>OJS Tutorial</span>
+            </a>
+            <a href="{url router=$smarty.const.ROUTE_PAGE page="ojt" op="support"}" target="_blank"
+              class="ojt-w-full ojt-text-sm ojt-flex ojt-text-gray-500 ojt-items-center ojt-px-4 ojt-py-2 ojt-rounded-xl ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br hover:ojt-text-white ojt-gap-4 ojt-text-left">
+              <svg class="ojt-icon" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" viewBox="0 0 24 24" fill="currentColor"><g><rect fill="none" height="24" width="24"></rect></g><g><g><circle cx="9" cy="13" r="1"></circle><circle cx="15" cy="13" r="1"></circle><path d="M18,11.03C17.52,8.18,15.04,6,12.05,6c-3.03,0-6.29,2.51-6.03,6.45c2.47-1.01,4.33-3.21,4.86-5.89 C12.19,9.19,14.88,11,18,11.03z"></path><path d="M20.99,12C20.88,6.63,16.68,3,12,3c-4.61,0-8.85,3.53-8.99,9H2v6h3v-5.81c0-3.83,2.95-7.18,6.78-7.29 c3.96-0.12,7.22,3.06,7.22,7V19h-8v2h10v-3h1v-6H20.99z"></path></g></g></svg>
+              <span>Get Support</span>
             </a>
             <a href="https://openjournaltheme.com/about-open-journal-theme" target="_blank"
               class="focus:ojt-outline-none ojt-text-white ojt-text-sm ojt-justify-center ojt-py-2.5 ojt-px-5 ojt-rounded-xl  ojt-flex ojt-items-center ojt-bg-gradient-to-l ojt-text-white ojt-shadow-lg ojt-shadow-primary-500/50 ojt-from-primary-500 ojt-via-primary-600 ojt-to-primary-700 hover:ojt-bg-gradient-to-br ojt-gap-4">
