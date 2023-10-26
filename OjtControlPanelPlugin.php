@@ -274,17 +274,26 @@ class OjtControlPanelPlugin extends GenericPlugin
         if (!$request->getContext()) return;
 
         $templateMgr = TemplateManager::getManager($this->getRequest());
-        $dispatcher = $request->getDispatcher();
         $router = $request->getRouter();
         $userRoles = (array) $router->getHandler()->getAuthorizedContextObject(Application::ASSOC_TYPE_USER_ROLES);
-        if (!$request->getUser() || !count(array_intersect([Role::ROLE_ID_MANAGER, Role::ROLE_ID_SITE_ADMIN], $userRoles))) return;
+        $user = $request->getUser();
+        if (!$user || !count(array_intersect([Role::ROLE_ID_MANAGER, Role::ROLE_ID_SITE_ADMIN], $userRoles))) return;
 
         $menu = $templateMgr->getState('menu');
         $menu['ojtPlugin'] = [
             'name' => 'OJT Control Panel',
-            'url' => $request->getDispatcher()->url($request, Application::ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off',
+            'url' => $request->getDispatcher()->url($request, Application::ROUTE_PAGE, $request->getContext()->getPath(),  'ojt') . '?PageSpeed=off',
             "isCurrent" => false,
         ];
+
+
+        if($this->getSetting($this->getCurrentContextId(), 'show_support_link_ojs') ?? true){
+            $menu['ojtSupportTicketing'] = [
+                'name' => 'Get OJT support',
+                'url' => $request->getDispatcher()->url($request, Application::ROUTE_PAGE, $request->getContext()->getPath(), 'ojt', 'support'),
+                "isCurrent" => false
+            ];
+        }
 
         $templateMgr->setState(['menu' => $menu]);
     }

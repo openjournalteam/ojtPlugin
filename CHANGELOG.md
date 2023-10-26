@@ -1,3 +1,6 @@
+### 3.0.1.0 : 21 Oct 2023
+- Integration with OJT Support platform
+
 ### 3.0.0.4 : 05 Sep 2023
 - Fix showing log by PluginRegistry on Modules Plugin 
 
