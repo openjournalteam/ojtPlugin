@@ -8,6 +8,7 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Utils;
 use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
+use Openjournalteam\OjtPlugin\Classes\ModuleProtection;
 use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
 use Psr\Log\LogLevel;
@@ -22,12 +23,9 @@ class OjtPlugin extends GenericPlugin
     public function register($category, $path, $mainContextId = null)
     {
         if (parent::register($category, $path, $mainContextId)) {
-            // dd($encryption_key = openssl_digest(php_uname(), 'MD5', TRUE));
             if ($this->getEnabled()) {
-                register_shutdown_function([$this, 'fatalHandler']);
                 $this->init();
                 $this->setLogger();
-                $this->createModulesFolder();
                 $this->registerModules();
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
@@ -36,7 +34,6 @@ class OjtPlugin extends GenericPlugin
                 HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
             }
 
-
             return true;
         }
         return false;
@@ -44,6 +41,8 @@ class OjtPlugin extends GenericPlugin
 
     public function init()
     {
+        register_shutdown_function([$this, 'fatalHandler']);
+        
         $paramHandler = new ParamHandler($this);
         $paramHandler->handle();
     }
@@ -110,6 +109,8 @@ class OjtPlugin extends GenericPlugin
     {
         $error = error_get_last();
         // Fatal error, E_ERROR === 1
+        if($error === null) return;
+
         if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
         if (!str_contains($error['file'], 'ojtPlugin')) {
             return;
@@ -297,8 +298,10 @@ class OjtPlugin extends GenericPlugin
 
             $categoryPlugin = explode('.', $version->getData('productType'))[1];
             $categoryDir    = $this->getModulesPath();
-            $pluginDir      = $categoryDir .  $moduleFolder;
+            $pluginDir      = $categoryDir .  $moduleFolder . DIRECTORY_SEPARATOR;
 
+
+            $protection = new ModuleProtection($plugin, $pluginDir);
             PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
 
             if ($plugin instanceof ThemePlugin) {
@@ -315,15 +318,13 @@ class OjtPlugin extends GenericPlugin
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
             $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
+            $data['isInstalledFromOjt'] = $protection->check();
 
             $plugins[] = $data;
         }
 
-        // HookRegistry::call('PluginRegistry::categoryLoaded::themes');
-
 
         $this->registeredModule = $plugins;
-
         return $plugins;
     }
 

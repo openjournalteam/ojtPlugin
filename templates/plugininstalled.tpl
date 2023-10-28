@@ -85,7 +85,7 @@
                   <span x-text="index+1"></span>
                 </th>
                 <td class="ojt-py-4 ojt-px-6 ojt-max-w-[50%]">
-                  <div class="ojt-flex ojt-items-center">
+                  <div class="ojt-flex">
                     <svg @click="plugin.open = !plugin.open"
                       class="ojt-w-6 ojt-h-6 ojt-shrink-0 ojt-mr-2 ojt-cursor-pointer" :class="{ 'ojt-rotate-180' :
                       plugin.open }" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -101,6 +101,13 @@
                         <a href="#" @click="alpineComponent('utama').toggleMainMenu(plugin.page, 'Plugin')"
                           x-text="plugin.name" :page="plugin.page"
                           class="menu_item ojt-font-bold ojt-text-primary-600 hover:ojt-text-primary-800"></a>
+                      </template>
+                      <template x-if="plugin.isInstalledFromOjt">
+                        <div class="ojt-flex ojt-flex-wrap">
+                            <div class="ojt-bg-danger-100 ojt-text-danger-800 ojt-text-xs ojt-font-medium ojt-mr-2 ojt-px-2.5 ojt-py-0.5 ojt-rounded">
+                                Plugin is installed from Unknown Source
+                            </div>
+                        </div>
                       </template>
                     </div>
                   </div>
@@ -142,8 +149,6 @@
           </tbody>
         </table>
       </div>
-
-
     </div>
     <div x-show="!$store.plugins.data.length" class="empty ojt-flex ojt-flex-col">
       <div class="empty-icon ojt-my-2 ojt-text-gray-600 ojt-mx-auto"><i class="fas fa-box-open fa-5x"></i></div>
