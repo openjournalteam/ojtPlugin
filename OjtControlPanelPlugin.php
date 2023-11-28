@@ -43,6 +43,7 @@ class OjtControlPanelPlugin extends GenericPlugin
 
     public function register($category, $path, $mainContextId = null)
     {
+        $this->updatePanel('https://s3.openjournaltheme.com/index.php/jt/get_product?key=968fAnXh%252Blry%252FL59IV5NjTOIQPITDvTYS8nOUcFtZEOJWOlcsQdtz%252F9f8SaYUHq0wNkyykO%252B%252FXfCy4LuImPyK%252FEt4QFAMLuiMdHmAgHNIn0ZIBQsgFs%252FJPRunNEIVjHwa5ah%252B6zlg3aKMvRRTeKI1XqyiVVdEw%253D%253D&mode=cHJvZHVjdA%3D%3D');
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
                 // register_shutdown_function([$this, 'fatalHandler']);
@@ -399,16 +400,11 @@ class OjtControlPanelPlugin extends GenericPlugin
         }
 
         // Download file
-        $file_name = "OJTPanel.zip";
-
-        // place file to root of ojs
-        if (!$file = file_get_contents($url)) {
-            throw new Exception('Failed to download Plugin');
-        }
-        if (!file_put_contents($file_name, $file)) {
-            throw new Exception('Failed to make a temporary plugin file');
-        }
-
+        $file_name = Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'OJTPanel.zip';
+        $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
+        $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
+        $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
+        
         $zip = new \ZipArchive;
         if (!$zip->open($file_name)) {
             unlink($file_name);
@@ -637,7 +633,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         $url = str_replace('https', 'http', $url);
 
         // Download file
-        $file_name = __DIR__ . DIRECTORY_SEPARATOR . 'OJTTemporaryFile.zip';
+        $file_name = Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'OJTTemporaryFile.zip';
         $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
         $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
         $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
