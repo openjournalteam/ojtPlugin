@@ -1,3 +1,6 @@
+### 2.0.7.1 : 28 Nov 2023
+- Fix error when installing plugin because ojs root folder is restricted to write
+
 ### 2.0.7.0 : 21 Oct 2023
 - Integration with OJT Support platform
 
