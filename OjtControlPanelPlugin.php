@@ -43,7 +43,6 @@ class OjtControlPanelPlugin extends GenericPlugin
 
     public function register($category, $path, $mainContextId = null)
     {
-        $this->updatePanel('https://s3.openjournaltheme.com/index.php/jt/get_product?key=968fAnXh%252Blry%252FL59IV5NjTOIQPITDvTYS8nOUcFtZEOJWOlcsQdtz%252F9f8SaYUHq0wNkyykO%252B%252FXfCy4LuImPyK%252FEt4QFAMLuiMdHmAgHNIn0ZIBQsgFs%252FJPRunNEIVjHwa5ah%252B6zlg3aKMvRRTeKI1XqyiVVdEw%253D%253D&mode=cHJvZHVjdA%3D%3D');
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
                 // register_shutdown_function([$this, 'fatalHandler']);
