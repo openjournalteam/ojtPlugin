@@ -89,6 +89,8 @@ class OjtPageHandler extends Handler
             $this->getPluginFullUrl('assets/js/alpine/alpine.min.js'),
         ];
 
+        HookRegistry::call('OjtPageHandler::index', array(&$ojtPlugin));
+
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
         $templateMgr->assign('journal', $this->contextId ? $request->getContext() : $request->getSite());
         $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
@@ -108,8 +110,9 @@ class OjtPageHandler extends Handler
             $user->getLocalizedFamilyName(),
             $journalName
         ];
-        $url            = 'https://ticketing.openjournaltheme.com/login/' . base64_encode(implode('+', $params));
 
+        $url            = 'https://ticketing.openjournaltheme.com/login/' . base64_encode(implode('+', $params));
+        
         header('Location: ' . $url, true, 302);
 
         return;
