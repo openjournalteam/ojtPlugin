@@ -15,9 +15,20 @@
   <link href="{$ojtPlugin->tailwindCss}" rel="stylesheet">
   <link href="{$ojtPlugin->fontAwesomeCss}" rel="stylesheet">
   <link href="{$ojtPlugin->sweetAlertCss}" rel="stylesheet">
+  <meta name="htmx-config" content='{ "includeIndicatorStyles": false }'>
   <style>
     [x-cloak] {
       display: none;
+    }
+
+    .htmx-indicator{
+      display:none;
+    }
+    .htmx-request .htmx-indicator{
+        display:block;
+    }
+    .htmx-request.htmx-indicator{
+        display:block;
     }
   </style>
 </head>
