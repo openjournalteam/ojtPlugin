@@ -87,6 +87,7 @@ class OjtPageHandler extends Handler
             $this->getPluginFullUrl('assets/js/main.js'),
             $this->getPluginFullUrl('assets/js/updater.js'),
             $this->getPluginFullUrl('assets/js/alpine/alpine.min.js'),
+            $this->getPluginFullUrl('assets/js/htmx.min.js'),
         ];
 
         HookRegistry::call('OjtPageHandler::index', array(&$ojtPlugin));
