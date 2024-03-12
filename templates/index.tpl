@@ -1,6 +1,3 @@
-{if $currentContext}
-  {assign var="logoImage" value=$currentContext->getLocalizedData('pageHeaderLogoImage')}
-{/if}
 <!DOCTYPE html>
 <html lang="en">
 

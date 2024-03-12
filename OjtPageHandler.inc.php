@@ -1,6 +1,7 @@
 <?php
 
 use GuzzleHttp\Exception\BadResponseException;
+use Openjournalteam\OjtPlugin\Classes\ModuleProtection;
 
 import('classes.handler.Handler');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
@@ -53,12 +54,9 @@ class OjtPageHandler extends Handler
         $baseUrl = $request->getBaseUrl() . '/';
         $pluginFullUrl          = $baseUrl . $plugin->getPluginPath();
         $templateMgr            = TemplateManager::getManager($request);
+        $journal                = $this->contextId ? $request->getContext() : $request->getSite();
 
-        $publicFileManager = new PublicFileManager();
-
-        $publicFolder      = ($plugin->getJournalVersion() > '31')
-            ? $baseUrl . $publicFileManager->getContextFilesPath($this->contextId) . '/'
-            : $baseUrl . $publicFileManager->getContextFilesPath(ASSOC_TYPE_JOURNAL, $this->contextId) . '/';
+        $publicFolder      = $plugin->getPublicFilesJournalUrl();
 
         $ojtPlugin                                  = new \stdClass;
         $ojtPlugin->api                             = $plugin->apiUrl() . '/product/';
@@ -90,7 +88,8 @@ class OjtPageHandler extends Handler
         ];
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
-        $templateMgr->assign('journal', $this->contextId ? $request->getContext() : $request->getSite());
+        $templateMgr->assign('journal', $journal);
+        $templateMgr->assign('logoImage', $this->contextId ? $journal->getLocalizedData('pageHeaderLogoImage') : $journal->getLocalizedData('pageHeaderTitleImage'));
         $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
         $templateMgr->assign('pluginInstalledHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl')));
 
@@ -294,8 +293,8 @@ class OjtPageHandler extends Handler
                 $pluginVersion = $plugin['version'];
                 $targetPlugin = @include($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
 
-                $plugin['update'] = false;
-                $plugin['license'] = $pluginSettingsDao->getSetting($this->ojtPlugin->getCurrentContextId(), $plugin['class'], 'license') ?? null;
+                $plugin['update']   = false;
+                $plugin['license']  = $pluginSettingsDao->getSetting($this->ojtPlugin->getCurrentContextId(), $plugin['class'], 'license') ?? null;
 
                 if ($targetPlugin) {
                     import('lib.pkp.classes.site.VersionCheck');
@@ -368,12 +367,14 @@ class OjtPageHandler extends Handler
     public function installPlugin($args, $request)
     {
         try {
-            $ojtPlugin = $this->ojtPlugin;
-            $fileManager = new FileManager();
-            $pluginToInstall = json_decode($request->getUserVar('plugin'));
-            $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
-            $license = $request->getUserVar('license') ?? false;
-            $update = $request->getUserVar('update');
+            $ojtPlugin              = $this->ojtPlugin;
+            $fileManager            = new FileManager();
+            $pluginToInstall        = json_decode($request->getUserVar('plugin'));
+            $pluginFolder           = $ojtPlugin->getModulesPath($pluginToInstall->folder . DIRECTORY_SEPARATOR);
+            $indexFile              = $pluginFolder . "index.php";
+            $license                = $request->getUserVar('license') ?? false;
+            $update                 = $request->getUserVar('update');
+            
             if ($update && $fileManager->fileExists($indexFile)) {
                 $pluginInstance = include($indexFile);
 
@@ -385,7 +386,7 @@ class OjtPageHandler extends Handler
 
             // trying to install dependencies
             foreach ($downloadLink['dependencies'] as $dependency) {
-                $indexDependency = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $dependency['folder'] . DIRECTORY_SEPARATOR . "index.php");
+                $indexDependency = $ojtPlugin->getModulesPath($dependency['folder'] . DIRECTORY_SEPARATOR . "index.php");
                 
                 if (!$fileManager->fileExists($indexDependency)) {
                     $ojtPlugin->installPlugin($dependency['link']);
@@ -407,9 +408,13 @@ class OjtPageHandler extends Handler
                 $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
             }
 
+            $protection = new ModuleProtection($pluginInstance, $pluginFolder);
+            $protection->generateProtectionFile();
+
 
             $json['error']  = 0;
-            $json['msg']    =  !$update ? 'Plugin Installed' : 'Plugin Updated';
+            $json['msg']    = !$update ? 'Plugin Installed' : 'Plugin Updated';
+            
             return showJson($json);
         } catch (Exception $e) {
             $json['error']  = 1;
@@ -431,6 +436,9 @@ class OjtPageHandler extends Handler
         // delete plugin when error occured
         register_shutdown_function(function () use ($ojtPlugin, $pluginToInstall) {
             $error = error_get_last();
+
+            if(!$error) return;
+
             if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
 
             // Working directory berubah ketika callback ini berjalan, jadi harus mendapatkan fullpath
