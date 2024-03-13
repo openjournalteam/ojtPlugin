@@ -1,3 +1,6 @@
+### 3.0.2.0 : 13 Mar 2024
+- Fix showing notice log when there's an error
+
 ### 3.0.1.1 : 21 Nov 2023
 - Fix error when installing plugin because ojs root folder is restricted to write
 
