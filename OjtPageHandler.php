@@ -93,7 +93,10 @@ class OjtPageHandler extends Handler
             $this->getPluginFullUrl('assets/js/main.js'),
             $this->getPluginFullUrl('assets/js/updater.js'),
             $this->getPluginFullUrl('assets/js/alpine/alpine.min.js'),
+            $this->getPluginFullUrl('assets/js/htmx.min.js'),
         ];
+
+        Hook::call('OjtPageHandler::index', array(&$ojtPlugin));
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
         $templateMgr->assign('journal', $this->contextId ? $request->getContext() : $request->getSite());
