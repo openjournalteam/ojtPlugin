@@ -115,6 +115,8 @@ async function loadAjax(name, dom = false) {
       });
     }
     dom.html(resp.html);
+    
+    htmx.process('#main-menu')
   });
 
   xhr.fail((responseText, statusText, xhr, form) => {

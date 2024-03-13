@@ -132,7 +132,7 @@ class OjtControlPanelPlugin extends GenericPlugin
     {
         $error = error_get_last();
         // Fatal error, E_ERROR === 1
-        if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
+        if (!in_array(array_key_exists('type', $error) && $error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
         if (!str_contains($error['file'], 'ojtControlPanel')) {
             return;
         }
