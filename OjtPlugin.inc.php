@@ -93,6 +93,7 @@ class OjtPlugin extends GenericPlugin
             'ojt-plugin-version' => $this->getPluginVersion(),
             'ojs-version' => $this->getJournalVersion(),
             'ojs-version-detail' => $version->getVersionString(),
+            'journal-url' => $this->getJournalURL(),
             'php-version' => PHP_VERSION,
         ]);
 
