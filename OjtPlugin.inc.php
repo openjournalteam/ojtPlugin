@@ -176,11 +176,13 @@ class OjtPlugin extends GenericPlugin
                 static::deleteLogFile();
             };
 
-            $logger->log(
-                LogLevel::ERROR,
-                sprintf('Uncaught Exception %s: "%s" at %s line %s', Utils::getClass($e), $e->getMessage(), $e->getFile(), $e->getLine()),
-                ['exception' => $e]
-            );
+            if (str_contains($e->getFile(), 'ojtPlugin')) {
+                $logger->log(
+                    LogLevel::ERROR,
+                    sprintf('Uncaught Exception %s: "%s" at %s line %s', Utils::getClass($e), $e->getMessage(), $e->getFile(), $e->getLine()),
+                    ['exception' => $e]
+                );
+            }
 
             throw $e;
         });
@@ -194,7 +196,7 @@ class OjtPlugin extends GenericPlugin
 
 
             $logger->log(LogLevel::CRITICAL, 'E_ERROR: ' . $message, ['code' => $code, 'message' => $message, 'file' => $file, 'line' => $line]);
-            return false;
+            return false;   
         });
     }
 
