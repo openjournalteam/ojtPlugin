@@ -1,3 +1,9 @@
+### 2.0.8.1 : 08 Februari 2024
+- Fix error handler when there's no file on error log
+  
+### 2.0.8.0 : 08 Februari 2024
+- Some enhancement in OJT Plugin
+
 ### 2.0.7.1 : 28 Nov 2023
 - Fix error when installing plugin because ojs root folder is restricted to write
 

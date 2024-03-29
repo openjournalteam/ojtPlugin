@@ -111,7 +111,13 @@ class OjtPlugin extends GenericPlugin
         $error = error_get_last();
         // Fatal error, E_ERROR === 1
         if (array_key_exists('type', $error) && !in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
-        if (!str_contains($error['file'], 'ojtPlugin')) {
+        
+        // Sometime there's no file in error so we need to check it first
+        if (!array_key_exists('file', $error)) return;
+
+
+
+        if (!$this->str_contains($error['file'], 'ojtPlugin')) {
             return;
         }
 
@@ -176,11 +182,13 @@ class OjtPlugin extends GenericPlugin
                 static::deleteLogFile();
             };
 
-            $logger->log(
-                LogLevel::ERROR,
-                sprintf('Uncaught Exception %s: "%s" at %s line %s', Utils::getClass($e), $e->getMessage(), $e->getFile(), $e->getLine()),
-                ['exception' => $e]
-            );
+            if ($this->str_contains($e->getFile(), 'ojtPlugin')) {
+                $logger->log(
+                    LogLevel::ERROR,
+                    sprintf('Uncaught Exception %s: "%s" at %s line %s', Utils::getClass($e), $e->getMessage(), $e->getFile(), $e->getLine()),
+                    ['exception' => $e]
+                );
+            }
 
             throw $e;
         });
@@ -725,5 +733,14 @@ class OjtPlugin extends GenericPlugin
     public function isDiagnosticEnabled()
     {
         return $this->getSetting(CONTEXT_SITE, 'enable_diagnostic') ?? true;
+    }
+
+    function str_contains($haystack, $needle)
+    {
+        if(!$haystack){
+            return false;
+        }
+
+        return $needle !== '' && mb_strpos($haystack, $needle) !== false;
     }
 }
