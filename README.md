@@ -14,6 +14,11 @@ See why we created this plugin [here](https://docs.google.com/presentation/d/1m1
 - Protection from Plugin Error (the plugin will automatically deleted if it's causing an error)
 
 ## Installation
+### From OJS
+- Open Website Settings -> Plugins -> Plugin Gallery in your OJS Dashboard
+- Search for "OJT Control Panel" and then Install the plugin
+
+### Manual Upload
 - Go to [releases](https://github.com/openjournalteam/ojtPlugin/releases) page.
 - Download latest release tar.gz file.
 - Upload the tar.gz file in your OJS 3 Plugin Manager
