@@ -31,3 +31,4 @@ This plugin is licensed under the GNU GPL v3.0 License. See the [LICENSE](LICENS
 
 ---
 Thank you for using our plugin for your journal! If you have any questions or need assistance, please don't hesitate to contact us to support@openjournaltheme.com
+Don't forget to subscribe to our channel [subscribe now!](https://subscription.openjournaltheme.com/lists/63bfa9ae7633a/sign-up) and visit our site for the latest free plugin : https://openjournaltheme.com
