@@ -109,13 +109,15 @@ class OjtPlugin extends GenericPlugin
     function fatalHandler()
     {
         $error = error_get_last();
+
+        // Sometimes fatalHandler called without error
+        if(!is_array($error)) return;
+
         // Fatal error, E_ERROR === 1
         if (array_key_exists('type', $error) && !in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
         
         // Sometime there's no file in error so we need to check it first
         if (!array_key_exists('file', $error)) return;
-
-
 
         if (!$this->str_contains($error['file'], 'ojtPlugin')) {
             return;

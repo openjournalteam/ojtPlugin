@@ -1,3 +1,6 @@
+### 2.0.8.2 : 02 May 2024
+- Fix error handler when there's no error triggered
+
 ### 2.0.8.1 : 08 Februari 2024
 - Fix error handler when there's no file on error log
   
