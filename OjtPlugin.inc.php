@@ -47,6 +47,21 @@ class OjtPlugin extends GenericPlugin
         $paramHandler->handle();
     }
 
+    /**
+	 * Determine whether the plugin can be enabled.
+	 * @return boolean
+	 */
+	function getCanEnable() {
+		return $this->getCanDisable();
+	}
+
+    /**
+	 * @copydoc Plugin::getCanDisable()
+	 */
+	function getCanDisable() {
+		return $this->getRequest()->getUser()->hasRole([ROLE_ID_SITE_ADMIN], $this->getCurrentContextId());
+	}
+
     public function apiUrl()
     {
         return static::API;
