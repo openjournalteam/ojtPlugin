@@ -15,15 +15,34 @@ class OjtPageHandler extends Handler
 
     public function __construct($request)
     {
-        if (!$request->getUser()) {
-            $request->redirect(null, 'login', null, null);
-        }
+        parent::__construct();
+
+        $this->addRoleAssignment(
+			[ROLE_ID_SITE_ADMIN, ROLE_ID_MANAGER],
+		    ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
+		);
 
         $this->ojtPlugin = OjtPlugin::get();
 
         $this->contextId = $this->ojtPlugin->getCurrentContextId();
         $this->baseUrl = $this->ojtPlugin->getJournalURL();
     }
+
+    	/**
+	 * @copydoc PKPHandler::authorize
+	 */
+	public function authorize($request, &$args, $roleAssignments) {
+		import('lib.pkp.classes.security.authorization.PolicySet');
+		$rolePolicy = new PolicySet(COMBINING_PERMIT_OVERRIDES);
+
+		import('lib.pkp.classes.security.authorization.RoleBasedHandlerOperationPolicy');
+		foreach ($roleAssignments as $role => $operations) {
+			$rolePolicy->addPolicy(new RoleBasedHandlerOperationPolicy($request, $role, $operations));
+		}
+		$this->addPolicy($rolePolicy);
+
+		return parent::authorize($request, $args, $roleAssignments);
+	}
 
     public function updatePanel($args, $request)
     {
