@@ -59,7 +59,7 @@ class OjtPlugin extends GenericPlugin
 	 * @copydoc Plugin::getCanDisable()
 	 */
 	function getCanDisable() {
-		return $this->getRequest()->getUser()->hasRole([ROLE_ID_SITE_ADMIN], $this->getCurrentContextId());
+		return $this->getRequest()->getUser()->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
 	}
 
     public function apiUrl()
