@@ -47,6 +47,21 @@ class OjtPlugin extends GenericPlugin
         $paramHandler->handle();
     }
 
+    /**
+	 * Determine whether the plugin can be enabled.
+	 * @return boolean
+	 */
+	function getCanEnable() {
+		return $this->getCanDisable();
+	}
+
+    /**
+	 * @copydoc Plugin::getCanDisable()
+	 */
+	function getCanDisable() {
+		return $this->getRequest()->getUser()->hasRole([ROLE_ID_SITE_ADMIN], $this->getCurrentContextId());
+	}
+
     public function apiUrl()
     {
         return static::API;
@@ -111,11 +126,11 @@ class OjtPlugin extends GenericPlugin
         $error = error_get_last();
 
         // Sometimes fatalHandler called without error
-        if(!is_array($error)) return;
+        if (!is_array($error)) return;
 
         // Fatal error, E_ERROR === 1
         if (array_key_exists('type', $error) && !in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
-        
+
         // Sometime there's no file in error so we need to check it first
         if (!array_key_exists('file', $error)) return;
 
@@ -274,8 +289,8 @@ class OjtPlugin extends GenericPlugin
             "isCurrent" => false
         ];
 
-        
-        if($this->getSetting($this->getCurrentContextId(), 'show_support_link_ojs') ?? true){
+
+        if ($this->getSetting($this->getCurrentContextId(), 'show_support_link_ojs') ?? true) {
             $menu['ojtSupportTicketing'] = [
                 'name' => 'Get OJT support',
                 'url' => $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath(), 'ojt', 'support'),
@@ -404,7 +419,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
         $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
         $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
-        
+
         $zip = new ZipArchive;
         if (!$zip->open($file_name)) {
             unlink($file_name);
@@ -550,19 +565,6 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
     }
 
     /**
-     * Check the folder this $folder is.
-     * @return bool - true if folder exist
-     */
-    public function isPluginExist($folder)
-    {
-        if (!$folder) {
-            return false;
-        }
-
-        return is_dir(getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath() . $folder);
-    }
-
-    /**
      * Removing plugin folder
      * @return bool - true if success.
      */
@@ -655,7 +657,6 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
      * throw error if there is something wrong
      * @return bool - true if success.
      */
-
     public function installPlugin($url)
     {
         $url = str_replace('https', 'http', $url);
@@ -742,7 +743,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
 
     function str_contains($haystack, $needle)
     {
-        if(!$haystack){
+        if (!$haystack) {
             return false;
         }
 

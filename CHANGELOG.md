@@ -1,3 +1,8 @@
+### 2.0.9.0 : 02 September 2024
+- Add protection to access the control panel
+- only allow admin to enable/disable plugin
+- First version to release to pkp plugin gallery
+
 ### 2.0.8.2 : 02 May 2024
 - Fix error handler when there's no error triggered
 
