@@ -1,3 +1,6 @@
+### 2.0.9.1 : 31 October 2024
+- Allow Journal Manager to enable/disable plugin
+
 ### 2.0.9.0 : 02 September 2024
 - Add protection to access the control panel
 - only allow admin to enable/disable plugin
