@@ -1,3 +1,6 @@
+### 2.0.9.2 : 31 Octover 2024
+- Fix error when user not login
+
 ### 2.0.9.1 : 31 October 2024
 - Allow Journal Manager to enable/disable plugin
 

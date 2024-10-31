@@ -61,7 +61,10 @@ class OjtPlugin extends GenericPlugin
 	function getCanDisable() {
         if($this->isCurrentUserAreJournalManager()) return true;
 
-		return $this->getRequest()->getUser()->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
+        $currentUser = $this->getRequest()->getUser();
+        if(!$currentUser) return false;
+
+		return $currentUser->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
 	}
 
     public function isCurrentUserAreJournalManager()
