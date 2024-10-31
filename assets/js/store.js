@@ -56,6 +56,13 @@ Spruce.store("plugins", {
     this.type = "all";
   },
   async togglePlugin(currentPlugin) {
+    if(!currentPlugin.canEnable){
+      return Toast.fire({
+        title: "User does not have permission to enable this plugin",
+        icon: "warning",
+      });
+    }
+
     const formData = new FormData();
     formData.append("className", currentPlugin.className);
     formData.append("productType", currentPlugin.productType);

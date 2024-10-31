@@ -123,8 +123,8 @@
                   <div class="ojt-flex ojt-place-items-center">
                     <div class="lg:ojt-mx-auto">
                       <input type="checkbox" x-model="plugin.enabled" x-on:click.prevent class="cbx ojt-hidden"
-                        style="display: none;" />
-                      <label for="cbx" class="toggle" @click="$store.plugins.togglePlugin(plugin);"
+                        style="display: none;" disabled />
+                      <label for="cbx" class="toggle" @click="plugin.canEnable && $store.plugins.togglePlugin(plugin);"
                         :id="'toggleplugin' + plugin.product">
                         <span>
                           <svg width="10px" height="10px" viewBox="0 0 10 10">

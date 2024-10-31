@@ -365,6 +365,13 @@ class OjtPageHandler extends Handler
     {
         $plugin = $this->ojtPlugin;
 
+        if(!$plugin->getCanDisable()) {
+            $json['error'] = 1;
+            $json['msg'] = 'User does not have permission to disable/enable plugin';
+            showJson($json);
+            return;
+        }
+
         $pluginFolder = $request->getUserVar('pluginFolder');
         $isEnabled    = ($request->getUserVar('enabled') == 'true') ? true : false;
 

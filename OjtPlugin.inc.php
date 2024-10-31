@@ -59,8 +59,27 @@ class OjtPlugin extends GenericPlugin
 	 * @copydoc Plugin::getCanDisable()
 	 */
 	function getCanDisable() {
+        if($this->isCurrentUserAreJournalManager()) return true;
+
 		return $this->getRequest()->getUser()->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
 	}
+
+    public function isCurrentUserAreJournalManager()
+    {
+        $currentUser = $this->getRequest()->getUser();
+        if(!$currentUser) return false;
+        
+        $userGroupDao = DAORegistry::getDAO('UserGroupDAO');
+        $currentUserGroups = $userGroupDao->getByUserId($currentUser->getId(), $this->getCurrentContextId());
+
+        $currentUserGroupNameLocaleKeys = collect($currentUserGroups->toArray())->map(function ($userGroup) {
+            return $userGroup->getData('nameLocaleKey');
+        })->toArray();
+
+        if(in_array('default.groups.name.manager', $currentUserGroupNameLocaleKeys)) return true;
+
+        return false;
+    }
 
     public function apiUrl()
     {
@@ -347,6 +366,7 @@ class OjtPlugin extends GenericPlugin
             $data['className']   = $plugin->getName();
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
+            $data['canEnable']   = $this->getCanEnable();
             $data['open']        = false;
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
@@ -354,7 +374,6 @@ class OjtPlugin extends GenericPlugin
 
             $plugins[] = $data;
         }
-
         // HookRegistry::call('PluginRegistry::categoryLoaded::themes');
 
 
