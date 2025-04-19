@@ -18,7 +18,7 @@ class OjtPageHandler extends Handler
         parent::__construct();
 
         $this->addRoleAssignment(
-			[ROLE_ID_SITE_ADMIN],
+			[ROLE_ID_SITE_ADMIN, ROLE_ID_MANAGER],
 		    ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
 		);
 
@@ -380,6 +380,13 @@ class OjtPageHandler extends Handler
         if (!$targetPlugin && !is_object($targetPlugin)) {
             $json['error'] = 1;
             $json['msg']   = 'Plugin is Invalid';
+            showJson($json);
+            return;
+        }
+
+        if (!$targetPlugin->getCanEnable()) {
+            $json['error'] = 1;
+            $json['msg']   = 'Plugin cannot be enabled/disabled';
             showJson($json);
             return;
         }

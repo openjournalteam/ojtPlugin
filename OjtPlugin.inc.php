@@ -302,7 +302,7 @@ class OjtPlugin extends GenericPlugin
         $userRoles      = (array) $router->getHandler()->getAuthorizedContextObject(ASSOC_TYPE_USER_ROLES);
         $user           = $request->getUser();
 
-        if (!$user || !count(array_intersect([ROLE_ID_SITE_ADMIN], $userRoles))) return;
+        if (!$user || !count(array_intersect([ROLE_ID_MANAGER, ROLE_ID_SITE_ADMIN], $userRoles))) return;
 
         $menu = $templateMgr->getState('menu');
         $menu['ojtPlugin'] = [
@@ -369,7 +369,7 @@ class OjtPlugin extends GenericPlugin
             $data['className']   = $plugin->getName();
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
-            $data['canEnable']   = $this->getCanEnable();
+            $data['canEnable']   = $plugin->getCanEnable();
             $data['open']        = false;
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
