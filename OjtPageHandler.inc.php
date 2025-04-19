@@ -18,7 +18,7 @@ class OjtPageHandler extends Handler
         parent::__construct();
 
         $this->addRoleAssignment(
-			[ROLE_ID_SITE_ADMIN, ROLE_ID_MANAGER],
+			[ROLE_ID_SITE_ADMIN],
 		    ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
 		);
 
