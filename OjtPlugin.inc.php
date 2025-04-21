@@ -336,7 +336,7 @@ class OjtPlugin extends GenericPlugin
 
         $plugins = [];
         $fileManager = new FileManager();
-        foreach ($modulesFolder as $moduleFolder) {
+        foreach ($modulesFolder as $key => $moduleFolder) {
             $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
             $indexFile = $this->getModulesPath(DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php");
             if (
@@ -369,7 +369,13 @@ class OjtPlugin extends GenericPlugin
             $data['className']   = $plugin->getName();
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
-            $data['canEnable']   = $plugin->getCanEnable();
+
+            if(method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
+                $data['canEnable']   = $plugin->getCanEnable();
+            } else {
+                $data['canEnable']   = $this->getCanEnable();
+            }
+
             $data['open']        = false;
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
