@@ -1,4 +1,7 @@
-### 2.0.9.2 : 31 Octover 2024
+### 2.0.9.3 : 21 April 2025
+- Improved enabled/disabled on installed plugins
+
+### 2.0.9.2 : 31 October 2024
 - Fix error when user not login
 
 ### 2.0.9.1 : 31 October 2024

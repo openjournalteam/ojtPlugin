@@ -384,6 +384,13 @@ class OjtPageHandler extends Handler
             return;
         }
 
+        if (!$targetPlugin->getCanEnable()) {
+            $json['error'] = 1;
+            $json['msg']   = 'Plugin cannot be enabled/disabled';
+            showJson($json);
+            return;
+        }
+
         $targetPlugin->setEnabled($isEnabled);
 
         $enabledMessage = ($isEnabled) ? ' has been enabled.' : ' has been disabled.';
