@@ -1,3 +1,7 @@
+### 3.0.2.1 : 22 April 2025
+- Improved enabled/disabled on installed plugins
+- Allow only admin can disable/enable plugins on certain plugin
+
 ### 3.0.2.0 : 13 Mar 2024
 - Fix showing notice log when there's an error
 

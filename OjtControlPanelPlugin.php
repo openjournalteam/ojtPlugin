@@ -2,7 +2,9 @@
 
 namespace APP\plugins\generic\ojtControlPanel;
 
+use APP\facades\Repo;
 use Exception;
+use PKPApplication;
 use ZipArchive;
 use Monolog\Logger;
 use PKP\plugins\Hook;
@@ -66,6 +68,44 @@ class OjtControlPanelPlugin extends GenericPlugin
     {
         $paramHandler = new ParamHandler($this);
         $paramHandler->handle();
+    }
+
+    /**
+     * Determine whether the plugin can be enabled.
+     * @return boolean
+     */
+    function getCanEnable(): bool
+    {
+        return $this->getCanDisable();
+    }
+
+    /**
+     * @copydoc Plugin::getCanDisable()
+     */
+    function getCanDisable(): bool
+    {
+        if($this->isCurrentUserAreJournalManager()) return true;
+
+        $currentUser = $this->getRequest()->getUser();
+        if(!$currentUser) return false;
+
+        return $currentUser->hasRole([Role::ROLE_ID_SITE_ADMIN], PKPApplication::CONTEXT_SITE);
+    }
+
+    public function isCurrentUserAreJournalManager(): bool
+    {
+        $currentUser = $this->getRequest()->getUser();
+        if(!$currentUser) return false;
+
+        $currentUserGroups = Repo::userGroup()->userUserGroups($currentUser->getId());
+
+        $currentUserGroupNameLocaleKeys = collect($currentUserGroups->toArray())->map(function ($userGroup) {
+            return $userGroup->getData('nameLocaleKey');
+        })->toArray();
+
+        if(in_array('default.groups.name.manager', $currentUserGroupNameLocaleKeys)) return true;
+
+        return false;
     }
 
     public function apiUrl()
@@ -340,6 +380,13 @@ class OjtControlPanelPlugin extends GenericPlugin
             $data['className']   = $plugin->getName();
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
+
+            if($this->getRequest()->getUser() && method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
+                $data['canEnable']   = $plugin->getCanEnable();
+            } else {
+                $data['canEnable']   = $this->getCanEnable();
+            }
+
             $data['open']        = false;
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;

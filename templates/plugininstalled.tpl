@@ -125,7 +125,7 @@
                       <input type="checkbox" x-model="plugin.enabled" x-on:click.prevent class="cbx ojt-hidden"
                         style="display: none;" />
                       <label for="cbx" class="toggle" @click="$store.plugins.togglePlugin(plugin);"
-                        :id="'toggleplugin' + plugin.product">
+                        :id="'toggleplugin' + plugin.product" :class="{ldelim} 'ojt-cursor-not-allowed ojt-opacity-30' : !plugin.canEnable {rdelim}">
                         <span>
                           <svg width="10px" height="10px" viewBox="0 0 10 10">
                             <path
