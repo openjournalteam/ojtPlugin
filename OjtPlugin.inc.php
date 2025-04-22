@@ -370,7 +370,7 @@ class OjtPlugin extends GenericPlugin
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
 
-            if(method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
+            if($plugin->getRequest()->getUser() && method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
                 $data['canEnable']   = $plugin->getCanEnable();
             } else {
                 $data['canEnable']   = $this->getCanEnable();
