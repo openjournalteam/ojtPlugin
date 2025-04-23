@@ -17,14 +17,18 @@ trait HasIndexing
     public function addIndexingPage($hookName, $args)
     {
         $xmlDom = $args[0];
-        $this->updateXmlSitemap($xmlDom, $this->pagePath);
+        $enabledPlugins = $this->getEnabledPlugins();
+
+        foreach ($enabledPlugins as $pluginName) {
+            $this->updateXmlSitemap($xmlDom, $this->pagePath . '/' . $pluginName);
+        }
     }
 
     private function updateXmlSitemap($xmlDom, $pagePath)
     {
         $url = $xmlDom->createElement('url');
         $loc = $xmlDom->createElement('loc');
-        $loc->textContent = $this->getJournalUrl() . DIRECTORY_SEPARATOR . $pagePath;
+        $loc->textContent = $this->getJournalUrl() . '/' . $pagePath;
         $url->appendChild($loc);
         $urlset = $xmlDom->getElementsByTagName('urlset')->item(0);
         $urlset->appendChild($url);
@@ -61,5 +65,16 @@ trait HasIndexing
         }
 
         return $journal;
+    }
+
+    public function getEnabledPlugins(): array
+    {
+        $listOfEnabledPlugins = [];
+        foreach ($this->getRegisteredModules() as $plugin) {
+            if ($plugin['enabled'] ?? false) {
+                $listOfEnabledPlugins[] = $plugin['className'] ?? $plugin['product'];
+            }
+        }
+        return $listOfEnabledPlugins;
     }
 }

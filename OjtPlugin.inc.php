@@ -377,7 +377,7 @@ class OjtPlugin extends GenericPlugin
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
 
-            if(method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
+            if (method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
                 $data['canEnable']   = $plugin->getCanEnable();
             } else {
                 $data['canEnable']   = $this->getCanEnable();
@@ -553,6 +553,8 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         }
 
         $page = $params[0];
+        $op   = $params[1];
+        // dd($params);
 
         switch ($page) {
             case 'ojt':
@@ -564,7 +566,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
             case $this->getIndexingPagePath():
                 define('HANDLER_CLASS', 'IndexingPageHandler');
                 $this->import('src.Indexing.IndexingPageHandler');
-                IndexingPageHandler::setPlugin($this);
+                IndexingPageHandler::setPlugin($this, $op);
                 return true;
         }
 
