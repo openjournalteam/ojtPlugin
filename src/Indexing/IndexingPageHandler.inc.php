@@ -33,7 +33,7 @@ class IndexingPageHandler extends Handler
             'productName'          => static::$ojtPlugin->getDisplayName(),
             'productVersion'       => static::$ojtPlugin->getPluginVersion(),
             'productInstalledDate' => static::$ojtPlugin->getPluginInstalledDate(),
-            'cssPath'              => static::$ojtPlugin->getAssetUrl('css/sitemap.css'),
+            'cssPath'              => static::$ojtPlugin->getAssetUrl('stylesheets/sitemap.css'),
             'templatePath'         => static::$ojtPlugin->getTemplateResource(),
         ];
 
