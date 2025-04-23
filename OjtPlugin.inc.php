@@ -553,8 +553,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         }
 
         $page = $params[0];
-        $op   = $params[1];
-        // dd($params);
+        $op   = &$params[1];
 
         switch ($page) {
             case 'ojt':
@@ -564,9 +563,16 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
                 return true;
                 break;
             case $this->getIndexingPagePath():
+                // don't show page for plugins that is not enabled
+                if (!in_array($op, $this->getEnabledPlugins())) {
+                    return false;
+                }
+
+                $plugin = $params[1];
+                $op = 'index';
                 define('HANDLER_CLASS', 'IndexingPageHandler');
                 $this->import('src.Indexing.IndexingPageHandler');
-                IndexingPageHandler::setPlugin($this, $op);
+                IndexingPageHandler::setPlugin($this, $plugin);
                 return true;
         }
 
@@ -795,5 +801,16 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
     public function getAssetUrl($asset)
     {
         return $this->getRequest()->getBaseUrl() . DIRECTORY_SEPARATOR . $this->getPluginPath() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR  . $asset;
+    }
+
+    public function getEnabledPlugins(): array
+    {
+        $listOfEnabledPlugins = [];
+        foreach ($this->getRegisteredModules() as $plugin) {
+            if ($plugin['enabled'] ?? false) {
+                $listOfEnabledPlugins[] = $plugin['className'] ?? $plugin['product'];
+            }
+        }
+        return $listOfEnabledPlugins;
     }
 }

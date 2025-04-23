@@ -66,15 +66,4 @@ trait HasIndexing
 
         return $journal;
     }
-
-    public function getEnabledPlugins(): array
-    {
-        $listOfEnabledPlugins = [];
-        foreach ($this->getRegisteredModules() as $plugin) {
-            if ($plugin['enabled'] ?? false) {
-                $listOfEnabledPlugins[] = $plugin['className'] ?? $plugin['product'];
-            }
-        }
-        return $listOfEnabledPlugins;
-    }
 }
