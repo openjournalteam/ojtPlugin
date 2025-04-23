@@ -14,13 +14,18 @@ trait HasIndexing
         return $this->pagePath;
     }
 
+    /**
+     * Only register to sitemap if
+     * 1. Plugin is enabled
+     * 2. Plugin Sitemap data file exist, which contain detail about itself
+     */
     public function addIndexingPage($hookName, $args)
     {
         $xmlDom = $args[0];
-        $enabledPlugins = $this->getEnabledPlugins();
-
-        foreach ($enabledPlugins as $pluginName) {
-            $this->updateXmlSitemap($xmlDom, $this->pagePath . '/' . $pluginName);
+        foreach ($this->getEnabledPlugins() as $folderName => $pluginName) {
+            if ($this->hasSitemapData($folderName)) {
+                $this->updateXmlSitemap($xmlDom, $this->pagePath . '/' . $pluginName);
+            }
         }
     }
 
@@ -65,5 +70,12 @@ trait HasIndexing
         }
 
         return $journal;
+    }
+
+    public function hasSitemapData($pluginName): bool
+    {
+        $pluginContentPath = $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $pluginName . DIRECTORY_SEPARATOR . 'SitemapData.php';
+
+        return file_exists($pluginContentPath);
     }
 }

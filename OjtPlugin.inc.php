@@ -808,7 +808,9 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         $listOfEnabledPlugins = [];
         foreach ($this->getRegisteredModules() as $plugin) {
             if ($plugin['enabled'] ?? false) {
-                $listOfEnabledPlugins[] = $plugin['className'] ?? $plugin['product'];
+                if (isset($plugin['product']) && isset($plugin['className'])) {
+                    $listOfEnabledPlugins[$plugin['product']] = $plugin['className'];
+                }
             }
         }
         return $listOfEnabledPlugins;
