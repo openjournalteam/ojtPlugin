@@ -567,7 +567,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
                 $enabledPlugins = $this->getEnabledPluginsSitemap();
                 // don't show page for plugins that is not enabled
                 // and don't have getSitemapData method in it
-                if (!$this->isAddSitemap($enabledPlugins[$op])) {
+                if (!$this->isAddSitemap($enabledPlugins[$op] ?? null)) {
                     return false;
                 }
 
