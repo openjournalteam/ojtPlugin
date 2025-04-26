@@ -10,7 +10,7 @@ use Monolog\Utils;
 use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
 use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
-use Openjournalteam\OjtPlugin\Indexing\Traits\HasIndexing;
+use Openjournalteam\OjtPlugin\Traits\HasIndexing;
 use Psr\Log\LogLevel;
 
 class OjtPlugin extends GenericPlugin

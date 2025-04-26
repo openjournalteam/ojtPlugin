@@ -1,6 +1,6 @@
 <?php
 
-namespace Openjournalteam\OjtPlugin\Indexing\Traits;
+namespace Openjournalteam\OjtPlugin\Traits;
 
 use DAORegistry;
 use DateTime;
