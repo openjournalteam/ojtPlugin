@@ -17,13 +17,13 @@ trait HasIndexing
     /**
      * Only register to sitemap if
      * 1. Plugin is enabled
-     * 2. Plugin Sitemap data file exist, which contain detail about itself
+     * 2. getSitemapData method exist in the plugins
      */
     public function addIndexingPage($hookName, $args)
     {
         $xmlDom = $args[0];
-        foreach ($this->getEnabledPlugins() as $folderName => $pluginName) {
-            if ($this->hasSitemapData($folderName)) {
+        foreach ($this->getEnabledPluginsSitemap() as $pluginName => $sitemapData) {
+            if ($sitemapData) {
                 $this->updateXmlSitemap($xmlDom, $this->pagePath . '/' . $pluginName);
             }
         }
@@ -72,10 +72,15 @@ trait HasIndexing
         return $journal;
     }
 
-    public function hasSitemapData($pluginName): bool
-    {
-        $pluginContentPath = $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $pluginName . DIRECTORY_SEPARATOR . 'SitemapData.php';
 
-        return file_exists($pluginContentPath);
+    public function getEnabledPluginsSitemap(): array
+    {
+        $listOfEnabledPlugins = [];
+        foreach ($this->getRegisteredModules() as $plugin) {
+            if ($plugin['enabled'] ?? false) {
+                $listOfEnabledPlugins[$plugin['className']] = $plugin['sitemapData'];
+            }
+        }
+        return $listOfEnabledPlugins;
     }
 }

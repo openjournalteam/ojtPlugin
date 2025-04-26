@@ -17,7 +17,7 @@ class IndexingPageHandler extends Handler
     {
         $templateMgr = TemplateManager::getManager($request);
         $templateMgr->assign($this->getJournalData());
-        $templateMgr->display(static::$ojtPlugin->getTemplateResource('sitemap/index.tpl'));
+        $templateMgr->display(static::$ojtPlugin->getTemplateResource('sitemap.tpl'));
     }
 
     private function getJournalData(): array
@@ -37,13 +37,9 @@ class IndexingPageHandler extends Handler
             'templatePath'         => static::$ojtPlugin->getTemplateResource(),
         ];
 
-        $pluginContentPath = static::$ojtPlugin->getPluginPath() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . static::$plugin . DIRECTORY_SEPARATOR . 'SitemapData.php';
-
-        if (file_exists($pluginContentPath)) {
-            $pluginContents = include $pluginContentPath;
-            foreach ($pluginContents as $key => $value) {
-                $content[$key] = $value;
-            }
+        $modules = static::$ojtPlugin->getEnabledPluginsSitemap();
+        if ($sitemapData = $modules[static::$plugin]) {
+            $content = array_merge($content, $sitemapData);
         }
 
         return $content;

@@ -387,6 +387,7 @@ class OjtPlugin extends GenericPlugin
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
             $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
+            $data['sitemapData'] = method_exists($plugin, 'getSitemapData') ? $plugin->getSitemapData() : null;
 
             $plugins[] = $data;
         }
@@ -564,15 +565,18 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
                 break;
             case $this->getIndexingPagePath():
                 // don't show page for plugins that is not enabled
-                if (!in_array($op, $this->getEnabledPlugins())) {
+                // and don't have getSitemapData method in it
+                if (!$this->getEnabledPluginsSitemap()[$op]) {
                     return false;
                 }
 
                 $plugin = $params[1];
                 $op = 'index';
+
                 define('HANDLER_CLASS', 'IndexingPageHandler');
                 $this->import('src.Indexing.IndexingPageHandler');
                 IndexingPageHandler::setPlugin($this, $plugin);
+
                 return true;
         }
 
@@ -801,18 +805,5 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
     public function getAssetUrl($asset)
     {
         return $this->getRequest()->getBaseUrl() . DIRECTORY_SEPARATOR . $this->getPluginPath() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR  . $asset;
-    }
-
-    public function getEnabledPlugins(): array
-    {
-        $listOfEnabledPlugins = [];
-        foreach ($this->getRegisteredModules() as $plugin) {
-            if ($plugin['enabled'] ?? false) {
-                if (isset($plugin['product']) && isset($plugin['className'])) {
-                    $listOfEnabledPlugins[$plugin['product']] = $plugin['className'];
-                }
-            }
-        }
-        return $listOfEnabledPlugins;
     }
 }
