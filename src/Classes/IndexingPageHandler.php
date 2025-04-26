@@ -1,6 +1,9 @@
 <?php
 
-import('classes.handler.Handler');
+namespace Openjournalteam\OjtPlugin\Classes;
+
+use Handler;
+use TemplateManager;
 
 class IndexingPageHandler extends Handler
 {

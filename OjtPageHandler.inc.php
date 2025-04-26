@@ -300,7 +300,6 @@ class OjtPageHandler extends Handler
     public function getPluginGalleryList($args, $request)
     {
         $url = $this->ojtPlugin->apiUrl() . '/product/list/ojs';
-        dd($this->ojtPlugin->apiUrl());
 
         $params = [
             'query' => [

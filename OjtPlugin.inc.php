@@ -10,6 +10,7 @@ use Monolog\Utils;
 use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
 use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
+use Openjournalteam\OjtPlugin\Classes\IndexingPageHandler;
 use Openjournalteam\OjtPlugin\Traits\HasIndexing;
 use Psr\Log\LogLevel;
 
@@ -20,7 +21,6 @@ class OjtPlugin extends GenericPlugin
     public $registeredModule;
 
     const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
-    // const API = "http://localhost/openjournaltheme/wp-json/openjournalvalidation/v3";
     const SERVICE_API = "https://sp.openjournaltheme.com/";
 
     public function register($category, $path, $mainContextId = null)
@@ -565,6 +565,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
                 break;
             case $this->getIndexingPagePath():
                 $enabledPlugins = $this->getEnabledPluginsSitemap();
+
                 // don't show page for plugins that is not enabled
                 // and don't have getSitemapData method in it
                 if (!$this->isAddSitemap($enabledPlugins[$op] ?? null)) {
@@ -574,8 +575,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
                 $plugin = $params[1];
                 $op = 'index';
 
-                define('HANDLER_CLASS', 'IndexingPageHandler');
-                $this->import('src.Indexing.IndexingPageHandler');
+                define('HANDLER_CLASS', IndexingPageHandler::class);
                 IndexingPageHandler::setPlugin($this, $plugin);
 
                 return true;
