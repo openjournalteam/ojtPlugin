@@ -17,6 +17,7 @@ class IndexingPageHandler extends Handler
     {
         $templateMgr = TemplateManager::getManager($request);
         $templateMgr->assign($this->getJournalData());
+        $templateMgr->addStyleSheet('ojtplugin', static::$ojtPlugin->getAssetUrl('stylesheets/sitemap.css'), ['baseUrl' => '', 'contexts' => ['frontend']]);
         $templateMgr->display(static::$ojtPlugin->getTemplateResource('sitemap.tpl'));
     }
 
@@ -27,14 +28,10 @@ class IndexingPageHandler extends Handler
 
         $content = [
             'journalName'          => $journal->getName($locale),
-            'journalAbout'         => $journal->getDescription(),
+            'journalAbout'         => $journal->getDescription($locale),
+            'journalUrl'           => static::$ojtPlugin->getJournalUrl(),
             'onlineIssn'           => $journal->getData('onlineIssn') ?: '-',
             'printIssn'            => $journal->getData('printIssn') ?: '-',
-            'productName'          => static::$ojtPlugin->getDisplayName(),
-            'productVersion'       => static::$ojtPlugin->getPluginVersion(),
-            'productInstalledDate' => static::$ojtPlugin->getPluginInstalledDate(),
-            'cssPath'              => static::$ojtPlugin->getAssetUrl('stylesheets/sitemap.css'),
-            'templatePath'         => static::$ojtPlugin->getTemplateResource(),
         ];
 
         $modules = static::$ojtPlugin->getEnabledPluginsSitemap();

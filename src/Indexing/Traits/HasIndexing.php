@@ -23,7 +23,7 @@ trait HasIndexing
     {
         $xmlDom = $args[0];
         foreach ($this->getEnabledPluginsSitemap() as $pluginName => $sitemapData) {
-            if ($sitemapData) {
+            if ($this->isAddSitemap($sitemapData)) {
                 $this->updateXmlSitemap($xmlDom, $this->pagePath . '/' . $pluginName);
             }
         }
@@ -72,15 +72,29 @@ trait HasIndexing
         return $journal;
     }
 
-
     public function getEnabledPluginsSitemap(): array
     {
         $listOfEnabledPlugins = [];
         foreach ($this->getRegisteredModules() as $plugin) {
             if ($plugin['enabled'] ?? false) {
-                $listOfEnabledPlugins[$plugin['className']] = $plugin['sitemapData'];
+                $listOfEnabledPlugins[$plugin['className']] = array_merge(
+                    [
+                        'productName'            => $plugin['name'],
+                        'productDescription'     => $plugin['description'],
+                        'productInstalledDate'   => $this->getPluginInstalledDate(),
+                        'productVersion'         => $plugin['version'],
+                        'productUrl'             => 'https://openjournaltheme.com',
+                        'productLongDescription' => [],
+                    ],
+                    $plugin['sitemapData'] ?? [] // from getSitemapData in each plugins
+                );
             }
         }
         return $listOfEnabledPlugins;
+    }
+
+    public function isAddSitemap($plugin)
+    {
+        return isset($plugin['productLongDescription']) && count($plugin['productLongDescription']);
     }
 }
