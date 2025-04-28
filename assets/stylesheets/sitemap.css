@@ -1,0 +1,32 @@
+dl {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  grid-gap: 10px;
+  align-items: center;
+}
+
+dt {
+  font-weight: 600;
+  color: #2c3e50;
+  padding: 8px 10px;
+  margin-right: 10px;
+  text-align: right;
+  border-right: 2px solid #e9ecef;
+  grid-column: 1;
+}
+
+dd {
+  margin: 0;
+  padding: 8px 10px;
+  color: #495057;
+  grid-column: 2;
+}
+
+p {
+  text-align: justify;
+}

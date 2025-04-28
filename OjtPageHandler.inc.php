@@ -18,9 +18,9 @@ class OjtPageHandler extends Handler
         parent::__construct();
 
         $this->addRoleAssignment(
-			[ROLE_ID_SITE_ADMIN, ROLE_ID_MANAGER],
-		    ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
-		);
+            [ROLE_ID_SITE_ADMIN, ROLE_ID_MANAGER],
+            ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
+        );
 
         $this->ojtPlugin = OjtPlugin::get();
 
@@ -28,21 +28,22 @@ class OjtPageHandler extends Handler
         $this->baseUrl = $this->ojtPlugin->getJournalURL();
     }
 
-    	/**
-	 * @copydoc PKPHandler::authorize
-	 */
-	public function authorize($request, &$args, $roleAssignments) {
-		import('lib.pkp.classes.security.authorization.PolicySet');
-		$rolePolicy = new PolicySet(COMBINING_PERMIT_OVERRIDES);
+    /**
+     * @copydoc PKPHandler::authorize
+     */
+    public function authorize($request, &$args, $roleAssignments)
+    {
+        import('lib.pkp.classes.security.authorization.PolicySet');
+        $rolePolicy = new PolicySet(COMBINING_PERMIT_OVERRIDES);
 
-		import('lib.pkp.classes.security.authorization.RoleBasedHandlerOperationPolicy');
-		foreach ($roleAssignments as $role => $operations) {
-			$rolePolicy->addPolicy(new RoleBasedHandlerOperationPolicy($request, $role, $operations));
-		}
-		$this->addPolicy($rolePolicy);
+        import('lib.pkp.classes.security.authorization.RoleBasedHandlerOperationPolicy');
+        foreach ($roleAssignments as $role => $operations) {
+            $rolePolicy->addPolicy(new RoleBasedHandlerOperationPolicy($request, $role, $operations));
+        }
+        $this->addPolicy($rolePolicy);
 
-		return parent::authorize($request, $args, $roleAssignments);
-	}
+        return parent::authorize($request, $args, $roleAssignments);
+    }
 
     public function updatePanel($args, $request)
     {
@@ -132,7 +133,7 @@ class OjtPageHandler extends Handler
         ];
 
         $url            = 'https://ticketing.openjournaltheme.com/login/' . base64_encode(implode('+', $params));
-        
+
         header('Location: ' . $url, true, 302);
 
         return;
@@ -268,7 +269,7 @@ class OjtPageHandler extends Handler
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url);
             $json = json_decode((string) $response->getBody(), true);
-            $json['updateAvailable'] = version_compare($this->ojtPlugin->getPluginVersion(), $json['latest_version'], '<'); 
+            $json['updateAvailable'] = version_compare($this->ojtPlugin->getPluginVersion(), $json['latest_version'], '<');
 
             return showJson($json);
         } catch (\Throwable $th) {
@@ -365,7 +366,7 @@ class OjtPageHandler extends Handler
     {
         $plugin = $this->ojtPlugin;
 
-        if(!$plugin->getCanDisable()) {
+        if (!$plugin->getCanDisable()) {
             $json['error'] = 1;
             $json['msg'] = 'User does not have permission to disable/enable plugin';
             showJson($json);
@@ -423,14 +424,14 @@ class OjtPageHandler extends Handler
             // trying to install dependencies
             foreach ($downloadLink['dependencies'] as $dependency) {
                 $indexDependency = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $dependency['folder'] . DIRECTORY_SEPARATOR . "index.php");
-                
+
                 if (!$fileManager->fileExists($indexDependency)) {
                     $ojtPlugin->installPlugin($dependency['link']);
                 }
 
                 if (!$fileManager->fileExists($indexDependency)) throw new Exception("Index file dependency not found.");
             }
-            
+
             // trying to install plugin
             $ojtPlugin->installPlugin($downloadLink['product']);
 
@@ -439,7 +440,7 @@ class OjtPageHandler extends Handler
             if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
 
             $pluginInstance         = $pluginInstance ?? include($indexFile);
-            // Applying input license to plugin setting  
+            // Applying input license to plugin setting
             if ($pluginInstance instanceof Plugin && $license && !$update) {
                 $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
             }

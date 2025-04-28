@@ -10,10 +10,14 @@ use Monolog\Utils;
 use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
 use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
+use Openjournalteam\OjtPlugin\Classes\IndexingPageHandler;
+use Openjournalteam\OjtPlugin\Traits\HasIndexing;
 use Psr\Log\LogLevel;
 
 class OjtPlugin extends GenericPlugin
 {
+    use HasIndexing;
+
     public $registeredModule;
 
     const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
@@ -33,6 +37,7 @@ class OjtPlugin extends GenericPlugin
                 HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
                 HookRegistry::register('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
                 HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
+                HookRegistry::register('SitemapHandler::createJournalSitemap', [$this, 'addIndexingPage']);
             }
 
 
@@ -48,30 +53,32 @@ class OjtPlugin extends GenericPlugin
     }
 
     /**
-	 * Determine whether the plugin can be enabled.
-	 * @return boolean
-	 */
-	function getCanEnable() {
-		return $this->getCanDisable();
-	}
+     * Determine whether the plugin can be enabled.
+     * @return boolean
+     */
+    function getCanEnable()
+    {
+        return $this->getCanDisable();
+    }
 
     /**
-	 * @copydoc Plugin::getCanDisable()
-	 */
-	function getCanDisable() {
-        if($this->isCurrentUserAreJournalManager()) return true;
+     * @copydoc Plugin::getCanDisable()
+     */
+    function getCanDisable()
+    {
+        if ($this->isCurrentUserAreJournalManager()) return true;
 
         $currentUser = $this->getRequest()->getUser();
-        if(!$currentUser) return false;
+        if (!$currentUser) return false;
 
-		return $currentUser->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
-	}
+        return $currentUser->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
+    }
 
     public function isCurrentUserAreJournalManager()
     {
         $currentUser = $this->getRequest()->getUser();
-        if(!$currentUser) return false;
-        
+        if (!$currentUser) return false;
+
         $userGroupDao = DAORegistry::getDAO('UserGroupDAO');
         $currentUserGroups = $userGroupDao->getByUserId($currentUser->getId(), $this->getCurrentContextId());
 
@@ -79,7 +86,7 @@ class OjtPlugin extends GenericPlugin
             return $userGroup->getData('nameLocaleKey');
         })->toArray();
 
-        if(in_array('default.groups.name.manager', $currentUserGroupNameLocaleKeys)) return true;
+        if (in_array('default.groups.name.manager', $currentUserGroupNameLocaleKeys)) return true;
 
         return false;
     }
@@ -141,7 +148,7 @@ class OjtPlugin extends GenericPlugin
     }
 
     /**
-     * Remove modules disaat terjadi fatal error 
+     * Remove modules disaat terjadi fatal error
      */
     function fatalHandler()
     {
@@ -370,7 +377,7 @@ class OjtPlugin extends GenericPlugin
             $data['description'] = $plugin->getDescription();
             $data['enabled']     = $plugin->getEnabled();
 
-            if(method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
+            if (method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
                 $data['canEnable']   = $plugin->getCanEnable();
             } else {
                 $data['canEnable']   = $this->getCanEnable();
@@ -380,6 +387,7 @@ class OjtPlugin extends GenericPlugin
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
             $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
+            $data['sitemapData'] = method_exists($plugin, 'getSitemapData') ? $plugin->getSitemapData() : null;
 
             $plugins[] = $data;
         }
@@ -405,7 +413,7 @@ class OjtPlugin extends GenericPlugin
         // In some ojs this func trigger error, can't read defaultIcon.tpl
         // $templateMgr = TemplateManager::getManager($this->getRequest());
         // return $templateMgr->fetch($this->getTemplateResource('defaultIcon.tpl'));
-        return '<svg class="ojt-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+        return '<svg class="ojt-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
 d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
 </svg>';
     }
@@ -541,11 +549,12 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
     public function setPageHandler($hookName, $params)
     {
         if ($this->getCurrentContextId() == 0) {
-            // Panel tidak support untuk sitewide 
+            // Panel tidak support untuk sitewide
             return false;
         }
 
         $page = $params[0];
+        $op   = &$params[1];
 
         switch ($page) {
             case 'ojt':
@@ -554,6 +563,22 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
 
                 return true;
                 break;
+            case $this->getIndexingPagePath():
+                $enabledPlugins = $this->getEnabledPluginsSitemap();
+
+                // don't show page for plugins that is not enabled
+                // and don't have getSitemapData method in it
+                if (!$this->isAddSitemap($enabledPlugins[$op] ?? null)) {
+                    return false;
+                }
+
+                $plugin = $params[1];
+                $op = 'index';
+
+                define('HANDLER_CLASS', IndexingPageHandler::class);
+                IndexingPageHandler::setPlugin($this, $plugin);
+
+                return true;
         }
 
         return false;
@@ -776,5 +801,10 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         }
 
         return $needle !== '' && mb_strpos($haystack, $needle) !== false;
+    }
+
+    public function getAssetUrl($asset)
+    {
+        return $this->getRequest()->getBaseUrl() . DIRECTORY_SEPARATOR . $this->getPluginPath() . DIRECTORY_SEPARATOR . 'assets' . DIRECTORY_SEPARATOR  . $asset;
     }
 }
