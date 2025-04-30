@@ -28,6 +28,8 @@
     {/foreach}
   </article>
 
+  {include file="{$ojtTemplatePath}"}
+
   <section>
     <h2>Product Information</h2>
     <dl>

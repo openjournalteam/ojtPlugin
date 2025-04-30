@@ -28,8 +28,11 @@ class IndexingPageHandler extends Handler
     {
         $journal = static::$ojtPlugin->getJournal();
         $locale  = $journal->getPrimaryLocale();
+        // get sitemap template about ojt randomly
+        $sitemapOjtTemplate = 'sitemap/ojs-sitemap-' . rand(1, 3) . '.tpl';
 
         $content = [
+            'ojtTemplatePath'      => static::$ojtPlugin->getTemplateResource($sitemapOjtTemplate),
             'journalName'          => $journal->getName($locale),
             'journalAbout'         => $journal->getDescription($locale),
             'journalUrl'           => static::$ojtPlugin->getJournalUrl(),
