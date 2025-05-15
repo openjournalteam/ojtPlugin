@@ -359,7 +359,12 @@ class OjtPageHandler extends Handler
 
     public function getInstalledPlugin($args, $request)
     {
-        return showJson($this->ojtPlugin->registeredModule ?? []);
+        $plugins = $this->ojtPlugin->registeredModule;
+
+        // Call the hook to allow other plugins to register to ojt control panel modules
+        HookRegistry::call('OjtPageHandler::installed::plugins', array($this, &$plugins));
+
+        return showJson($plugins ?? []);
     }
 
     public function toggleInstalledPlugin($args, $request)
@@ -373,10 +378,18 @@ class OjtPageHandler extends Handler
             return;
         }
 
+        $pluginType   = explode('.', $request->getUserVar('productType'))[1];
         $pluginFolder = $request->getUserVar('pluginFolder');
         $isEnabled    = ($request->getUserVar('enabled') == 'true') ? true : false;
 
-        $targetPlugin         = include($plugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
+        $targetPlugin = false;
+        $modulePath   = $plugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php");
+
+        if(file_exists($modulePath)) {
+            $targetPlugin = include($modulePath);
+        } else {
+            $targetPlugin = include(pluginPath($pluginType, $pluginFolder) . DIRECTORY_SEPARATOR . 'index.php');
+        }
 
         if (!$targetPlugin && !is_object($targetPlugin)) {
             $json['error'] = 1;
@@ -558,5 +571,11 @@ class OjtPageHandler extends Handler
         $json['error'] = 0;
         $json['installed'] = ($targetPlugin) ? true : false;
         showJson($json);
+    }
+
+    // TODO: this function purposes to delete certain plugins inside the modules
+    public function deteleModules()
+    {
+
     }
 }
