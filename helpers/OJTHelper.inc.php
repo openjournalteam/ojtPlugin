@@ -85,25 +85,3 @@ if (!function_exists('vd')) {
         echo '</pre>';
     }
 }
-
-if (!function_exists('pluginGenericPath')) {
-    function pluginGenericPath($path = null)
-    {
-        if(!$path) {
-            return 'plugins' . DIRECTORY_SEPARATOR . 'generic';
-        }
-
-        return 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $path;
-    }
-}
-
-if (!function_exists('pluginPath')) {
-    function pluginPath($type, $path = null)
-    {
-        if ($path) {
-            return 'plugins' . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $path;
-        }
-
-        return 'plugins' . DIRECTORY_SEPARATOR . $type;
-    }
-}
