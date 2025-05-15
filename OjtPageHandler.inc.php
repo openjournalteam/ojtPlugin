@@ -378,18 +378,11 @@ class OjtPageHandler extends Handler
             return;
         }
 
-        $pluginType   = explode('.', $request->getUserVar('productType'))[1];
-        $pluginFolder = $request->getUserVar('pluginFolder');
-        $isEnabled    = ($request->getUserVar('enabled') == 'true') ? true : false;
+        $pluginType      = explode('.', $request->getUserVar('productType'))[1];
+        $pluginClassName = $request->getUserVar('className');
+        $isEnabled       = ($request->getUserVar('enabled') == 'true') ? true : false;
 
-        $targetPlugin = false;
-        $modulePath   = $plugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php");
-
-        if(file_exists($modulePath)) {
-            $targetPlugin = include($modulePath);
-        } else {
-            $targetPlugin = include(pluginPath($pluginType, $pluginFolder) . DIRECTORY_SEPARATOR . 'index.php');
-        }
+        $targetPlugin = PluginRegistry::getPlugin($pluginType, $pluginClassName);
 
         if (!$targetPlugin && !is_object($targetPlugin)) {
             $json['error'] = 1;
