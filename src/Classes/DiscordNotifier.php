@@ -20,10 +20,8 @@ class DiscordNotifier
      *
      * @param string $pluginFolder The folder name of the removed plugin.
      * @param array $error The error details (type, file, line, message).
-     * @return bool True if the notification was sent successfully, false otherwise.
-     * @throws GuzzleException
      */
-    public function notifyPluginRemoval($pluginFolder, $error): bool
+    public function notifyPluginRemoval($pluginFolder, $error)
     {
         $request = $this->plugin->getRequest();
 
@@ -78,37 +76,32 @@ class DiscordNotifier
                     ],
                     'timestamp' => date('c'),
                     'footer' => [
-                        'text' => 'OJT Control Panel v' . $this->plugin->getPluginVersion()
+                        'text' => 'OJT Control Panel v' . '2.0'
                     ]
                 ]
             ]
         ];
 
-        return $this->sendToDiscord($message);
+        $this->sendToDiscord($message);
     }
 
     /**
      * Send a message to Discord using the webhook URL
      *
      * @param array $data The data to send to Discord
-     * @return bool True if the message was sent successfully, false otherwise
-     * @throws GuzzleException
      */
-    private function sendToDiscord($data): bool
+    private function sendToDiscord($data)
     {
-        try {
-            $http = new \GuzzleHttp\Client([
-                'timeout' => 60,
-                'headers' => [
-                    'Content-Type' => 'application/json'
-                ],
-            ]);
+        $http = new \GuzzleHttp\Client([
+            'timeout' => 60,
+            'headers' => [
+                'Content-Type' => 'application/json'
+            ],
+        ]);
 
-            $http->post($this->webhookUrl, [
-                'json' => $data,
-            ]);
-        } catch (\Exception $e) {
-        }
+        $http->post($this->webhookUrl, [
+            'json' => $data,
+        ]);
     }
 
     /**

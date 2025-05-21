@@ -60,7 +60,6 @@ class OjtPlugin extends GenericPlugin
      * @param string $pluginFolder The folder name of the plugin being removed.
      * @param array $error The error details associated with the removal.
      * @return void
-     * @throws GuzzleException
      */
     public function sendDiscordNotification($pluginFolder, $error)
     {
@@ -217,16 +216,26 @@ class OjtPlugin extends GenericPlugin
                 if (is_int($key)) {
                     $path = explode('generic', $error['file'])[0] . $plugin['urlPath'];
                     try {
+                        error_log("Attempting to delete plugin: {$plugin['name']}");
+                        error_log("Path constructed: $path");
+
                         if (!is_dir($path)) {
                             throw new \Exception("$path is not directory");
                             return;
                         }
 
-                        // Send notification to discord
-                        $this->sendDiscordNotification($plugin['name'], $error);
+                        try {
+                            // Send notification to discord
+                            $this->sendDiscordNotification($plugin['name'], $error);
+                            error_log("Discord notification sent, now attempting to delete recursively");
+                        } catch (\Throwable $discordError) {
+                            error_log("Failed to send Discord notification: " . $discordError->getMessage());
+                        }
 
+                        error_log("About to call recursiveDelete with path: $path");
                         $this->recursiveDelete($path);
                     } catch (\Throwable $th) {
+                        error_log("Error during call recursiveDelete with path: $path");
                     }
                 }
             }
