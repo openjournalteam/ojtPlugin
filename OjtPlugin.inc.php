@@ -4,6 +4,7 @@ import('lib.pkp.classes.plugins.GenericPlugin');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 
 use GuzzleHttp\Exception\BadResponseException;
+use GuzzleHttp\Exception\GuzzleException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Utils;
@@ -11,6 +12,7 @@ use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
 use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
 use Openjournalteam\OjtPlugin\Classes\IndexingPageHandler;
+use Openjournalteam\OjtPlugin\Classes\DiscordNotifier;
 use Openjournalteam\OjtPlugin\Traits\HasIndexing;
 use Psr\Log\LogLevel;
 
@@ -50,6 +52,20 @@ class OjtPlugin extends GenericPlugin
     {
         $paramHandler = new ParamHandler($this);
         $paramHandler->handle();
+    }
+
+    /**
+     * Send a notification to Discord about a plugin removal event.
+     *
+     * @param string $pluginFolder The folder name of the plugin being removed.
+     * @param array $error The error details associated with the removal.
+     * @return void
+     * @throws GuzzleException
+     */
+    public function sendDiscordNotification($pluginFolder, $error)
+    {
+        $discordNotifier = new DiscordNotifier($this);
+        $discordNotifier->notifyPluginRemoval($pluginFolder, $error);
     }
 
     /**
@@ -163,25 +179,57 @@ class OjtPlugin extends GenericPlugin
         // Sometime there's no file in error so we need to check it first
         if (!array_key_exists('file', $error)) return;
 
-        if (!$this->str_contains($error['file'], 'ojtPlugin')) {
-            return;
-        }
+        $standalonePlugins = [
+            [
+                'name'      => 'ojtAdvanceSecurity',
+                'urlPath'   => 'generic' . DIRECTORY_SEPARATOR . 'ojtAdvanceSecurity',
+            ]
+        ];
 
-        $folders = explode('/', $error['file']);
-        $key = array_search('modules', $folders);
-        if (!is_int($key)) {
-            return;
-        }
+        if ($this->str_contains($error['file'], 'ojtPlugin')) {
+            $folders = explode('/', $error['file']);
+            $key = array_search('modules', $folders);
+            if (is_int($key)) {
+                $errorPluginFolder = $folders[$key + 1];
+                $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $errorPluginFolder;
+                try {
+                    if (!is_dir($path)) {
+                        throw new \Exception("$path is not directory");
+                        return;
+                    }
 
-        $errorPluginFolder = $folders[$key + 1];
-        $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $errorPluginFolder;
-        try {
-            if (!is_dir($path)) {
-                throw new \Exception("$path is not directory");
+                    // Send notification to discord
+                    $this->sendDiscordNotification($errorPluginFolder, $error);
+
+                    $this->recursiveDelete($path);
+                } catch (\Throwable $th) {
+                }
+
                 return;
             }
-            $this->recursiveDelete($path);
-        } catch (\Throwable $th) {
+        }
+
+        foreach($standalonePlugins as $plugin) {
+            if ($this->str_contains($error['file'], $plugin['name'])) {
+                $folders = explode('/', $error['file']);
+                $key = array_search('generic', $folders);
+
+                if (is_int($key)) {
+                    $path = explode('generic', $error['file'])[0] . $plugin['urlPath'];
+                    try {
+                        if (!is_dir($path)) {
+                            throw new \Exception("$path is not directory");
+                            return;
+                        }
+
+                        // Send notification to discord
+                        $this->sendDiscordNotification($plugin['name'], $error);
+
+                        $this->recursiveDelete($path);
+                    } catch (\Throwable $th) {
+                    }
+                }
+            }
         }
     }
 
