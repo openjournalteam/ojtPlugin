@@ -1,3 +1,6 @@
+### 2.1.0.0 : 22 May 2025
+- Added Discord notification system for fatal errors occurring in plugins
+
 ### 2.0.9.3 : 21 April 2025
 - Improved enabled/disabled on installed plugins
 

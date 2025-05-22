@@ -31,6 +31,8 @@ class DiscordNotifier
 
         $journalUrl = $this->plugin->getJournalURL();
 
+        $pluginVersion = $this->getPluginVersion();
+        
         $message = [
             'embeds' => [
                 [
@@ -76,7 +78,7 @@ class DiscordNotifier
                     ],
                     'timestamp' => date('c'),
                     'footer' => [
-                        'text' => 'OJT Control Panel v' . '2.0'
+                        'text' => 'OJT Control Panel v' . $pluginVersion
                     ]
                 ]
             ]
@@ -121,5 +123,27 @@ class DiscordNotifier
         ];
 
         return $errorTypes[$type] ?? 'Error #' . $type;
+    }
+
+    public function getPluginVersion(): string
+    {
+        libxml_use_internal_errors(true);
+        $versionFile = $this->plugin->getPluginVersionFile();
+        $parseXML = false;
+
+        if (file_exists($versionFile)) {
+            $parseXML = simplexml_load_file($versionFile);
+            if ($parseXML === false) {
+                // XML parsing failed, collect errors
+                $errors = libxml_get_errors();
+                libxml_clear_errors();
+                // You could log these errors if needed
+            }
+        }
+
+        // Use a fallback version if XML parsing failed
+        $pluginVersion = ($parseXML && isset($parseXML->release)) ? (string)$parseXML->release : '2.0';
+
+        return $pluginVersion;
     }
 }

@@ -185,6 +185,9 @@ class OjtPlugin extends GenericPlugin
             ]
         ];
 
+        $data['error'] = $error;
+        dd($data);
+
         if ($this->str_contains($error['file'], 'ojtPlugin')) {
             $folders = explode('/', $error['file']);
             $key = array_search('modules', $folders);
@@ -197,11 +200,12 @@ class OjtPlugin extends GenericPlugin
                         return;
                     }
 
+                    $this->recursiveDelete($path);
+
                     // Send notification to discord
                     $this->sendDiscordNotification($errorPluginFolder, $error);
-
-                    $this->recursiveDelete($path);
                 } catch (\Throwable $th) {
+                    error_log("Error message: " . $th->getMessage());
                 }
 
                 return;
@@ -216,26 +220,17 @@ class OjtPlugin extends GenericPlugin
                 if (is_int($key)) {
                     $path = explode('generic', $error['file'])[0] . $plugin['urlPath'];
                     try {
-                        error_log("Attempting to delete plugin: {$plugin['name']}");
-                        error_log("Path constructed: $path");
-
                         if (!is_dir($path)) {
                             throw new \Exception("$path is not directory");
                             return;
                         }
 
-                        try {
-                            // Send notification to discord
-                            $this->sendDiscordNotification($plugin['name'], $error);
-                            error_log("Discord notification sent, now attempting to delete recursively");
-                        } catch (\Throwable $discordError) {
-                            error_log("Failed to send Discord notification: " . $discordError->getMessage());
-                        }
-
-                        error_log("About to call recursiveDelete with path: $path");
                         $this->recursiveDelete($path);
+
+                        // Send notification to discord
+                        $this->sendDiscordNotification($plugin['name'], $error);
                     } catch (\Throwable $th) {
-                        error_log("Error during call recursiveDelete with path: $path");
+                        error_log("Error message: " . $th->getMessage());
                     }
                 }
             }
