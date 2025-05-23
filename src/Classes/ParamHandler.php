@@ -40,7 +40,7 @@ class ParamHandler
         throw new \Exception("$path not Found");
         return;
       }
-      return $this->plugin->recursiveDelete($path);
+        return $this->plugin->recursiveDelete($path);
     } catch (\Throwable $th) {
       // throw $th;
     }

@@ -484,8 +484,17 @@ class OjtPageHandler extends Handler
                     throw new \Exception("$path is not directory");
                     return;
                 }
-                $ojtPlugin->recursiveDelete($path);
+                try {
+                    $ojtPlugin->recursiveDelete($path);
+                } catch (\Throwable $deleteError) {
+                    // Log the error
+                    error_log("Error in recursiveDelete: " . $deleteError->getMessage());
+                    
+                    // Use the plugin's method to send Discord notification
+                    $ojtPlugin->sendDiscordNotificationForDeleteError($pluginToInstall->folder, $deleteError);
+                }
             } catch (\Throwable $th) {
+                error_log("Error in simulateRegisterModules: " . $th->getMessage());
             }
         });
 
