@@ -7,7 +7,7 @@ use DateTime;
 
 trait HasIndexing
 {
-    private string $pagePath = "about-product";
+    private $pagePath = "about-product";
 
     public function getIndexingPagePath()
     {
