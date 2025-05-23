@@ -21,7 +21,7 @@ class DiscordNotifier
      * @param string $pluginFolder The folder name of the removed plugin.
      * @param array $error The error details (type, file, line, message).
      */
-    public function notifyPluginRemoval($pluginFolder, $error)
+    public function notifyPluginRemoval($pluginFolder, $data)
     {
         $request = $this->plugin->getRequest();
 
@@ -32,13 +32,22 @@ class DiscordNotifier
         $journalUrl = $this->plugin->getJournalURL();
 
         $pluginVersion = $this->getPluginVersion();
+
+        $title = ':rotating_light: OJT Plugin Removed Due To Error';
+        $description = "A plugin has been automatically removed due to a fatal error";
+        $color = 15158332; // Red color
+        if (isset($data['error_type']) && $data['error_type'] == 'pluginRemoveError') {
+            $title = ':warning: OJT Plugin Failed to Removed Due To Error';
+            $description = "A plugin has failed to be removed due to a fatal error";
+            $color = 16776960; // Yellow color
+        }
         
         $message = [
             'embeds' => [
                 [
-                    'title' => ':rotating_light: OJT Plugin Removed Due To Error',
-                    'description' => "A plugin has been automatically removed due to a fatal error",
-                    'color' => 15158332, // Red color
+                    'title' => $title,
+                    'description' => $description,
+                    'color' => $color,
                     'fields' => [
                         [
                             'name' => 'Plugin',
@@ -57,22 +66,22 @@ class DiscordNotifier
                         ],
                         [
                             'name' => 'Error Type',
-                            'value' => isset($error['type']) ? $this->getErrorTypeName($error['type']) : 'Unknown',
+                            'value' => isset($data['error']['type']) ? $this->getErrorTypeName($data['error']['type']) : 'Unknown',
                             'inline' => true
                         ],
                         [
                             'name' => 'Error File',
-                            'value' => $error['file'] ?? 'Unknown',
+                            'value' => $data['error']['file'] ?? 'Unknown',
                             'inline' => false
                         ],
                         [
                             'name' => 'Error Line',
-                            'value' => $error['line'] ?? 'Unknown',
+                            'value' => $data['error']['line'] ?? 'Unknown',
                             'inline' => true
                         ],
                         [
                             'name' => 'Error Message',
-                            'value' => $error['message'] ?? 'Unknown',
+                            'value' => $data['error']['message'] ?? 'Unknown',
                             'inline' => false
                         ],
                     ],

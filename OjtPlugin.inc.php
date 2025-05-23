@@ -58,13 +58,13 @@ class OjtPlugin extends GenericPlugin
      * Send a notification to Discord about a plugin removal event.
      *
      * @param string $pluginFolder The folder name of the plugin being removed.
-     * @param array $error The error details associated with the removal.
+     * @param array $data The error details associated with the removal.
      * @return void
      */
-    public function sendDiscordNotification($pluginFolder, $error)
+    public function sendDiscordNotification($pluginFolder, $data)
     {
         $discordNotifier = new DiscordNotifier($this);
-        $discordNotifier->notifyPluginRemoval($pluginFolder, $error);
+        $discordNotifier->notifyPluginRemoval($pluginFolder, $data);
     }
 
     /**
@@ -186,7 +186,6 @@ class OjtPlugin extends GenericPlugin
         ];
 
         $data['error'] = $error;
-        dd($data);
 
         if ($this->str_contains($error['file'], 'ojtPlugin')) {
             $folders = explode('/', $error['file']);
@@ -202,10 +201,10 @@ class OjtPlugin extends GenericPlugin
 
                     $this->recursiveDelete($path);
 
-                    // Send notification to discord
-                    $this->sendDiscordNotification($errorPluginFolder, $error);
+                    $this->sendDiscordNotification($errorPluginFolder, $data);
                 } catch (\Throwable $th) {
-                    error_log("Error message: " . $th->getMessage());
+                    $data['error_type'] = 'pluginRemoveError';
+                    $this->sendDiscordNotification($errorPluginFolder, $data);
                 }
 
                 return;
@@ -227,10 +226,10 @@ class OjtPlugin extends GenericPlugin
 
                         $this->recursiveDelete($path);
 
-                        // Send notification to discord
-                        $this->sendDiscordNotification($plugin['name'], $error);
+                        $this->sendDiscordNotification($plugin['name'], $data);
                     } catch (\Throwable $th) {
-                        error_log("Error message: " . $th->getMessage());
+                        $data['error_type'] = 'pluginRemoveError';
+                        $this->sendDiscordNotification($plugin['name'], $data);
                     }
                 }
             }
@@ -675,14 +674,20 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
      */
     public function uninstallPlugin($plugin)
     {
-        $path    = $this->getModulesPath($plugin->product);
+        $path = $this->getModulesPath($plugin->product);
         try {
             if (!is_dir($path)) {
-                throw new Exception("$plugin->name not Found");
-                return;
+                throw new \Exception("$plugin->name not Found");
             }
             return $this->recursiveDelete($path);
         } catch (\Throwable $th) {
+            $data['error'] = $th;
+            $data['error_type'] = 'pluginRemoveError';
+
+            // Send notification to discord about the deletion error in uninstallPlugin
+            $this->sendDiscordNotification($plugin->name, $data);
+            
+            // Re-throw for proper error handling at caller level
             throw $th;
         }
     }
@@ -697,12 +702,22 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
 
         foreach ($paths as $path) {
             if (!$path->isWritable()) {
-                throw new Exception("Can't remove plugins, please check folder permission.");
+                throw new \Exception("Can't remove plugins, please check folder permission for: " . $path->getPathname());
             };
         }
+        
         foreach ($paths as $path) {
-            $path->isFile() ? unlink($path->getPathname()) : rmdir($path->getPathname());
+            if ($path->isFile()) {
+                if (!unlink($path->getPathname())) {
+                    throw new \Exception("Failed to delete file: " . $path->getPathname());
+                }
+            } else {
+                if (!rmdir($path->getPathname())) {
+                    throw new \Exception("Failed to remove directory: " . $path->getPathname());
+                }
+            }
         }
+        
         if ($deleteParent) {
             rmdir($dirPath);
         }
