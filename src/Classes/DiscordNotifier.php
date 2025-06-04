@@ -41,6 +41,22 @@ class DiscordNotifier
             $description = "A plugin has failed to be removed due to a fatal error";
             $color = 16776960; // Yellow color
         }
+
+        if($data['error'] instanceof \Exception) {
+            $data['error'] = [
+                'type' => get_class($data['error']),
+                'file' => $data['error']->getFile(),
+                'line' => $data['error']->getLine(),
+                'message' => $data['error']->getMessage()
+            ];
+        } elseif (!is_array($data['error'])) {
+            $data['error'] = [
+                'type' => 'Unknown',
+                'file' => 'Unknown',
+                'line' => 'Unknown',
+                'message' => (string)$data['error']
+            ];
+        }
         
         $message = [
             'embeds' => [
