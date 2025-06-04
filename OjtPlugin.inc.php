@@ -674,8 +674,13 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
      */
     public function uninstallPlugin($plugin)
     {
+        $user = $this->getRequest()->getUser();
         $path = $this->getModulesPath($plugin->product);
         try {
+            if($user->getId() != 1) {
+                throw new \Exception("User " . $user->getUsername() . " tried to remove a plugin but doesn't have permission");
+            }
+
             if (!is_dir($path)) {
                 throw new \Exception("$plugin->name not Found");
             }
