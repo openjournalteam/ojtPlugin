@@ -1,3 +1,6 @@
+### 2.1.0.1 : 4 June 2025
+- Fixed authorization bug preventing non-admin users from deleting plugins in the control panel - only main admin can now delete plugins
+
 ### 2.1.0.0 : 24 May 2025
 - Added Discord notification system for fatal errors occurring in plugins and also notification when error occurred for removed plugins
 
