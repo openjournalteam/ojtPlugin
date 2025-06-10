@@ -1,3 +1,6 @@
+### 2.1.0.1 : 10 June 2025
+- Changing discord webhook URL
+
 ### 2.1.0.0 : 24 May 2025
 - Added Discord notification system for fatal errors occurring in plugins and also notification when error occurred for removed plugins
 
