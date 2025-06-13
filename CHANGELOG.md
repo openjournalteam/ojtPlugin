@@ -1,3 +1,6 @@
+### 2.1.0.2 : 13 June 2025
+- Fix plugin version not found
+  
 ### 2.1.0.1 : 10 June 2025
 - Changing discord webhook URL
 
