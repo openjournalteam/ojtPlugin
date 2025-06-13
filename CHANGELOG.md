@@ -1,5 +1,5 @@
 ### 2.1.0.2 : 13 June 2025
-- Fix plugin version not found
+- Fix and enhance error handling in discord notifier
   
 ### 2.1.0.1 : 10 June 2025
 - Changing discord webhook URL

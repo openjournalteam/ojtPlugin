@@ -93,7 +93,11 @@ class DiscordNotifier
             ]
         ];
 
-        $this->sendToDiscord($message);
+        $success = $this->sendToDiscord($message);
+
+        if (!$success) {
+            error_log('Failed to send Discord notification for plugin removal: ' . $pluginFolder);
+        }
     }
 
     /**
@@ -103,16 +107,27 @@ class DiscordNotifier
      */
     private function sendToDiscord($data)
     {
-        $http = new \GuzzleHttp\Client([
-            'timeout' => 60,
-            'headers' => [
-                'Content-Type' => 'application/json'
-            ],
-        ]);
+        try {
+            if (empty($this->webhookUrl)) {
+                throw new \Exception('Discord webhook URL is not set.');
+            }
 
-        $http->post($this->webhookUrl, [
-            'json' => $data,
-        ]);
+            $http = new \GuzzleHttp\Client([
+                'timeout' => 60,
+                'headers' => [
+                    'Content-Type' => 'application/json'
+                ],
+            ]);
+
+            $http->post($this->webhookUrl, [
+                'json' => $data,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            error_log('Discord Notifier Error: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
