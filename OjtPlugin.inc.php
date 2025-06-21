@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Utils;
+use Openjournalteam\OjtPlugin\Classes\ApiServicePanel;
 use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
 use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
@@ -457,6 +458,25 @@ class OjtPlugin extends GenericPlugin
         }
 
         return $this->registeredModule;
+    }
+
+    public static function reportToServicePanel($plugin)
+    {
+        $serviceData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
+
+        if (!$plugin->getEnabled() || $serviceData) return;
+
+        $apiService = ApiServicePanel::make($plugin);
+
+        try {
+            $response = $apiService->registerClient();
+            
+            $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $response['journal_data']);
+
+            return true;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
     public function getDefaultPluginIcon()
