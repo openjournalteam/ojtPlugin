@@ -460,22 +460,32 @@ class OjtPlugin extends GenericPlugin
         return $this->registeredModule;
     }
 
-    public static function reportToServicePanel($plugin)
+    public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [])
     {
+        $ojtPlugin = new self();
         $serviceData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
 
         if (!$plugin->getEnabled() || $serviceData) return;
 
         $apiService = ApiServicePanel::make($plugin);
 
+        $params['product-class'] = get_class($plugin);
+
+        if ($isGlobalPlugin) {
+            $headers['client-url'] = $plugin->getRequest()->getBaseUrl();
+        } else {
+            $headers ['client-url'] = $ojtPlugin->getJournalURL();
+        }
+
         try {
-            $response = $apiService->registerClient();
+            $response = $apiService->registerClient($params, $headers);
             
             $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $response['journal_data']);
 
             return true;
         } catch (\Throwable $th) {
-            throw $th;
+            // throw $th;
+            return false;
         }
     }
 

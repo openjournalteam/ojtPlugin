@@ -23,17 +23,19 @@ class ApiServicePanel
         return $this->apiUrl . $path;
     }
 
-    public function registerClient()
+    public function registerClient($params = [], $headers = [])
     {
         $url = $this->getApiUrl('product/register-client');
 
         $httpClient = \OjtPlugin::get()->getHttpClient();
+        $httpHeaders = [
+            'Accept' => 'application/json',
+        ] + $headers;
+
         try {
             $response = $httpClient->post($url, [
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Journal-Site' => $this->plugin->getRequest()->getBaseUrl()
-                ],
+                'headers' => $httpHeaders,
+                'json' => $params
             ]);
         } catch (\Throwable $th) {
             throw $th;
