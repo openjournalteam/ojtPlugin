@@ -93,7 +93,11 @@ class DiscordNotifier
             ]
         ];
 
-        $this->sendToDiscord($message);
+        $success = $this->sendToDiscord($message);
+
+        if (!$success) {
+            error_log('Failed to send Discord notification for plugin removal: ' . $pluginFolder);
+        }
     }
 
     /**
@@ -103,16 +107,27 @@ class DiscordNotifier
      */
     private function sendToDiscord($data)
     {
-        $http = new \GuzzleHttp\Client([
-            'timeout' => 60,
-            'headers' => [
-                'Content-Type' => 'application/json'
-            ],
-        ]);
+        try {
+            if (empty($this->webhookUrl)) {
+                throw new \Exception('Discord webhook URL is not set.');
+            }
 
-        $http->post($this->webhookUrl, [
-            'json' => $data,
-        ]);
+            $http = new \GuzzleHttp\Client([
+                'timeout' => 60,
+                'headers' => [
+                    'Content-Type' => 'application/json'
+                ],
+            ]);
+
+            $http->post($this->webhookUrl, [
+                'json' => $data,
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            error_log('Discord Notifier Error: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -136,23 +151,38 @@ class DiscordNotifier
 
     public function getPluginVersion(): string
     {
-        libxml_use_internal_errors(true);
-        $versionFile = $this->plugin->getPluginVersionFile();
-        $parseXML = false;
+        try {
+            $versionFile = $this->plugin->getPluginVersionFile();
+            
+            if (!file_exists($versionFile)) {
+                return '2.0';
+            }
 
-        if (file_exists($versionFile)) {
+            libxml_use_internal_errors(true);
             $parseXML = simplexml_load_file($versionFile);
+
             if ($parseXML === false) {
-                // XML parsing failed, collect errors
                 $errors = libxml_get_errors();
                 libxml_clear_errors();
-                // You could log these errors if needed
+                throw new \Exception('XML parsing failed: ' . implode(', ', array_map(function($error) {
+                    return $error->message;
+                }, $errors)));
             }
+
+            if (!isset($parseXML->release)) {
+                throw new \Exception('Release version not found in XML');
+            }
+
+            return (string)$parseXML->release;
+            
+        } catch (\Exception $e) {
+            error_log('Plugin version retrieval failed: ' . $e->getMessage());
+            
+            return '2.0';
+        } finally {
+            // Clean up libxml errors when success/failure
+            libxml_clear_errors();
+            libxml_use_internal_errors(false);
         }
-
-        // Use a fallback version if XML parsing failed
-        $pluginVersion = ($parseXML && isset($parseXML->release)) ? (string)$parseXML->release : '2.0';
-
-        return $pluginVersion;
     }
 }
