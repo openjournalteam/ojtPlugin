@@ -472,9 +472,9 @@ class OjtPlugin extends GenericPlugin
         $params['product-class'] = get_class($plugin);
 
         if ($isGlobalPlugin) {
-            $headers['client-url'] = $plugin->getRequest()->getBaseUrl();
+            $headers['Client-Url'] = $plugin->getRequest()->getBaseUrl();
         } else {
-            $headers ['client-url'] = $ojtPlugin->getJournalURL();
+            $headers ['Client-Url'] = $ojtPlugin->getJournalURL();
         }
 
         try {
