@@ -62,10 +62,6 @@ class OjtPluginApiHandler extends Handler
     {
         return [
             'api' => [
-                // Article routes
-                'articles' => [$this, 'articles'],
-                'article/{articleId}' => [$this, 'article'],
-
                 // check update plugin
                 'check-update-plugin/{pluginClass}' => [$this, 'checkUpdatePlugin'],
             ],
@@ -150,65 +146,6 @@ class OjtPluginApiHandler extends Handler
             http_response_code(500);
             return new JSONMessage(false, 'Plugin update failed: ' . $e->getMessage());
         }
-    }
-
-    public function journal($args, $request)
-    {
-        return new JSONMessage(true, [
-            'message' => 'Journal endpoint',
-            'args' => $args,
-            'data' => 'Journal data would go here'
-        ]);
-    }
-
-    public function issues($args, $request)
-    {
-        return new JSONMessage(true, [
-            'message' => 'Issues endpoint',
-            'args' => $args,
-            'data' => 'Issues list would go here'
-        ]);
-    }
-
-    public function issue($args, $request)
-    {
-        $issueId = $args['issueId'] ?? null;
-        
-        if (!$issueId) {
-            return new JSONMessage(false, 'Issue ID is required');
-        }
-
-        return new JSONMessage(true, [
-            'message' => 'Single issue endpoint',
-            'issueId' => $issueId,
-            'args' => $args,
-            'data' => "Issue $issueId data would go here"
-        ]);
-    }
-
-    public function articles($args, $request)
-    {
-        return new JSONMessage(true, [
-            'message' => 'Articles endpoint',
-            'args' => $args,
-            'data' => 'Articles list would go here'
-        ]);
-    }
-
-    public function article($args, $request)
-    {
-        $articleId = $args['articleId'] ?? null;
-        
-        if (!$articleId) {
-            return new JSONMessage(false, 'Article ID is required');
-        }
-
-        return new JSONMessage(true, [
-            'message' => 'Single article endpoint',
-            'articleId' => $articleId,
-            'args' => $args,
-            'data' => "Article $articleId data would go here"
-        ]);
     }
 
     protected function handleRoute($handler, $routeParams, $request)
