@@ -5,10 +5,11 @@ namespace APP\plugins\generic\ojtControlPanel\classes;
 use APP\core\Application;
 use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
 use Monolog\Handler\AbstractProcessingHandler;
+use Monolog\LogRecord;
 
 class ServiceHandler extends AbstractProcessingHandler
 {
-  protected function write(array $record): void
+  protected function write(LogRecord $record): void
   {
 
     try {
