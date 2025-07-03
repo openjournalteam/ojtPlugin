@@ -76,28 +76,63 @@ class OjtPluginApiHandler extends Handler
             return new JSONMessage(false, 'This endpoint only accepts POST requests.');
         }
 
-        $pluginClass = $args['pluginClass'];
-
-        if (!$pluginClass) {
-            return new JSONMessage(false, 'Plugin class is required');
+        $getBearerToken = $this->getAuthorizationHeader();
+        
+        if (empty($getBearerToken)) {
+            http_response_code(401); // Unauthorized
+            return new JSONMessage(false, 'Authorization header is missing or empty.');
         }
 
+        if (!str_contains($getBearerToken, 'Bearer ')) {
+            http_response_code(401); // Unauthorized
+            return new JSONMessage(false, 'Invalid authorization format. Expected "Bearer {token}".');
+        }
+
+        $getBearerToken = str_replace('Bearer ', '', $getBearerToken);
+
+        $pluginClass = $args['pluginClass'] ?? null;
+        $getAllPlugins = PluginRegistry::getAllPlugins();
+        if(!isset($getAllPlugins[$pluginClass])) {
+            http_response_code(404); // Not Found
+            return new JSONMessage(false, 'Plugin class not found: ' . $pluginClass);
+        }
+
+        $data = null;
+        if (!empty($request->getUserVars())) {
+            $data = $request->getUserVars();
+        } else {
+            $data = json_decode(file_get_contents('php://input'), true);
+        }
+
+        $requiredFields = ['link_download', 'latest_version', 'ojs_version'];
+
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                http_response_code(400);
+                return new JSONMessage(false, "Missing required parameter: $field");
+            }
+        }
+
+        $latestVersion = $data['latest_version'];
+        $linkDownload = $data['link_download'];
+        $ojsVersion = $data['ojs_version'];
+
+        $dataPlugin = [
+            'class' => $pluginClass,
+            'category' => $getAllPlugins[$pluginClass]->getCategory(),
+            'path' => $getAllPlugins[$pluginClass]->getPluginPath(),
+        ];
+
         $response = [
-            "status" => "error",
-            "error_code" => 404, // kode error, misal: 404 (not found)
-            "message" => "Data tidak ditemukan",
-            "data" => null
+            'status_code' => 200,
+            'update_success' => true,
+            'product_version' => '1.0.0',
+            'ojs_version' => '33'
         ];
 
         header('Content-Type: application/json');
-        echo json_encode($response);
-        exit;
-
-        return new JSONMessage(true, [
-            'message' => 'API is working',
-            'args' => $args,
-            'request' => $request->getUserVars() ?? 'No test variable provided',
-        ]);
+        http_response_code($response['status_code']);
+        return json_encode($response);
     }
 
     public function journal($args, $request)
@@ -188,6 +223,24 @@ class OjtPluginApiHandler extends Handler
         return new JSONMessage(false, "Invalid route handler configuration");
     }
 
+    private function getAuthorizationHeader()
+    {
+        $headers = null;
+        if (isset($_SERVER['Authorization'])) {
+            $headers = trim($_SERVER["Authorization"]);
+        } else if (isset($_SERVER['HTTP_AUTHORIZATION'])) { //Nginx or fast CGI
+            $headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
+        } elseif (function_exists('apache_request_headers')) {
+            $requestHeaders = apache_request_headers();
+            // Server-side fix for bug in old Android versions (a nice side-effect of this fix means we don't care about capitalization for Authorization)
+            $requestHeaders = array_combine(array_map('ucwords', array_keys($requestHeaders)), array_values($requestHeaders));
+            //print_r($requestHeaders);
+            if (isset($requestHeaders['Authorization'])) {
+                $headers = trim($requestHeaders['Authorization']);
+            }
+        }
+        return $headers;
+    }
 }
 
 ?>
