@@ -95,6 +95,19 @@ class OjtPluginApiHandler extends Handler
             http_response_code(404); // Not Found
             return new JSONMessage(false, 'Plugin class not found: ' . $pluginClass);
         }
+        $plugin = $getAllPlugins[$pluginClass];
+
+        // check token
+        $getServicePanelData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
+        if($getServicePanelData['token'] == null) {
+            http_response_code(403); // Forbidden
+            return new JSONMessage(false, 'Service panel token is not set for this plugin.');
+        }
+
+        if ($getServicePanelData['token'] !== $getBearerToken) {
+            http_response_code(403); // Forbidden
+            return new JSONMessage(false, 'Invalid or expired token.');
+        }
 
         $data = null;
         if (!empty($request->getUserVars())) {
@@ -117,9 +130,10 @@ class OjtPluginApiHandler extends Handler
         $ojsVersion = $data['ojs_version'];
 
         $dataPlugin = [
+            'plugin_class' => $plugin,
             'class' => $pluginClass,
-            'category' => $getAllPlugins[$pluginClass]->getCategory(),
-            'path' => $getAllPlugins[$pluginClass]->getPluginPath(),
+            'category' => $plugin->getCategory(),
+            'path' => $plugin->getPluginPath(),
         ];
 
         try {
