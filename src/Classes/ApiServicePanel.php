@@ -6,7 +6,7 @@ class ApiServicePanel
 {
     protected $plugin;
 
-    protected $apiUrl = 'http://127.0.0.1:8000/api/v1/';
+    protected $apiUrl = 'https://sp.openjournaltheme.com/';
 
     public function __construct($plugin)
     {
