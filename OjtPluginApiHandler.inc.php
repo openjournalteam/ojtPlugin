@@ -116,6 +116,33 @@ class OjtPluginApiHandler extends Handler
             $data = json_decode(file_get_contents('php://input'), true);
         }
 
+        if (empty($data)) {
+            http_response_code(400); // Bad Request
+            return new JSONMessage(false, 'Request body is empty or invalid.');
+        }
+
+        // validate OJS version
+        if ($data['ojs_version'] != $this->ojtPlugin->getJournalVersion()) {
+            http_response_code(400); // Bad Request
+            return new JSONMessage(false, 'OJS version mismatch. Expected: ' . $this->ojtPlugin->getJournalVersion() . ', Received: ' . $data['ojs_version']);
+        }
+
+        // validate plugin version
+        import('lib.pkp.classes.site.VersionCheck');
+        $version = VersionCheck::parseVersionXML($plugin->getPluginPath() . '/version.xml');
+
+        // Check if latest version is lower than current version
+        if (version_compare($data['latest_version'], $version['release'], '<')) {
+            http_response_code(409); // Conflict
+            return new JSONMessage(false, 'Latest version is lower than current version. Current: ' . $version['release'] . ', Latest: ' . $data['latest_version']);
+        }
+
+        // Check if latest version is equal to current version
+        if (version_compare($data['latest_version'], $version['release'], '=')) {
+            http_response_code(409); // Conflict
+            return new JSONMessage(false, 'Plugin is already up to date. Current version: ' . $version['release']);
+        }
+
         $requiredFields = ['link_download', 'latest_version', 'ojs_version'];
 
         foreach ($requiredFields as $field) {
