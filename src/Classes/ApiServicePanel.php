@@ -6,7 +6,10 @@ class ApiServicePanel
 {
     protected $plugin;
 
-    protected $apiUrl = 'https://sp.openjournaltheme.com/';
+    // protected $apiUrl = 'https://sp.openjournaltheme.com/';
+
+    // Staging Service Panel
+    protected $apiUrl = 'https://sp-staging.ojthost.xyz/api/v1/';
 
     public function __construct($plugin)
     {
