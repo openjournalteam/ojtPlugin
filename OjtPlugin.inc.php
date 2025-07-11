@@ -685,7 +685,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
             $data['error_type'] = 'pluginRemoveError';
 
             // Send notification to discord about the deletion error in uninstallPlugin
-            $this->sendDiscordNotification($plugin->name, $data);
+            // $this->sendDiscordNotification($plugin->name, $data);
             
             // Re-throw for proper error handling at caller level
             throw $th;
