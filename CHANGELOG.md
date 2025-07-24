@@ -1,3 +1,6 @@
+### 2.1.1.0 : 24 July 2025
+- Added a feature to register clients using exclusive plugins to the OJT Service Panel
+
 ### 2.1.0.2 : 13 June 2025
 - Fix and enhance error handling in discord notifier
   
