@@ -345,90 +345,10 @@ class OjtPageHandler extends Handler
 
     public function getExclusivePlugins($args, $request)
     {
-        $exclusivePlugins = [
-            [
-                "base" => "http://localhost/demo3311/index.php/novelty",
-                "token" => "a95DIdDFZmmau1gIeTeeXNpZIU8HuSrz9ej7CBio",
-                "name" => "OJT Blazing Cache Pro - OJS 3 Plugin",
-                "placeholder" => "https://openjournaltheme.com/wp-content/uploads/2024/01/OJTBlazingCache-PRO-For-OJT-Control-Panel.png",
-                "thumbnail" => "https://openjournaltheme.com/wp-content/uploads/2024/01/OJT-blazing-cache.png",
-                "folder" => "ojtBlazingCachePro",
-                "category" => "PAID",
-                "type" => "Plugin",
-                "tags" => null,
-                "class" => "ojtblazingcacheproplugin",
-                "description" => "\"\"
-                Ready to make all journals left behind? OJTBlazing Cache will make the load performance of your journal faster just like the speed of a rocket!
-                
-                We are aware that the OJS is very slow in loading some of the core sites such as the Index journal page, article detail page, issue list, issue detail page, and announcement page. With this plugin, you can make the load improvement natively in OJS
-                
-                Based on our test, the plugin will increase the load to more than 2000% speed improvement*. With this flashing speed, all other journals will get left behind with this speed. 
-                
-                Why the speed is a matter for your journal? 
-                Enhanced Search Engine Ranking: Search engines prioritize websites that load quickly and provide a smooth user experience. By improving the loading speed of your journal's website, you can increase its ranking on search engine results pages, leading to higher visibility and more organic traffic.
-                Increased Credibility: A fast-loading website reflects positively on the credibility of your journal. It demonstrates your commitment to providing a seamless and efficient user experience, which can enhance the perception of your journal among readers, authors, and researchers.
-                Cost Savings: Faster loading speeds can lead to decreased server resource consumption and reduced hosting costs. By optimizing your website's performance, you can potentially lower the expenses associated with hosting and server maintenance. 
-                
-                
-                Ready to make your journal blazingly fast? The time is now!
-                
-                What will be cached? 
-                Index journal page (Free and Pro version)
-                Article detail page (Pro version)
-                Issue list page (Pro version)
-                Issue detail (Pro version)
-                Announcement (Pro version)
-                \"\"",
-                "shop" => "https://openjournaltheme.com/product/ojt-blazing-cache-pro-ojs-3-plugin",
-                "version" => "1.0.1.3",
-                "changelog" => "-",
-                "trial" => false,
-                "early_access" => false,
-                "update" => false,
-                "license" => "OJT8HTJ-7UNH-ARAN-EEEO",
-                "installed" => true
-            ],
-            [
-                "base" => "http://localhost/demo3311/index.php/novelty",
-                "token" => "a95DIdDFZmmau1gIeTeeXNpZIU8HuSrz9ej7CBio",
-                "name" => "OJT Advance Security - OJS 3 Plugin",
-                "placeholder" => "https://openjournaltheme.com/wp-content/uploads/2024/01/OJTAdvanceSecurity-For-OJT-Control-Panel.png",
-                "thumbnail" => "https://openjournaltheme.com/wp-content/uploads/2024/01/OJT-advance-security.png",
-                "folder" => "ojtAdvanceSecurity",
-                "category" => "PAID",
-                "type" => "Plugin",
-                "tags" => null,
-                "class" => "ojtadvancesecurityplugin",
-                "description" => "\"\"
-                OJT Advance Security is a plugin that will help you to secure your journal from any malicious attack. 
-                
-                This plugin
-                will help you to secure your journal from any malicious attack.
-                \"\"",
-                "shop" => "https://openjournaltheme.com/product/ojt-advance-security-ojs-3-plugin",
-                "version" => "1.0.0",
-                "changelog" => "-",
-                "trial" => false,
-                "early_access" => false,
-                "update" => false,
-                "license" => "OJT8HTJ-7UNH-ARAN-EEEO",
-                "installed" => false
-            ]
-        ];
-
-        $installedPlugins = $this->installedPlugins();
-
-        $plugins = array_filter($exclusivePlugins, function($plugin) use ($installedPlugins) {
-            if (!$plugin['installed']) return false;
-            
-            return array_filter($installedPlugins, function($registered) use ($plugin) {
-                return $registered['enabled'] && 
-                    strtolower($registered['className']) === strtolower($plugin['class']);
-            });
-        });
+        
 
         // Reset array keys if needed
-        return showJson(array_values($plugins));
+        return showJson([]);
     }
 
     public function save($args, $request)
