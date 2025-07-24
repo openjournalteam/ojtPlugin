@@ -8,6 +8,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Utils;
+use Openjournalteam\OjtPlugin\Classes\ApiServicePanel;
 use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
 use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
@@ -459,6 +460,35 @@ class OjtPlugin extends GenericPlugin
         return $this->registeredModule;
     }
 
+    public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [])
+    {
+        $ojtPlugin = new self();
+        $serviceData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
+
+        if (!$plugin->getEnabled() || $serviceData) return;
+
+        $apiService = ApiServicePanel::make($plugin);
+
+        $params['product-class'] = get_class($plugin);
+
+        if ($isGlobalPlugin) {
+            $headers['Client-Url'] = $plugin->getRequest()->getBaseUrl();
+        } else {
+            $headers ['Client-Url'] = $ojtPlugin->getJournalURL();
+        }
+
+        try {
+            $response = $apiService->registerClient($params, $headers);
+            
+            $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $response['journal_data']);
+
+            return true;
+        } catch (\Throwable $th) {
+            // throw $th;
+            return false;
+        }
+    }
+
     public function getDefaultPluginIcon()
     {
         // In some ojs this func trigger error, can't read defaultIcon.tpl
@@ -503,6 +533,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
 
         // Download file
         $file_name = Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'OJTPanel.zip';
+        
         $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
         $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
         $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
@@ -607,6 +638,13 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         $page = $params[0];
         $op   = &$params[1];
 
+        if($page === 'ojt' && $op === 'api') {
+            define('HANDLER_CLASS', 'OjtPluginApiHandler');
+            $this->import('OjtPluginApiHandler');
+
+            return true;
+        }
+        
         switch ($page) {
             case 'ojt':
                 define('HANDLER_CLASS', 'OjtPageHandler');

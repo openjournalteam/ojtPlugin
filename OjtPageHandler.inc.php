@@ -19,7 +19,7 @@ class OjtPageHandler extends Handler
 
         $this->addRoleAssignment(
             [ROLE_ID_SITE_ADMIN, ROLE_ID_MANAGER],
-            ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
+            ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'getExclusivePlugins', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
         );
 
         $this->ojtPlugin = OjtPlugin::get();
@@ -116,6 +116,7 @@ class OjtPageHandler extends Handler
         $templateMgr->assign('journal', $this->contextId ? $request->getContext() : $request->getSite());
         $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
         $templateMgr->assign('pluginInstalledHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl')));
+        $templateMgr->assign('pluginExclusiveHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('pluginexclusive.tpl')));
 
         return $templateMgr->display($this->ojtPlugin->getTemplateResource('index.tpl'));
     }
@@ -342,6 +343,14 @@ class OjtPageHandler extends Handler
         }
     }
 
+    public function getExclusivePlugins($args, $request)
+    {
+        
+
+        // Reset array keys if needed
+        return showJson([]);
+    }
+
     public function save($args, $request)
     {
         ajaxOrError();
@@ -357,12 +366,19 @@ class OjtPageHandler extends Handler
         return showJson($json);
     }
 
-    public function getInstalledPlugin($args, $request)
+    protected function installedPlugins()
     {
         $plugins = $this->ojtPlugin->registeredModule;
 
         // Call the hook to allow other plugins to register to ojt control panel modules
         HookRegistry::call('OjtPageHandler::installed::plugins', array($this, &$plugins));
+
+        return $plugins;
+    }
+
+    public function getInstalledPlugin($args, $request)
+    {
+        $plugins = $this->installedPlugins();
 
         return showJson($plugins ?? []);
     }
