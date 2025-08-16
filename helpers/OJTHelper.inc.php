@@ -85,3 +85,18 @@ if (!function_exists('vd')) {
         echo '</pre>';
     }
 }
+
+if (!function_exists('findPluginByClass')) {
+    function findPluginByClass($name)
+    {
+        $allPlugin = PluginRegistry::getPlugins();
+        foreach ($allPlugin as $key => $value) {
+            foreach($value as $plugin) {
+                if ($name->className == $plugin->getName()) {
+                    return $plugin;
+                }
+            }
+        }
+        return null;
+    }
+}
