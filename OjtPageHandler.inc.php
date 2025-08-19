@@ -553,9 +553,11 @@ class OjtPageHandler extends Handler
             $this->resetSetting($removePlugin->class, false);
         }
 
+        $dataPlugin = findPluginByClass($removePlugin->className);
+
         // trying to remove plugin
         try {
-            $plugin->uninstallPlugin($removePlugin);
+            $plugin->uninstallPlugin($dataPlugin);
         } catch (Exception $e) {
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();

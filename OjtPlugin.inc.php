@@ -712,7 +712,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
      */
     public function uninstallPlugin($plugin)
     {
-        $path = findPluginByClass($plugin)->pluginPath;
+        $path = $plugin->pluginPath;
         try {
             if (!is_dir($path)) {
                 throw new \Exception("$plugin->name not Found");
