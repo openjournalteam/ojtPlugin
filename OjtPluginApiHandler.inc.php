@@ -1,5 +1,6 @@
 <?php
 
+use Openjournalteam\OjtPlugin\Actions\ApiRemovePlugin;
 use Slim\Http\Response;
 use Openjournalteam\OjtPlugin\Actions\ApiUpdatePlugin;
 
@@ -65,6 +66,7 @@ class OjtPluginApiHandler extends Handler
             'api' => [
                 // check update plugin
                 'check-update-plugin/{pluginClass}' => [ApiUpdatePlugin::class, 'handle'],
+                'remove-plugin/{pluginClass}' => [ApiRemovePlugin::class, 'handle']
             ],
         ];
     }

@@ -89,14 +89,12 @@ if (!function_exists('vd')) {
 if (!function_exists('findPluginByClass')) {
     function findPluginByClass($name)
     {
-        $allPlugin = PluginRegistry::getPlugins();
-        foreach ($allPlugin as $key => $value) {
-            foreach($value as $plugin) {
-                if ($name->className == $plugin->getName()) {
-                    return $plugin;
-                }
-            }
+        $getAllPlugins = PluginRegistry::getAllPlugins();
+        if(!isset($getAllPlugins[$name])) {
+            return null;
         }
-        return null;
+        $plugin = $getAllPlugins[$name];
+
+        return $plugin;
     }
 }
