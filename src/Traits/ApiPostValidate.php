@@ -3,6 +3,7 @@
 namespace Openjournalteam\OjtPlugin\Traits;
 
 use JSONMessage;
+use PluginRegistry;
 
 trait ApiPostValidate
 {
@@ -38,7 +39,7 @@ trait ApiPostValidate
         return $headers;
     }
 
-    public function validateBearerToken()
+    public function validateDataAndToken($args, $request)
     {
         $getBearerToken = $this->getAuthorizationHeader();
         
@@ -58,6 +59,36 @@ trait ApiPostValidate
 
         $getBearerToken = str_replace('Bearer ', '', $getBearerToken);
 
-        return $getBearerToken;
+        $pluginClass = $args['pluginClass'] ?? null;
+        $plugin = findPluginByClass($pluginClass);
+
+        // check token
+        $getServicePanelData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
+        if($getServicePanelData['token'] == null) { 
+            http_response_code(403); // Forbidden
+            return new JSONMessage(false, 'Service panel token is not set for this plugin.');
+        }
+
+        if ($getServicePanelData['token'] !== $getBearerToken) {
+            http_response_code(403); // Forbidden
+            return new JSONMessage(false, 'Invalid or expired token.');
+        }
+
+        return [
+            "plugin" => $plugin,
+            "pluginClass" => $pluginClass
+        ];
+    }
+
+    public function getBodyData($request)
+    {
+        $data = null;
+        if (!empty($request->getUserVars())) {
+            $data = $request->getUserVars();
+        } else {
+            $data = json_decode(file_get_contents('php://input'), true);
+        }
+
+        return $data;
     }
 }

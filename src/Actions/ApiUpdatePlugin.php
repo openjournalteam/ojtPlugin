@@ -32,34 +32,9 @@ class ApiUpdatePlugin
     {
         $this->validatePostRequest($request);
 
-        $getBearerToken = $this->validateBearerToken();
+        $pluginData = $this->validateDataAndToken($args, $request);
 
-        $pluginClass = $args['pluginClass'] ?? null;
-        $getAllPlugins = PluginRegistry::getAllPlugins();
-        if(!isset($getAllPlugins[$pluginClass])) {
-            http_response_code(404); // Not Found
-            return new JSONMessage(false, 'Plugin class not found: ' . $pluginClass);
-        }
-        $plugin = $getAllPlugins[$pluginClass];
-
-        // check token
-        $getServicePanelData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
-        if($getServicePanelData['token'] == null) {
-            http_response_code(403); // Forbidden
-            return new JSONMessage(false, 'Service panel token is not set for this plugin.');
-        }
-
-        if ($getServicePanelData['token'] !== $getBearerToken) {
-            http_response_code(403); // Forbidden
-            return new JSONMessage(false, 'Invalid or expired token.');
-        }
-
-        $data = null;
-        if (!empty($request->getUserVars())) {
-            $data = $request->getUserVars();
-        } else {
-            $data = json_decode(file_get_contents('php://input'), true);
-        }
+        $data = $this->getBodyData($request);
 
         if (empty($data)) {
             http_response_code(400); // Bad Request
@@ -93,7 +68,7 @@ class ApiUpdatePlugin
 
         // validate plugin version
         import('lib.pkp.classes.site.VersionCheck');
-        $version = VersionCheck::parseVersionXML($plugin->getPluginPath() . '/version.xml');
+        $version = VersionCheck::parseVersionXML($pluginData['plugin']->getPluginPath() . '/version.xml');
 
         // Check if latest version is lower than current version
         if (version_compare($latestVersion, $version['release'], '<')) {
@@ -108,10 +83,10 @@ class ApiUpdatePlugin
         }
 
         $dataPlugin = [
-            'plugin_class' => $plugin,
-            'class' => $pluginClass,
-            'category' => $plugin->getCategory(),
-            'path' => $plugin->getPluginPath(),
+            'plugin_class' => $pluginData['plugin'],
+            'class' => $pluginData['pluginClass'],
+            'category' => $pluginData['plugin']->getCategory(),
+            'path' => $pluginData['plugin']->getPluginPath(),
         ];
 
         try {
@@ -362,7 +337,7 @@ class ApiUpdatePlugin
                 'message' => 'Plugin extracted successfully to ' . $pluginFolder
             ];
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return [
                 'success' => false,
                 'message' => 'Extraction error: ' . $e->getMessage()
