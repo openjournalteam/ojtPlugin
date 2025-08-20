@@ -2,7 +2,6 @@
 
 namespace Openjournalteam\OjtPlugin\Actions;
 
-use JSONMessage;
 use OjtPlugin;
 use Openjournalteam\OjtPlugin\Traits\ApiPostValidate;
 
@@ -28,22 +27,26 @@ class ApiRemovePlugin
         $pluginData = $this->validateDataAndToken($args, $request);
 
         try {
-            $this->ojtPlugin->uninstallPlugin($pluginData['plugin']);
-
+            $uninstallPlugin = $this->ojtPlugin->uninstallPlugin($pluginData['plugin']);
+            if (!$uninstallPlugin) {
+                throw new \Exception('Plugin uninstall failed.');
+            }
+            
             header('Content-Type: application/json');
             http_response_code(200);
-            return new JSONMessage(true, [
+            echo json_encode([
                 'remove_success' => true,
-                "plugin" => $pluginData['plugin'],
-                'message' => 'Plugin removed successfully.'
+                'message' => 'Plugin removed successfully.',
             ]);
+            exit;
         } catch (\Throwable $th) {
             header('Content-Type: application/json');
             http_response_code(500);
-            return new JSONMessage(false, [
+            echo json_encode([
                 'remove_success' => false,
-                'message' => 'Plugin remove failed: ' . $th->getMessage()
+                'message' => 'Plugin remove failed: ' . $th->getMessage() . ' on line ' . $th->getLine() . ' in ' . $th->getFile()
             ]);
+            exit;
         }
     }
 }

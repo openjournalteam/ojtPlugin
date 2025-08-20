@@ -2,7 +2,6 @@
 
 namespace Openjournalteam\OjtPlugin\Traits;
 
-use JSONMessage;
 use PluginRegistry;
 
 trait ApiPostValidate
@@ -65,13 +64,17 @@ trait ApiPostValidate
         // check token
         $getServicePanelData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
         if($getServicePanelData['token'] == null) { 
+            header('Content-Type: application/json');
             http_response_code(403); // Forbidden
-            return new JSONMessage(false, 'Service panel token is not set for this plugin.');
+            echo json_encode(['success' => false, 'message' => 'Service panel token is not set for this plugin.']);
+            exit;
         }
 
         if ($getServicePanelData['token'] !== $getBearerToken) {
+            header('Content-Type: application/json');
             http_response_code(403); // Forbidden
-            return new JSONMessage(false, 'Invalid or expired token.');
+            echo json_encode(['success' => false, 'message' => 'Invalid or expired token.']);
+            exit;
         }
 
         return [
