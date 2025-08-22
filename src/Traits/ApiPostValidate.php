@@ -94,4 +94,9 @@ trait ApiPostValidate
 
         return $data;
     }
+
+    public function checkPluginExisted($args, $request)
+    {
+        
+    }
 }
