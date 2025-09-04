@@ -345,7 +345,7 @@ class OjtPageHandler extends Handler
 
     public function getExclusivePlugins($args, $request)
     {
-        
+
 
         // Reset array keys if needed
         return showJson([]);
@@ -437,7 +437,10 @@ class OjtPageHandler extends Handler
             if ($update && $fileManager->fileExists($indexFile)) {
                 $pluginInstance = include($indexFile);
 
-                $license = $pluginInstance->getSetting($this->contextId, 'licenseMain');
+
+                // licenseMain is old version validation
+                // the updated one is license
+                $license = $pluginInstance->getSetting($this->contextId, 'license') || $pluginInstance->getSetting($this->contextId, 'licenseMain');
             }
 
             $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
@@ -505,7 +508,7 @@ class OjtPageHandler extends Handler
                 } catch (\Throwable $deleteError) {
                     // Log the error
                     error_log("Error in recursiveDelete: " . $deleteError->getMessage());
-                    
+
                     // Use the plugin's method to send Discord notification
                     $ojtPlugin->sendDiscordNotificationForDeleteError($pluginToInstall->folder, $deleteError);
                 }
@@ -592,8 +595,5 @@ class OjtPageHandler extends Handler
     }
 
     // TODO: this function purposes to delete certain plugins inside the modules
-    public function deteleModules()
-    {
-
-    }
+    public function deteleModules() {}
 }
