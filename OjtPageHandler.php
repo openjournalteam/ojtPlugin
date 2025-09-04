@@ -81,7 +81,7 @@ class OjtPageHandler extends Handler
         $ojtPlugin->sweetAlertCss                   = $this->getPluginFullUrl('assets/vendors/sweetalert/sweetalert2.min.css');
         $ojtPlugin->pageName                        = 'ojt';
         $ojtPlugin->javascript  = [
-            $request->getBaseUrl() . '/js/build/jquery/jquery.min.js',
+            version_compare($plugin->getJournalVersion(), '35', '>=') ? $request->getBaseUrl() . '/js/build/jquery/jquery.min.js' : '/lib/pkp/lib/vendor/components/jquery/jquery.min.js',
             $this->getPluginFullUrl('assets/vendors/sweetalert/sweetalert2.all.min.js'),
             $this->getPluginFullUrl('assets/js/jquery.form.min.js'),
             // $this->getPluginFullUrl('assets/js/alpine/spruce.umd.js'),

@@ -9,7 +9,10 @@ use Monolog\LogRecord;
 
 class ServiceHandler extends AbstractProcessingHandler
 {
-  protected function write(LogRecord $record): void
+  /**
+   * @param array|LogRecord $record
+   */
+  protected function write($record): void
   {
 
     try {
@@ -37,7 +40,7 @@ class ServiceHandler extends AbstractProcessingHandler
         ],
         [
           'name' => 'problem',
-          'contents' => $record['message'],
+          'contents' => ($record instanceof LogRecord) ? $record->message : $record['message'],
         ],
         [
           'name' => 'type',

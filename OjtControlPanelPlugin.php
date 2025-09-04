@@ -4,6 +4,7 @@ namespace APP\plugins\generic\ojtControlPanel;
 
 use APP\facades\Repo;
 use Exception;
+use PKPApplication;
 use ZipArchive;
 use Monolog\Logger;
 use PKP\plugins\Hook;
@@ -90,7 +91,11 @@ class OjtControlPanelPlugin extends GenericPlugin
         $currentUser = $this->getRequest()->getUser();
         if(!$currentUser) return false;
 
-        return $currentUser->hasRole([Role::ROLE_ID_SITE_ADMIN], Application::SITE_CONTEXT_ID);
+        if(version_compare($this->getJournalVersion(), '35', '>=')) {
+            return $currentUser->hasRole([Role::ROLE_ID_SITE_ADMIN], Application::SITE_CONTEXT_ID);
+        }
+
+        return $currentUser->hasRole([Role::ROLE_ID_SITE_ADMIN], Application::CONTEXT_SITE);
     }
 
     public function isCurrentUserAreJournalManager(): bool
@@ -98,15 +103,26 @@ class OjtControlPanelPlugin extends GenericPlugin
         $currentUser = $this->getRequest()->getUser();
         if(!$currentUser) return false;
 
-        $context = $this->getRequest()->getContext();
+        $journalVersion = $this->getJournalVersion();
 
-        $currentUserGroups = UserGroup::query()
-            ->withUserIds([$currentUser->getId()])
-            ->withUserUserGroupStatus(UserUserGroupStatus::STATUS_ACTIVE->value)
-            ->when($context, fn($query) => $query->withContextIds($context->getId()))
-            ->lazy();
+        if(version_compare($journalVersion, '35', '>=')) {
+            $context = $this->getRequest()->getContext();
 
-        return $currentUserGroups->contains(fn($userGroup) => $userGroup->nameLocaleKey == 'default.groups.name.manager');
+            $currentUserGroups = UserGroup::query()
+                ->withUserIds([$currentUser->getId()])
+                ->withUserUserGroupStatus(UserUserGroupStatus::STATUS_ACTIVE->value)
+                ->when($context, fn($query) => $query->withContextIds($context->getId()))
+                ->lazy();
+
+            return $currentUserGroups->contains(fn($userGroup) => $userGroup->nameLocaleKey == 'default.groups.name.manager');
+        }
+
+        $currentUserGroups = Repo::userGroup()->userUserGroups($currentUser->getId());
+        $currentUserGroupNameLocaleKeys = collect($currentUserGroups->toArray())
+            ->map(fn($userGroup) => $userGroup->getData('nameLocaleKey'))
+            ->toArray();
+
+        return in_array('default.groups.name.manager', $currentUserGroupNameLocaleKeys);
     }
 
     public function apiUrl()
@@ -363,7 +379,9 @@ class OjtControlPanelPlugin extends GenericPlugin
             $categoryDir    = $this->getModulesPath();
             $pluginDir      = $categoryDir .  $moduleFolder;
 
-            if ($plugin->getEnabled() || $this->getCurrentContextId() == Application::SITE_CONTEXT_ID) {
+            $contextSite = version_compare($this->getJournalVersion(), '35', '>=') ? Application::SITE_CONTEXT_ID : Application::CONTEXT_SITE;
+
+            if ($plugin->getEnabled() || $this->getCurrentContextId() == $contextSite) {
                 PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
                 if ($plugin instanceof ThemePlugin) {
                     $plugin->init();
