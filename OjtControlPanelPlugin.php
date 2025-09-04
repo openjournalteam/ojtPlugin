@@ -31,6 +31,8 @@ use APP\plugins\generic\ojtControlPanel\classes\ErrorHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ParamHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ServiceHandler;
 use Monolog\Utils;
+use PKP\userGroup\relationships\enums\UserUserGroupStatus;
+use PKP\userGroup\UserGroup;
 use Psr\Log\LogLevel;
 use Throwable;
 
@@ -89,7 +91,11 @@ class OjtControlPanelPlugin extends GenericPlugin
         $currentUser = $this->getRequest()->getUser();
         if(!$currentUser) return false;
 
-        return $currentUser->hasRole([Role::ROLE_ID_SITE_ADMIN], PKPApplication::CONTEXT_SITE);
+        if(version_compare($this->getJournalVersion(), '35', '>=')) {
+            return $currentUser->hasRole([Role::ROLE_ID_SITE_ADMIN], Application::SITE_CONTEXT_ID);
+        }
+
+        return $currentUser->hasRole([Role::ROLE_ID_SITE_ADMIN], Application::CONTEXT_SITE);
     }
 
     public function isCurrentUserAreJournalManager(): bool
@@ -97,15 +103,26 @@ class OjtControlPanelPlugin extends GenericPlugin
         $currentUser = $this->getRequest()->getUser();
         if(!$currentUser) return false;
 
+        $journalVersion = $this->getJournalVersion();
+
+        if(version_compare($journalVersion, '35', '>=')) {
+            $context = $this->getRequest()->getContext();
+
+            $currentUserGroups = UserGroup::query()
+                ->withUserIds([$currentUser->getId()])
+                ->withUserUserGroupStatus(UserUserGroupStatus::STATUS_ACTIVE->value)
+                ->when($context, fn($query) => $query->withContextIds($context->getId()))
+                ->lazy();
+
+            return $currentUserGroups->contains(fn($userGroup) => $userGroup->nameLocaleKey == 'default.groups.name.manager');
+        }
+
         $currentUserGroups = Repo::userGroup()->userUserGroups($currentUser->getId());
+        $currentUserGroupNameLocaleKeys = collect($currentUserGroups->toArray())
+            ->map(fn($userGroup) => $userGroup->getData('nameLocaleKey'))
+            ->toArray();
 
-        $currentUserGroupNameLocaleKeys = collect($currentUserGroups->toArray())->map(function ($userGroup) {
-            return $userGroup->getData('nameLocaleKey');
-        })->toArray();
-
-        if(in_array('default.groups.name.manager', $currentUserGroupNameLocaleKeys)) return true;
-
-        return false;
+        return in_array('default.groups.name.manager', $currentUserGroupNameLocaleKeys);
     }
 
     public function apiUrl()
@@ -362,7 +379,9 @@ class OjtControlPanelPlugin extends GenericPlugin
             $categoryDir    = $this->getModulesPath();
             $pluginDir      = $categoryDir .  $moduleFolder;
 
-            if ($plugin->getEnabled() || $this->getCurrentContextId() == Application::CONTEXT_SITE) {
+            $contextSite = version_compare($this->getJournalVersion(), '35', '>=') ? Application::SITE_CONTEXT_ID : Application::CONTEXT_SITE;
+
+            if ($plugin->getEnabled() || $this->getCurrentContextId() == $contextSite) {
                 PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
                 if ($plugin instanceof ThemePlugin) {
                     $plugin->init();
@@ -572,7 +591,6 @@ class OjtControlPanelPlugin extends GenericPlugin
             return $actions;
         }
 
-        import('lib.pkp.classes.linkAction.request.OpenWindowAction');
         $linkAction = new LinkAction(
             'ojt_control_panel',
             new OpenWindowAction($request->getDispatcher()->url($request, Application::ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off'),

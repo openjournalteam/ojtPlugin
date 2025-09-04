@@ -86,13 +86,13 @@
                 </th>
                 <td class="ojt-py-4 ojt-px-6 ojt-max-w-[50%]">
                   <div class="ojt-flex ojt-items-center">
-                    <svg @click="plugin.open = !plugin.open"
+                    {* <svg @click="plugin.open = !plugin.open"
                       class="ojt-w-6 ojt-h-6 ojt-shrink-0 ojt-mr-2 ojt-cursor-pointer" :class="{ 'ojt-rotate-180' :
                       plugin.open }" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path fill-rule="evenodd"
                         d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                         clip-rule="evenodd"></path>
-                    </svg>
+                    </svg> *}
                     <div>
                       <template x-if="!plugin.enabled || (plugin.enabled && !plugin?.page)">
                         <span x-text="plugin.name" :class="{ 'ojt-font-bold' : plugin.enabled }"></span>
@@ -104,11 +104,11 @@
                       </template>
                     </div>
                   </div>
-                  <div x-show.transition="plugin.open" class="ojt-mt-4 ojt-flex ojt-items-center ojt-gap-4">
+                  <div class="ojt-mt-2 ojt-flex ojt-items-center ojt-gap-4">
                     <a :href="plugin.documentation" x-show="plugin.documentation" target="_blank"
-                      class="ojt-text-blue-600 ojt-text-sm ojt-font-bold hover:ojt-underline">Documentation</a>
+                      class="ojt-text-blue-600 ojt-text-sm hover:ojt-underline">Documentation</a>
                     <a href="#" @click.prevent="$store.plugins.uninstall(plugin)"
-                      class="ojt-text-danger-600 ojt-text-sm ojt-font-bold hover:ojt-underline">Delete</a>
+                      class="ojt-text-danger-600 ojt-text-sm hover:ojt-underline">Delete</a>
                     {* <button type="button" @click="$store.plugins.uninstall(plugin)"
                       class="ojt-py-2 ojt-px-3 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-bg-danger-700 ojt-rounded-lg hover:ojt-bg-danger-800 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-danger-300">Delete</button> *}
                   </div>
