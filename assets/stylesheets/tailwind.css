@@ -1633,12 +1633,12 @@ select {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
-.ojt-cursor-pointer {
-  cursor: pointer;
-}
-
 .ojt-cursor-not-allowed {
   cursor: not-allowed;
+}
+
+.ojt-cursor-pointer {
+  cursor: pointer;
 }
 
 .ojt-grid-cols-1 {
@@ -2255,11 +2255,6 @@ select {
   color: rgb(30 64 175 / var(--tw-text-opacity, 1));
 }
 
-.ojt-text-danger-600 {
-  --tw-text-opacity: 1;
-  color: rgba(var(--colors-danger-600-rgb), var(--tw-text-opacity, 1));
-}
-
 .ojt-text-danger-700 {
   --tw-text-opacity: 1;
   color: rgba(var(--colors-danger-700-rgb), var(--tw-text-opacity, 1));
@@ -2343,6 +2338,21 @@ select {
 .ojt-text-white {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+
+.ojt-text-red-600 {
+  --tw-text-opacity: 1;
+  color: rgb(220 38 38 / var(--tw-text-opacity, 1));
+}
+
+.ojt-text-danger-600 {
+  --tw-text-opacity: 1;
+  color: rgba(var(--colors-danger-600-rgb), var(--tw-text-opacity, 1));
+}
+
+.ojt-text-danger-500 {
+  --tw-text-opacity: 1;
+  color: rgba(var(--colors-danger-500-rgb), var(--tw-text-opacity, 1));
 }
 
 .ojt-underline {
@@ -2546,6 +2556,16 @@ select {
 .hover\:ojt-text-white:hover {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+
+.hover\:ojt-text-danger-600:hover {
+  --tw-text-opacity: 1;
+  color: rgba(var(--colors-danger-600-rgb), var(--tw-text-opacity, 1));
+}
+
+.hover\:ojt-text-danger-800:hover {
+  --tw-text-opacity: 1;
+  color: rgba(var(--colors-danger-800-rgb), var(--tw-text-opacity, 1));
 }
 
 .hover\:ojt-underline:hover {
