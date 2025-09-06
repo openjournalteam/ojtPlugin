@@ -1,3 +1,7 @@
+### 3.1.0.0 : 06 Sep 2025
+- Compatibility with OJS 3.5.x.x
+- Improved Plugin Installed UI with action column and documentation link (based on plugin metadata)
+
 ### 3.0.2.1 : 22 April 2025
 - Improved enabled/disabled on installed plugins
 - Allow only admin can disable/enable plugins on certain plugin
