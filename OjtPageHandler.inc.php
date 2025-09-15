@@ -440,7 +440,11 @@ class OjtPageHandler extends Handler
 
                 // licenseMain is old version validation
                 // the updated one is license
-                $license = $pluginInstance->getSetting($this->contextId, 'license') || $pluginInstance->getSetting($this->contextId, 'licenseMain');
+                $license = $pluginInstance->getSetting($this->contextId, 'license');
+
+                if(!$license) {
+                    $license = $pluginInstance->getSetting($this->contextId, 'licenseMain');
+                }
             }
 
             $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
