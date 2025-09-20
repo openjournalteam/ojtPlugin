@@ -479,8 +479,8 @@ class OjtPlugin extends GenericPlugin
 
         try {
             $response = $apiService->registerClient($params, $headers);
-            
-            $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $response['journal_data']);
+
+            $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', json_encode($response['journal_data']));
 
             return true;
         } catch (\Throwable $th) {
