@@ -204,6 +204,13 @@
                       Product Gallery
                     </button>
                   </li>
+                  {* <li class="ojt-w-full">
+                    <button class="ojt-rounded-tr-lg" type="button" role="tab"
+                      @click="tab = 'plugin-exclusive';alpineComponent('pluginExclusive').init();"
+                      :class="tab === 'plugin-exclusive' ? activeTabClass : inactiveTabClass">
+                      Exclusive Plugins
+                    </button>
+                  </li> *}
                 </ul>
                 <div class="ojt-border-t ojt-border-gray-200">
                   <div x-show="tab == 'plugin-installed'" class="ojt-bg-white ojt-rounded-lg" role="tabpanel">
@@ -213,6 +220,9 @@
                     page="ojt/pluginGallery" role="tabpanel">
                     {$pluginGalleryHtml}
                   </div>
+                  {* <div x-show="tab == 'plugin-exclusive'" class="ojt-p-4 ojt-bg-white ojt-rounded-lg" role="tabpanel">
+                    {$pluginExclusiveHtml}
+                  </div> *}
                 </div>
               </div>
             </div>

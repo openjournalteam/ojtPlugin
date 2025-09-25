@@ -1,3 +1,12 @@
+### 2.1.1.0 : 24 July 2025
+- Added a feature to register clients using exclusive plugins to the OJT Service Panel
+
+### 2.1.0.2 : 13 June 2025
+- Fix and enhance error handling in discord notifier
+  
+### 2.1.0.1 : 10 June 2025
+- Changing discord webhook URL
+
 ### 2.1.0.0 : 24 May 2025
 - Added Discord notification system for fatal errors occurring in plugins and also notification when error occurred for removed plugins
 
