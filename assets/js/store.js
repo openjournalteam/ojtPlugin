@@ -56,7 +56,7 @@ Spruce.store("plugins", {
     this.type = "all";
   },
   async togglePlugin(currentPlugin) {
-    if(!currentPlugin.canEnable){
+    if (!currentPlugin.canEnable) {
       return Toast.fire({
         title: "User does not have permission to enable this plugin",
         icon: "warning",
@@ -81,9 +81,9 @@ Spruce.store("plugins", {
     this.data = this.data.map((plugin) =>
       plugin.product === currentPlugin.product
         ? {
-            ...plugin,
-            enabled: !plugin.enabled,
-          }
+          ...plugin,
+          enabled: !plugin.enabled,
+        }
         : plugin
     );
   },
@@ -163,7 +163,7 @@ Spruce.store(
     data: {},
     checkUpdate: async function () {
       try {
-        if (!this.isTimeToCheckUpdate()) return;
+        // if (!this.isTimeToCheckUpdate()) return;
         let res = await fetch(currentUrl + "checkUpdate");
         let ojtPlugin = await res.json();
 
@@ -172,7 +172,7 @@ Spruce.store(
         this.updateAvailable = ojtPlugin.updateAvailable ? true : false;
 
         this.lastChecked = Date.now();
-      } catch (error) {}
+      } catch (error) { }
     },
     isTimeToCheckUpdate() {
       if (!this.lastChecked) return true;

@@ -152,7 +152,10 @@ function checkUpdate() {
     checkUpdate: async function () {
       try {
         let res = await fetch(
-          "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update",
+          // "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update",
+          // "http://localhost/openjournaltheme2/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update",
+          // "http://localhost:8000/api/v1/product/control-panel",
+          "https://sp-staging.ojthost.xyz/api/v1/product/control-panel",
           {
             mode: "cors",
           }
@@ -164,7 +167,7 @@ function checkUpdate() {
         if (ojtPlugin.latest_version > ojtPluginVersion) {
           this.updateAvailable = true;
         }
-      } catch (error) {}
+      } catch (error) { }
     },
     doUpdate() {
       Swal.fire({

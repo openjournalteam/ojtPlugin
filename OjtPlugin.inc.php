@@ -23,8 +23,11 @@ class OjtPlugin extends GenericPlugin
 
     public $registeredModule;
 
-    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
-    const SERVICE_API = "https://sp.openjournaltheme.com/";
+    // const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
+    // const API = "http://localhost/openjournaltheme2/index.php/wp-json/openjournalvalidation/v3";
+    const API = "https://staging.openjournaltheme.my.id/index.php/wp-json/openjournalvalidation/v3";
+    // const API = "http://localhost:8000/api/v1";
+    const SERVICE_API = "https://sp-staging.ojthost.xyz/";
 
     public function register($category, $path, $mainContextId = null)
     {
@@ -212,7 +215,7 @@ class OjtPlugin extends GenericPlugin
             }
         }
 
-        foreach($standalonePlugins as $plugin) {
+        foreach ($standalonePlugins as $plugin) {
             if ($this->str_contains($error['file'], $plugin['name'])) {
                 $folders = explode('/', $error['file']);
                 $key = array_search('generic', $folders);
@@ -474,7 +477,7 @@ class OjtPlugin extends GenericPlugin
         if ($isGlobalPlugin) {
             $headers['Client-Url'] = $plugin->getRequest()->getBaseUrl();
         } else {
-            $headers ['Client-Url'] = $ojtPlugin->getJournalURL();
+            $headers['Client-Url'] = $ojtPlugin->getJournalURL();
         }
 
         try {
@@ -533,7 +536,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
 
         // Download file
         $file_name = Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'OJTPanel.zip';
-        
+
         $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
         $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
         $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
@@ -638,13 +641,13 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         $page = $params[0];
         $op   = &$params[1];
 
-        if($page === 'ojt' && $op === 'api') {
+        if ($page === 'ojt' && $op === 'api') {
             define('HANDLER_CLASS', 'OjtPluginApiHandler');
             $this->import('OjtPluginApiHandler');
 
             return true;
         }
-        
+
         switch ($page) {
             case 'ojt':
                 define('HANDLER_CLASS', 'OjtPageHandler');
@@ -724,7 +727,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
 
             // Send notification to discord about the deletion error in uninstallPlugin
             // $this->sendDiscordNotification($plugin->name, $data);
-            
+
             // Re-throw for proper error handling at caller level
             throw $th;
         }
@@ -743,7 +746,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
                 throw new \Exception("Can't remove plugins, please check folder permission for: " . $path->getPathname());
             };
         }
-        
+
         foreach ($paths as $path) {
             if ($path->isFile()) {
                 if (!unlink($path->getPathname())) {
@@ -755,7 +758,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
                 }
             }
         }
-        
+
         if ($deleteParent) {
             rmdir($dirPath);
         }
@@ -801,6 +804,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
             }
 
             $result['dependencies'] = $dependencies;
+            $result['status_validation'] = $response['data']['status_validation'] ?? false;
 
             return $result;
         } catch (BadResponseException $e) {
