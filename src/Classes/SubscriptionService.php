@@ -138,6 +138,20 @@ class SubscriptionService
     $this->updateSetting('quota', $response['quota']);
   }
 
+  public function getUsage($page = 1)
+  {
+    $response = $this->apiRequest(
+      'usage',
+      ['page' => $page]
+    );
+
+    if ($response['error']) {
+      throw new Exception($response['message']);
+    }
+
+    return $response;
+  }
+
   public function getQuota($refreshQuota = false)
   {
     if ($refreshQuota) {
