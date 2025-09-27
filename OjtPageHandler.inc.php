@@ -268,9 +268,9 @@ class OjtPageHandler extends Handler
     {
         // $url = 'https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update';
         // $url = 'http://localhost/openjournaltheme2/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update';
-        $url = 'http://staging.openjournaltheme.my.id/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update';
+        // $url = 'http://staging.openjournaltheme.my.id/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update';
         // $url = 'http://localhost:8000/api/v1/product/control-panel';
-        // $url = 'http://sp-staging.ojthost.xyz/api/v1/product/control-panel';
+        $url = 'http://sp-staging.ojthost.xyz/api/v1/product/control-panel';
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url);
             $json = json_decode((string) $response->getBody(), true);
@@ -312,9 +312,13 @@ class OjtPageHandler extends Handler
                 'ojs_version' => $this->ojtPlugin->getJournalVersion()
             ]
         ];
-
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url, $params);
+            $body     = json_decode((string) $response->getBody(), true);
+
+            if ($body['error']) {
+                throw new Exception($body['msg']);
+            }
 
             $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
             $ojtplugin = $this->ojtPlugin;
@@ -335,7 +339,8 @@ class OjtPageHandler extends Handler
                 $plugin['installed'] = ($targetPlugin) ? true : false;
 
                 return $plugin;
-            }, json_decode((string) $response->getBody(), true));
+            }, $body);
+
             if (!$plugins) throw new Exception("Couldn't connect to Server, please try again.");
 
             return showJson($plugins);

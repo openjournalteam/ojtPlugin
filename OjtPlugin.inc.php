@@ -25,7 +25,8 @@ class OjtPlugin extends GenericPlugin
 
     // const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
     // const API = "http://localhost/openjournaltheme2/index.php/wp-json/openjournalvalidation/v3";
-    const API = "https://staging.openjournaltheme.my.id/index.php/wp-json/openjournalvalidation/v3";
+    // const API = "https://staging.openjournaltheme.my.id/index.php/wp-json/openjournalvalidation/v3";
+    const API = "https://sp-staging.ojthost.xyz/api/v1";
     // const API = "http://localhost:8000/api/v1";
     const SERVICE_API = "https://sp-staging.ojthost.xyz/";
 
@@ -149,6 +150,7 @@ class OjtPlugin extends GenericPlugin
         ];
 
         $headers = array_merge($headers, [
+            'Authorization' => 'Basic ' . base64_encode('staging:nL78gBr2Y20z'),
             'Content-Type' => 'application/x-www-form-urlencoded',
             'User-Agent' => $agents[rand(0, 3)],
             'Access-Control-Allow-Origin' => '*',
