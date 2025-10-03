@@ -40,6 +40,20 @@ class SubscriptionService
     throw new Exception('Unknown subscription mode');
   }
 
+  public function getUsage($page = 1)
+  {
+    $response = $this->apiRequest(
+      'usage',
+      ['page' => $page]
+    );
+
+    if ($response['error']) {
+      throw new Exception($response['message']);
+    }
+
+    return $response;
+  }
+
   public function getSubscriptionApi($method = '')
   {
     return OjtControlPanelPlugin::SERVICE_API . 'api/v2/subscription/' . $method;

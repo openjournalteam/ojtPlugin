@@ -1,3 +1,6 @@
+### 3.1.0.1 : 03 Oct 2025
+- Add getUsage method for usage tracking
+
 ### 3.1.0.0 : 06 Sep 2025
 - Compatibility with OJS 3.5.x.x
 - Improved Plugin Installed UI with action column and documentation link (based on plugin metadata)
