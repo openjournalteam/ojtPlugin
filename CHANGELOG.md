@@ -1,3 +1,6 @@
+### 2.1.2.1 : 08 October 2025
+- Compatible with Windows OS
+
 ### 2.1.1.0 : 24 July 2025
 - Added a feature to register clients using exclusive plugins to the OJT Service Panel
 

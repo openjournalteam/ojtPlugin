@@ -414,7 +414,7 @@ class OjtPlugin extends GenericPlugin
 
             $categoryPlugin = explode('.', $version->getData('productType'))[1];
             $categoryDir    = $this->getModulesPath();
-            $pluginDir      = $categoryDir .  $moduleFolder;
+            $pluginDir = str_replace('\\', '/', $categoryDir .  $moduleFolder);
 
             PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
 
