@@ -1,3 +1,6 @@
+### 3.1.0.2 : 13 Oct 2025
+- Added a new Hook for global plugins can register itself to the OJT Control Panel page.
+
 ### 3.1.0.1 : 03 Oct 2025
 - Add getUsage method for usage tracking
 
