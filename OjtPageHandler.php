@@ -3,6 +3,7 @@
 namespace APP\plugins\generic\ojtControlPanel;
 
 use PKP\plugins\Hook;
+use PKP\plugins\PluginRegistry;
 use PKP\db\DAORegistry;
 use PKP\plugins\Plugin;
 use APP\handler\Handler;
@@ -358,19 +359,38 @@ class OjtPageHandler extends Handler
         return showJson($json);
     }
 
+    protected function installedPlugins()
+    {
+        $plugins = $this->ojtPlugin->registeredModule;
+
+        // Call the hook to allow other plugins to register to ojt control panel modules
+        Hook::call('OjtPageHandler::installed::plugins', array($this, &$plugins));
+
+        return $plugins;
+    }
+
     public function getInstalledPlugin($args, $request)
     {
-        return showJson($this->ojtPlugin->registeredModule ?? []);
+        $plugins = $this->installedPlugins();
+
+        return showJson($plugins ?? []);
     }
 
     public function toggleInstalledPlugin($args, $request)
     {
         try {
-            $ojtPlugin      = $this->ojtPlugin;
+            $ojtPlugin       = $this->ojtPlugin;
 
-            $pluginFolder   = $request->getUserVar('pluginFolder');
-            $plugin         = $ojtPlugin->instatiatePlugin($pluginFolder);
-            $isEnabled      = ($request->getUserVar('enabled') == 'true') ? true : false;
+            $pluginFolder    = $request->getUserVar('pluginFolder');
+            $pluginType      = explode('.', $request->getUserVar('productType'))[1];
+            $pluginClassName = $request->getUserVar('className');
+
+            $plugin = PluginRegistry::getPlugin($pluginType, $pluginClassName);
+
+            if ($plugin == null) {
+                $plugin      = $ojtPlugin->instatiatePlugin($pluginFolder);
+            }
+            $isEnabled       = ($request->getUserVar('enabled') == 'true') ? true : false;
 
             if (!$plugin && !$plugin instanceof Plugin) {
                 throw new \Exception("Plugin is Invalid");
