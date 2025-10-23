@@ -474,13 +474,13 @@ class OjtPlugin extends GenericPlugin
         if ($isGlobalPlugin) {
             $headers['Client-Url'] = $plugin->getRequest()->getBaseUrl();
         } else {
-            $headers ['Client-Url'] = $ojtPlugin->getJournalURL();
+            $headers['Client-Url'] = $ojtPlugin->getJournalURL();
         }
 
         try {
             $response = $apiService->registerClient($params, $headers);
 
-            $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $response['journal_data']);
+            if (isset($response['journal_data'])) $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $response['journal_data']);
 
             return true;
         } catch (\Throwable $th) {
