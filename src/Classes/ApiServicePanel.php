@@ -40,10 +40,10 @@ class ApiServicePanel
                 'headers' => $httpHeaders,
                 'json' => $params
             ]);
+            
+            return json_decode($response->getBody()->getContents(), true);
         } catch (\Throwable $th) {
             throw $th;
         }
-
-        return json_decode($response->getBody()->getContents(), true);
     }
 }
