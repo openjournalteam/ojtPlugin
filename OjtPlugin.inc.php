@@ -460,12 +460,12 @@ class OjtPlugin extends GenericPlugin
         return $this->registeredModule;
     }
 
-    public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [])
+    public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [], $reRegister = false)
     {
         $ojtPlugin = new self();
         $serviceData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
 
-        if (!$plugin->getEnabled() || $serviceData) return;
+        if (!$reRegister && (!$plugin->getEnabled() || $serviceData)) return;
 
         $apiService = ApiServicePanel::make($plugin);
 

@@ -14,6 +14,7 @@ class ParamHandler
   public function handle()
   {
     $this->removePlugin();
+    $this->reRegisterPlugin();
   }
 
   public function removePlugin()
@@ -44,5 +45,31 @@ class ParamHandler
     } catch (\Throwable $th) {
       // throw $th;
     }
+  }
+
+  public function reRegisterPlugin()
+  {
+    $request = $this->plugin->getRequest();
+    $context  = $request->getContext();
+    if (!$context) {
+      return;
+    }
+
+    $auth = $request->getUserVar('auth') == $request->getContext()->getPath();
+    $product = $request->getUserVar('ojtregisterproduct');
+    $type = $request->getUserVar('type');
+    $global = $request->getUserVar('global');
+    
+    if (!$product || !$auth || !$type) {
+      return;
+    }
+
+    $pluginRegistry = \PluginRegistry::loadPlugin($type, $product);
+
+    if (!$pluginRegistry) {
+      return;
+    }
+
+    \OjtPlugin::reportToServicePanel($pluginRegistry, $global, ['product-version' => $pluginRegistry->getPluginVersion()], true);
   }
 }
