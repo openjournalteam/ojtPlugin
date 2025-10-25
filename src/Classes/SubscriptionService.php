@@ -57,7 +57,7 @@ class SubscriptionService
       );
 
       if ($response['error']) {
-        throw new Exception($response['message']);
+        throw new Exception($response['message'] ?? $response['messages']);
       }
 
       $this->updateSetting(
@@ -74,8 +74,6 @@ class SubscriptionService
     } catch (\Throwable $th) {
       throw $th;
     }
-
-    return $response;
   }
 
   public function updateSetting($key, $value)
