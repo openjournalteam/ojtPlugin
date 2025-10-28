@@ -266,7 +266,7 @@ class OjtPageHandler extends Handler
 
     public function checkUpdate($args, $request)
     {
-        $url = 'https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update';
+        $url = 'https://sp.openjournaltheme.com/api/v1/product/control-panel';
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url);
             $json = json_decode((string) $response->getBody(), true);
@@ -442,7 +442,7 @@ class OjtPageHandler extends Handler
                 // the updated one is license
                 $license = $pluginInstance->getSetting($this->contextId, 'license');
 
-                if(!$license) {
+                if (!$license) {
                     $license = $pluginInstance->getSetting($this->contextId, 'licenseMain');
                 }
             }
@@ -472,6 +472,10 @@ class OjtPageHandler extends Handler
             // Applying input license to plugin setting
             if ($pluginInstance instanceof Plugin && $license && !$update) {
                 $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
+
+                if (method_exists($pluginInstance, 'updateStatusValidation')) {
+                    $pluginInstance->updateStatusValidation($downloadLink['status_validation']);
+                }
             }
 
 
