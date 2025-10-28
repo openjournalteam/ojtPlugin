@@ -23,7 +23,7 @@ class OjtPlugin extends GenericPlugin
 
     public $registeredModule;
 
-    const API = "http://sp.openjournaltheme.com/api/v1";
+    const API = "https://sp.openjournaltheme.com/api/v1";
 
     const SERVICE_API = "https://sp.openjournaltheme.com/";
 
