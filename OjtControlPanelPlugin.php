@@ -42,7 +42,7 @@ class OjtControlPanelPlugin extends GenericPlugin
 {
     public $registeredModule;
 
-    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
+    const API = "https://sp.openjournaltheme.com/api/v1";
     const SERVICE_API = "https://sp.openjournaltheme.com/";
 
     public function register($category, $path, $mainContextId = null)
