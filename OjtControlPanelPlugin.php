@@ -816,4 +816,49 @@ class OjtControlPanelPlugin extends GenericPlugin
             return null;
         }
     }
+
+    /**
+     * Instantiate a plugin from the global plugins directory (not modules)
+     * This is used for site-wide plugins that have been moved to plugins/generic/
+     * 
+     * @param string $pluginFolder The plugin folder name
+     * @return LazyLoadPlugin|null The plugin instance or null if not found
+     */
+    public function instantiatePluginFromGlobalDirectory($pluginFolder): ?LazyLoadPlugin
+    {
+        try {
+            $fileManager = new FileManager();
+            $globalPluginPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder;
+            $versionFile = $globalPluginPath . DIRECTORY_SEPARATOR . "version.xml";
+            
+            if (!$fileManager->fileExists($versionFile)) {
+                throw new Exception("Plugin version file not found in global directory: {$versionFile}");
+            }
+
+            $version = VersionCheck::getValidPluginVersionInfo($versionFile);
+            
+            // Use the standard APP namespace for plugins in global directory
+            $pluginClassName = "APP\\plugins\\generic\\{$pluginFolder}\\" . $version->getProductClassName();
+            
+            if (!class_exists($pluginClassName)) {
+                $indexFile = $globalPluginPath . DIRECTORY_SEPARATOR . "index.php";
+                if (!$fileManager->fileExists($indexFile)) {
+                    throw new Exception("Plugin index file not found: {$indexFile}");
+                }
+                $plugin = @include($indexFile);
+            }
+
+            $plugin = $plugin ?? new $pluginClassName();
+            
+            if (!$plugin || !($plugin instanceof Plugin)) {
+                throw new Exception("Failed to instantiate plugin from global directory: {$pluginClassName}");
+            }
+
+            return $plugin;
+            
+        } catch (\Throwable $th) {
+            error_log("Error instantiating plugin from global directory: " . $th->getMessage());
+            return null;
+        }
+    }
 }

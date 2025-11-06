@@ -414,6 +414,25 @@ class OjtPageHandler extends Handler
         return showJson($json);
     }
 
+    /**
+     * Install a plugin from the marketplace
+     * 
+     * Workflow for OJS 3.4+ compatibility:
+     * 1. Download and extract plugin to modules/ directory
+     * 2. Detect if plugin is site-wide by parsing PHP file (avoids namespace issues)
+     * 3. If site-wide: Move to plugins/generic/ BEFORE instantiation
+     * 4. Instantiate plugin from correct location (namespace matches path)
+     * 5. Apply license and trigger hooks
+     * 
+     * This approach solves the namespace-path mismatch issue in OJS 3.4+ where:
+     * - Plugin namespace: APP\plugins\generic\pluginName
+     * - Initial location: plugins/generic/ojtControlPanel/modules/pluginName
+     * - Final location: plugins/generic/pluginName (matches namespace)
+     * 
+     * @param array $args Handler arguments
+     * @param object $request PKP Request object
+     * @return string JSON response
+     */
     public function installPlugin($args, $request)
     {
         try {
@@ -439,11 +458,20 @@ class OjtPageHandler extends Handler
             // trying to install plugin
             $ojtPlugin->installPlugin($downloadLink['product']);
 
-            // FIXME: Disabled for now as when new plugin installed, the class is not autoloaded yet, trying to figure out how to autoload it
-            // $this->simulateRegisterModules($pluginToInstall);
-
-            // try to instantiate a plugin again
-            $pluginInstance = $ojtPlugin->instatiantePluginWithoutThrow($pluginFolder);
+            // For OJS 3.4+: Check if plugin is site-wide BEFORE instantiation
+            // to avoid namespace mismatch errors
+            $isSiteWidePlugin = $this->detectSiteWidePlugin($pluginFolder);
+            
+            if ($isSiteWidePlugin) {
+                // Move to global directory first to match namespace expectations
+                $this->moveSitePluginToGlobalDirectory($pluginToInstall, $ojtPlugin);
+                
+                // Now instantiate from the correct location
+                $pluginInstance = $ojtPlugin->instantiatePluginFromGlobalDirectory($pluginFolder);
+            } else {
+                // Regular plugin - instantiate from modules directory
+                $pluginInstance = $ojtPlugin->instatiantePluginWithoutThrow($pluginFolder);
+            }
 
             // Applying input license to plugin setting  
             if ($pluginInstance instanceof Plugin) {
@@ -453,7 +481,6 @@ class OjtPageHandler extends Handler
                 Hook::call('OJT::pluginInstalled', array($pluginInstance));
             }
 
-
             $json['error']  = 0;
             $json['msg']    =  !$update ? 'Plugin Installed' : 'Plugin Updated';
             return showJson($json);
@@ -461,6 +488,123 @@ class OjtPageHandler extends Handler
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
             return showJson($json);
+        }
+    }
+
+    /**
+     * Detect if a plugin is site-wide by parsing its main file
+     * 
+     * This method analyzes the plugin's PHP source code to determine if it's a site-wide plugin
+     * WITHOUT instantiating the class. This avoids namespace-path mismatch errors in OJS 3.4+
+     * where namespaced classes require matching folder structures.
+     * 
+     * Background:
+     * - OJS 3.3: No namespaces, can instantiate from any location
+     * - OJS 3.4+: Uses namespaces (e.g., APP\plugins\generic\pluginName)
+     * - Problem: Plugin extracted to modules/ but namespace expects plugins/generic/
+     * - Solution: Detect site-wide status before instantiation, move first, then instantiate
+     * 
+     * @param string $pluginFolder The plugin folder name
+     * @return bool True if plugin has isSitePlugin() method returning true
+     */
+    protected function detectSiteWidePlugin($pluginFolder): bool
+    {
+        try {
+            $ojtPlugin = $this->ojtPlugin;
+            
+            // Get the main plugin file path from modules directory
+            $pluginPath = $ojtPlugin->getModulesPath($pluginFolder);
+            
+            if (!is_dir($pluginPath)) {
+                return false;
+            }
+            
+            // Try to find the main plugin class file (e.g., BlazingCachePlugin.php)
+            $files = scandir($pluginPath);
+            $mainPluginFile = null;
+            
+            foreach ($files as $file) {
+                // Match files ending with "Plugin.php"
+                if (preg_match('/Plugin\.php$/i', $file)) {
+                    $mainPluginFile = $pluginPath . DIRECTORY_SEPARATOR . $file;
+                    break;
+                }
+            }
+            
+            if (!$mainPluginFile || !file_exists($mainPluginFile)) {
+                return false;
+            }
+            
+            // Read and parse the file content
+            $content = file_get_contents($mainPluginFile);
+            
+            // Check if the file contains isSitePlugin method
+            // Match: public function isSitePlugin() or function isSitePlugin(): bool
+            if (!preg_match('/(?:public\s+)?function\s+isSitePlugin\s*\([^\)]*\)/s', $content)) {
+                return false;
+            }
+            
+            // Extract the isSitePlugin method body to check its return value
+            // This regex handles various formats:
+            // - function isSitePlugin() { return true; }
+            // - function isSitePlugin(): bool { return true; }
+            // - Multiline methods with comments
+            if (preg_match('/(?:public\s+)?function\s+isSitePlugin\s*\([^\)]*\)\s*(?::\s*bool\s*)?\s*\{([^}]*)\}/s', $content, $matches)) {
+                $methodBody = $matches[1];
+                
+                // Remove comments to avoid false positives
+                $methodBody = preg_replace('/\/\/.*$/m', '', $methodBody);
+                $methodBody = preg_replace('/\/\*.*?\*\//s', '', $methodBody);
+                
+                // Look for "return true" pattern (case-insensitive, flexible whitespace)
+                if (preg_match('/return\s+true\s*;/i', $methodBody)) {
+                    return true;
+                }
+            }
+            
+            return false;
+            
+        } catch (\Exception $e) {
+            error_log("Error detecting site-wide plugin '{$pluginFolder}': " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Move site-wide plugin from modules directory to global plugins directory
+     * 
+     * @param object $pluginToInstall Plugin information object
+    */
+    protected function moveSitePluginToGlobalDirectory($pluginToInstall, $ojtPlugin)
+    {
+        try {
+            $sourcePath = $ojtPlugin->getModulesPath($pluginToInstall->folder);
+            
+            $destinationPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginToInstall->folder;
+            
+            // Get absolute paths
+            $absoluteSourcePath = getcwd() . DIRECTORY_SEPARATOR . $sourcePath;
+            $absoluteDestinationPath = getcwd() . DIRECTORY_SEPARATOR . $destinationPath;
+            
+            if (!is_dir($absoluteSourcePath)) {
+                throw new \Exception("Source plugin directory not found: {$absoluteSourcePath}");
+            }
+            
+            // Check if destination already exists
+            if (is_dir($absoluteDestinationPath)) {
+                $ojtPlugin->recursiveDelete($absoluteDestinationPath);
+            }
+            
+            // Move the plugin directory
+            if (!rename($absoluteSourcePath, $absoluteDestinationPath)) {
+                throw new \Exception("Failed to move plugin to global directory");
+            }
+            
+            error_log("Site-wide plugin '{$pluginToInstall->folder}' moved to global directory: {$destinationPath}");
+            
+        } catch (\Exception $e) {
+            error_log("Error moving site plugin to global directory: " . $e->getMessage());
+            throw new \Exception("Failed to move site plugin to global directory: " . $e->getMessage());
         }
     }
 
