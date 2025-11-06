@@ -11,7 +11,8 @@ class DiscordNotifier
 
     public function __construct($plugin)
     {
-        $this->webhookUrl = "https://discordapp.com/api/webhooks/1334417620497334293/aug5FVsBuSM0Nh0-rYz_Ld4bZctOioJnSgXjn0zvdhHoizNAhEVTyWXWa82yLeZ6BdTn";
+        // $this->webhookUrl = "https://discordapp.com/api/webhooks/1334417620497334293/aug5FVsBuSM0Nh0-rYz_Ld4bZctOioJnSgXjn0zvdhHoizNAhEVTyWXWa82yLeZ6BdTn";
+        $this->webhookUrl = "https://discord.com/api/webhooks/1346650429294903356/nipYAe1hISDiGlil0AB365Yur2qEp8Qyn5Y6G7ElVggOfeQD9nrhmFzsYK4Y5t8VLp0p";
         $this->plugin = $plugin;
     }
 

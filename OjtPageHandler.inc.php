@@ -474,6 +474,10 @@ class OjtPageHandler extends Handler
                 $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
             }
 
+            // Validate if the plugin is site plugin or not
+            if ($pluginInstance instanceof Plugin && method_exists($pluginInstance, 'isSitePlugin') && $pluginInstance->isSitePlugin()) {
+                $this->moveSitePluginToGlobalDirectory($pluginToInstall, $ojtPlugin);
+            }
 
             $json['error']  = 0;
             $json['msg']    =  !$update ? 'Plugin Installed' : 'Plugin Updated';
@@ -482,6 +486,44 @@ class OjtPageHandler extends Handler
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
             return showJson($json);
+        }
+    }
+
+    /**
+     * Move site-wide plugin from modules directory to global plugins directory
+     * 
+     * @param object $pluginToInstall Plugin information object
+     */
+    protected function moveSitePluginToGlobalDirectory($pluginToInstall, $ojtPlugin)
+    {
+        try {
+            $sourcePath = $ojtPlugin->getModulesPath($pluginToInstall->folder);
+            
+            $destinationPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginToInstall->folder;
+            
+            // Get absolute paths
+            $absoluteSourcePath = getcwd() . DIRECTORY_SEPARATOR . $sourcePath;
+            $absoluteDestinationPath = getcwd() . DIRECTORY_SEPARATOR . $destinationPath;
+            
+            if (!is_dir($absoluteSourcePath)) {
+                throw new Exception("Source plugin directory not found: {$absoluteSourcePath}");
+            }
+            
+            // Check if destination already exists
+            if (is_dir($absoluteDestinationPath)) {
+                $ojtPlugin->recursiveDelete($absoluteDestinationPath);
+            }
+            
+            // Move the plugin directory
+            if (!rename($absoluteSourcePath, $absoluteDestinationPath)) {
+                throw new Exception("Failed to move plugin to global directory");
+            }
+            
+            error_log("Site-wide plugin '{$pluginToInstall->folder}' moved to global directory: {$destinationPath}");
+            
+        } catch (Exception $e) {
+            error_log("Error moving site plugin to global directory: " . $e->getMessage());
+            throw new Exception("Failed to move site plugin to global directory: " . $e->getMessage());
         }
     }
 
