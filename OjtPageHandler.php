@@ -437,6 +437,7 @@ class OjtPageHandler extends Handler
     {
         try {
             $ojtPlugin = $this->ojtPlugin;
+            $fileManager = new FileManager();
             $pluginToInstall = json_decode($request->getUserVar('plugin'));
             $license = $request->getUserVar('license') ?? false;
             $update = $request->getUserVar('update');
@@ -452,7 +453,29 @@ class OjtPageHandler extends Handler
 
             // trying to install dependencies
             foreach ($downloadLink['dependencies'] as $dependency) {
-                $ojtPlugin->installPlugin($dependency['link']);
+                // Check if dependency exists in modules directory
+                $indexDependency = $ojtPlugin->getModulesPath($dependency['folder'] . DIRECTORY_SEPARATOR . "index.php");
+                
+                // Check if dependency exists in global plugins directory (for site-wide plugins)
+                $globalIndexDependency = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $dependency['folder'] . DIRECTORY_SEPARATOR . 'index.php';
+                $absoluteGlobalIndexDependency = getcwd() . DIRECTORY_SEPARATOR . $globalIndexDependency;
+                
+                // Check if dependency already exists in either location
+                $dependencyExistsInModules = $fileManager->fileExists($indexDependency);
+                $dependencyExistsGlobally = file_exists($absoluteGlobalIndexDependency);
+                
+                if ($dependencyExistsInModules || $dependencyExistsGlobally) {
+                    $location = $dependencyExistsGlobally ? 'plugins/generic/' : 'modules/';
+                    error_log("Dependency '{$dependency['folder']}' already exists in {$location}. Skipping reinstallation.");
+                    continue;
+                }
+
+                if (!$fileManager->fileExists($indexDependency)) {
+                    $ojtPlugin->installPlugin($dependency['link']);
+                }
+
+                // Track dependency folder for site-wide validation
+                $installedPluginFolders[] = $dependency['folder'];
             }
 
             // trying to install plugin
@@ -481,6 +504,12 @@ class OjtPageHandler extends Handler
                 Hook::call('OJT::pluginInstalled', array($pluginInstance));
             }
 
+            // Track main plugin folder for site-wide validation
+            $installedPluginFolders[] = $pluginToInstall->folder;
+
+            // Perform site-wide validation for all installed plugins (main + dependencies)
+            $this->relocateSiteWidePlugins($installedPluginFolders, $ojtPlugin);
+
             $json['error']  = 0;
             $json['msg']    =  !$update ? 'Plugin Installed' : 'Plugin Updated';
             return showJson($json);
@@ -488,6 +517,41 @@ class OjtPageHandler extends Handler
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
             return showJson($json);
+        }
+    }
+
+    protected function relocateSiteWidePlugins($pluginFolders, $ojtPlugin)
+    {
+        $movedPlugins = [];
+        
+        foreach ($pluginFolders as $pluginFolder) {
+            try {
+                $indexFile = $ojtPlugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php");
+                
+                // Check if plugin still exists in modules directory
+                if (!file_exists($indexFile)) {
+                    error_log("Plugin index file not found for site-wide validation: {$pluginFolder}");
+                    continue;
+                }
+                
+                // Load plugin instance
+                $pluginInstance = @include($indexFile);
+                
+                // Check if plugin is site-wide
+                if ($pluginInstance instanceof Plugin && method_exists($pluginInstance, 'isSitePlugin') && $pluginInstance->isSitePlugin()) {
+                    $this->moveSitePluginToGlobalDirectory($pluginFolder, $ojtPlugin);
+                    $movedPlugins[] = $pluginFolder;
+                }
+                
+            } catch (\Exception $e) {
+                error_log("Error validating site-wide plugin '{$pluginFolder}': " . $e->getMessage());
+                // Continue with other plugins even if one fails
+            }
+        }
+        
+        // Log summary if any plugins were moved
+        if (!empty($movedPlugins)) {
+            error_log("Relocated " . count($movedPlugins) . " site-wide plugin(s) to global directory: " . implode(', ', $movedPlugins));
         }
     }
 
@@ -570,17 +634,12 @@ class OjtPageHandler extends Handler
         }
     }
 
-    /**
-     * Move site-wide plugin from modules directory to global plugins directory
-     * 
-     * @param object $pluginToInstall Plugin information object
-    */
-    protected function moveSitePluginToGlobalDirectory($pluginToInstall, $ojtPlugin)
+    protected function moveSitePluginToGlobalDirectory($pluginFolder, $ojtPlugin)
     {
         try {
-            $sourcePath = $ojtPlugin->getModulesPath($pluginToInstall->folder);
+            $sourcePath = $ojtPlugin->getModulesPath($pluginFolder->folder);
             
-            $destinationPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginToInstall->folder;
+            $destinationPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder->folder;
             
             // Get absolute paths
             $absoluteSourcePath = getcwd() . DIRECTORY_SEPARATOR . $sourcePath;
@@ -600,7 +659,7 @@ class OjtPageHandler extends Handler
                 throw new \Exception("Failed to move plugin to global directory");
             }
             
-            error_log("Site-wide plugin '{$pluginToInstall->folder}' moved to global directory: {$destinationPath}");
+            // error_log("Site-wide plugin '{$pluginFolder}' moved to global directory: {$destinationPath}");
             
         } catch (\Exception $e) {
             error_log("Error moving site plugin to global directory: " . $e->getMessage());

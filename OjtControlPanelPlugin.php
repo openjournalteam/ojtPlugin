@@ -794,7 +794,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         if (!class_exists($pluginClassName)) {
             $indexFile = $this->getModulesPath(DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php");
             if (!$fileManager->fileExists($indexFile)) {
-                throw new Exception("Plugin with classname : $pluginClassName not found");
+                // throw new Exception("Plugin with classname : $pluginClassName not found");
             }
             $plugin = @include($indexFile);
         }
