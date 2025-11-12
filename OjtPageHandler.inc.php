@@ -314,6 +314,7 @@ class OjtPageHandler extends Handler
 
             $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
             $ojtplugin = $this->ojtPlugin;
+            $pluginGenericPath = $this->ojtPlugin->getGlobalPluginPath();
             $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao) {
                 $pluginFolder = $plugin['folder'];
                 $pluginVersion = $plugin['version'];
@@ -321,7 +322,7 @@ class OjtPageHandler extends Handler
                 $targetPlugin = @include($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
                 $isSiteWide = false;
                 if (!$targetPlugin) {
-                    $targetPlugin = @include('plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder . DIRECTORY_SEPARATOR . "index.php");
+                    $targetPlugin = @include($pluginGenericPath . $pluginFolder . DIRECTORY_SEPARATOR . "index.php");
                     $isSiteWide = true;
                 }
 
@@ -331,7 +332,7 @@ class OjtPageHandler extends Handler
                 if ($targetPlugin) {
                     import('lib.pkp.classes.site.VersionCheck');
                     if ($isSiteWide) {
-                        $version = VersionCheck::parseVersionXML('plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder . DIRECTORY_SEPARATOR . "version.xml");
+                        $version = VersionCheck::parseVersionXML($pluginGenericPath . $pluginFolder . DIRECTORY_SEPARATOR . "version.xml");
                     } else {
                         $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
                     }
@@ -441,7 +442,14 @@ class OjtPageHandler extends Handler
             $ojtPlugin = $this->ojtPlugin;
             $fileManager = new FileManager();
             $pluginToInstall = json_decode($request->getUserVar('plugin'));
+
+            $pluginGenericPath = $this->ojtPlugin->getGlobalPluginPath();
+
             $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
+            if (!$fileManager->fileExists($indexFile)) {
+                $indexFile = $pluginGenericPath . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php";
+            }
+
             $license = $request->getUserVar('license') ?? false;
             $update = $request->getUserVar('update');
             if ($update && $fileManager->fileExists($indexFile)) {
@@ -469,7 +477,7 @@ class OjtPageHandler extends Handler
                 $indexDependency = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $dependency['folder'] . DIRECTORY_SEPARATOR . "index.php");
                 
                 // Check if dependency exists in global plugins directory (for site-wide plugins)
-                $globalIndexDependency = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $dependency['folder'] . DIRECTORY_SEPARATOR . 'index.php';
+                $globalIndexDependency = $pluginGenericPath . $dependency['folder'] . DIRECTORY_SEPARATOR . 'index.php';
                 $absoluteGlobalIndexDependency = getcwd() . DIRECTORY_SEPARATOR . $globalIndexDependency;
                 
                 // Check if dependency already exists in either location
@@ -477,7 +485,7 @@ class OjtPageHandler extends Handler
                 $dependencyExistsGlobally = file_exists($absoluteGlobalIndexDependency);
                 
                 if ($dependencyExistsInModules || $dependencyExistsGlobally) {
-                    $location = $dependencyExistsGlobally ? 'plugins/generic/' : 'modules/';
+                    $location = $dependencyExistsGlobally ? $pluginGenericPath : 'modules/';
                     error_log("Dependency '{$dependency['folder']}' already exists in {$location}. Skipping reinstallation.");
                     continue;
                 }
@@ -567,8 +575,10 @@ class OjtPageHandler extends Handler
     {
         try {
             $sourcePath = $ojtPlugin->getModulesPath($pluginFolder);
+
+            $pluginGenericPath = $this->ojtPlugin->getGlobalPluginPath();
             
-            $destinationPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder;
+            $destinationPath = $pluginGenericPath . $pluginFolder;
             
             // Get absolute paths
             $absoluteSourcePath = getcwd() . DIRECTORY_SEPARATOR . $sourcePath;
