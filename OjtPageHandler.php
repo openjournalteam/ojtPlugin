@@ -331,7 +331,7 @@ class OjtPageHandler extends Handler
 
                 if ($targetPlugin) {
                     if ($isSiteWide) {
-                        $version = VersionCheck::parseVersionXML('plugins/generic/' . $pluginFolder . DIRECTORY_SEPARATOR . "version.xml");
+                        $version = VersionCheck::parseVersionXML('plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder . DIRECTORY_SEPARATOR . "version.xml");
                     } else {
                         $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
                     }

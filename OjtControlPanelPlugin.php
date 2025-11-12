@@ -626,7 +626,10 @@ class OjtControlPanelPlugin extends GenericPlugin
      */
     public function uninstallPlugin($plugin): bool
     {
-        $path    = $this->getModulesPath($plugin->product);
+        $path = $this->getModulesPath($plugin->product);
+        if ($plugin->sitewide == true) {
+            $path = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $plugin->product;
+        }
         try {
             if (!is_dir($path)) {
                 throw new Exception("$plugin->name not Found");
