@@ -320,13 +320,21 @@ class OjtPageHandler extends Handler
                 $pluginVersion = $plugin['version'];
 
                 $targetPlugin = $this->ojtPlugin->instatiantePluginWithoutThrow($pluginFolder);
-
+                $isSiteWide = false;
+                if ($targetPlugin == null) {
+                    $targetPlugin = $this->ojtPlugin->instantiatePluginFromGlobalDirectory($pluginFolder);
+                    $isSiteWide = true;
+                }
 
                 $plugin['update'] = false;
                 $plugin['license'] = $targetPlugin?->getSetting($this->contextId, 'license') ?? null;
 
                 if ($targetPlugin) {
-                    $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
+                    if ($isSiteWide) {
+                        $version = VersionCheck::parseVersionXML('plugins/generic/' . $pluginFolder . DIRECTORY_SEPARATOR . "version.xml");
+                    } else {
+                        $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
+                    }
                     $plugin['update'] = version_compare($version['release'], $pluginVersion, '<');
                 }
 

@@ -1,3 +1,6 @@
+### 3.1.0.3 : 12 Nov 2025
+- Fixed site-wide plugins installed path and enhance the UI for site-wide plugins
+
 ### 3.1.0.2 : 13 Oct 2025
 - Added a new Hook for global plugins can register itself to the OJT Control Panel page.
 
