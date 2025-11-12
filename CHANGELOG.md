@@ -1,5 +1,6 @@
 ### 2.1.2.2 : 06 November 2025
-- Fix issue with site plugins not being moved to the global plugins directory
+- Fixed issue with site plugins not being moved to the global plugins directory
+- Fixed issue with delete plugin for site-wide plugins
 
 ### 2.1.2.1 : 08 October 2025
 - Compatible with Windows OS
