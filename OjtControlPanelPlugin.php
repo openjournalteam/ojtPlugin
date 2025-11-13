@@ -564,12 +564,32 @@ class OjtControlPanelPlugin extends GenericPlugin
 
         $page = $params[0];
 
+        // Force http or https based on host
+        $request = Application::get()->getRequest();
+        $serverHost = $request->getServerHost(null, false);
+        $host = explode(':', (string) $serverHost)[0];
+        $shouldUseHttpProtocol = $this->shouldUseHttpProtocolForHost($host);
+        $request->_protocol = $shouldUseHttpProtocol ? 'http' : 'https';
+
         switch ($page) {
             case 'ojt':
                 $handler = new OjtPageHandler($this->getRequest());
 
                 return true;
                 break;
+        }
+
+        return false;
+    }
+
+    private function shouldUseHttpProtocolForHost(string $host)
+    {
+        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+            return true;
+        }
+
+        if (preg_match('/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/', $host)) {
+            return true;
         }
 
         return false;

@@ -1,6 +1,7 @@
 ### 3.1.0.3 : 12 Nov 2025
 - Fixed issue with site plugins not being moved to the global plugins directory
 - Fixed issue with delete plugin for site-wide plugins
+- Fixed issue with HTTP validation
 
 ### 3.1.0.2 : 13 Oct 2025
 - Added a new Hook for global plugins can register itself to the OJT Control Panel page.
