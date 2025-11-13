@@ -1,6 +1,7 @@
 ### 2.1.2.3 : 12 November 2025
 - Change Layout of Plugin Installed Page
 - Added Documentation button if the plugin has documentation URL
+- Fixed issue with HTTP validation
 
 ### 2.1.2.2 : 06 November 2025
 - Fixed issue with site plugins not being moved to the global plugins directory

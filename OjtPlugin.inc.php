@@ -643,6 +643,13 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         $page = $params[0];
         $op   = &$params[1];
 
+        // Force http or https based on host
+        $request = Application::get()->getRequest();
+        $serverHost = $request->getServerHost(null, false);
+        $host = explode(':', (string) $serverHost)[0];
+        $shouldUseHttpProtocol = $this->shouldUseHttpProtocolForHost($host);
+        $request->_protocol = $shouldUseHttpProtocol ? 'http' : 'https';
+
         if($page === 'ojt' && $op === 'api') {
             define('HANDLER_CLASS', 'OjtPluginApiHandler');
             $this->import('OjtPluginApiHandler');
@@ -673,6 +680,19 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
                 IndexingPageHandler::setPlugin($this, $plugin);
 
                 return true;
+        }
+
+        return false;
+    }
+
+    private function shouldUseHttpProtocolForHost(string $host)
+    {
+        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+            return true;
+        }
+
+        if (preg_match('/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/', $host)) {
+            return true;
         }
 
         return false;
