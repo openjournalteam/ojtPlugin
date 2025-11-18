@@ -314,8 +314,8 @@ class OjtPageHandler extends Handler
 
             $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
             $ojtplugin = $this->ojtPlugin;
-            $pluginGenericPath = $this->ojtPlugin->getGlobalPluginPath();
-            $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao) {
+            $pluginGenericPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR;
+            $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao, $pluginGenericPath) {
                 $pluginFolder = $plugin['folder'];
                 $pluginVersion = $plugin['version'];
                 
@@ -347,10 +347,10 @@ class OjtPageHandler extends Handler
 
             return showJson($plugins);
         } catch (\Throwable $th) {
-            return showJson([
-                'error' => 1,
-                'msg' => $th->getMessage()
-            ]);
+            // return showJson([
+            //     'error' => 1,
+            //     'msg' => $th->getMessage()
+            // ]);
         }
     }
 
@@ -443,7 +443,7 @@ class OjtPageHandler extends Handler
             $fileManager = new FileManager();
             $pluginToInstall = json_decode($request->getUserVar('plugin'));
 
-            $pluginGenericPath = $this->ojtPlugin->getGlobalPluginPath();
+            $pluginGenericPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR;
 
             $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
             if (!$fileManager->fileExists($indexFile)) {
@@ -576,7 +576,7 @@ class OjtPageHandler extends Handler
         try {
             $sourcePath = $ojtPlugin->getModulesPath($pluginFolder);
 
-            $pluginGenericPath = $this->ojtPlugin->getGlobalPluginPath();
+            $pluginGenericPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR;
             
             $destinationPath = $pluginGenericPath . $pluginFolder;
             

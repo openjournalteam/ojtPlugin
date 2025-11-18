@@ -1,3 +1,6 @@
+### 2.1.2.4 : 18 November 2025
+- Fix issue with plugin gallery installation on some server configurations
+
 ### 2.1.2.3 : 12 November 2025
 - Change Layout of Plugin Installed Page
 - Added Documentation button if the plugin has documentation URL

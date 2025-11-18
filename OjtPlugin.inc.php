@@ -554,11 +554,6 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         unlink($file_name);
     }
 
-    public function getGlobalPluginPath()
-    {
-        return 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR;
-    }
-
     /**
      * Install default settings on journal creation.
      * @return string
