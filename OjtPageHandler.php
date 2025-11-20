@@ -455,7 +455,7 @@ class OjtPageHandler extends Handler
             $pluginFolder = Str::camel($pluginToInstall->folder);
             
             // Clean up old staging directories (older than 24 hours)
-            $ojtPlugin->cleanupOldStagingDirectories(24);
+            // $ojtPlugin->cleanupOldStagingDirectories(24);
             
             $pluginInstance = $ojtPlugin->instatiantePluginWithoutThrow($pluginFolder);
             if ($update && $pluginInstance) {
