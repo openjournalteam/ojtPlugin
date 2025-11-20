@@ -54,7 +54,6 @@ class OjtControlPanelPlugin extends GenericPlugin
                 $this->setLogger();
                 $this->createModulesFolder();
                 $this->createStagingFolder();
-                $this->cleanupOldModuleStagingDirectories();
                 $this->registerModules();
 
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
