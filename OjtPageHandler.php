@@ -455,7 +455,7 @@ class OjtPageHandler extends Handler
             $pluginFolder = Str::camel($pluginToInstall->folder);
             
             // Clean up old staging directories (older than 24 hours)
-            $ojtPlugin->cleanupOldStagingDirectories(24);
+            // $ojtPlugin->cleanupOldStagingDirectories(24);
             
             $pluginInstance = $ojtPlugin->instatiantePluginWithoutThrow($pluginFolder);
             if ($update && $pluginInstance) {
@@ -527,7 +527,7 @@ class OjtPageHandler extends Handler
                 Hook::call('OJT::pluginInstalled', array($pluginInstance));
             }
 
-            $stagingBasePath = $ojtPlugin->getModulesPath('.staging');
+            $stagingBasePath = $ojtPlugin->getStagingBasePath();
             if (is_dir($stagingBasePath) && count(array_diff(scandir($stagingBasePath), ['.', '..'])) === 0) {
                 rmdir($stagingBasePath);
             }
@@ -540,7 +540,7 @@ class OjtPageHandler extends Handler
                 $ojtPlugin->recursiveDelete($stagingInfo['stagingPath']);
             }
             
-            $stagingBasePath = $ojtPlugin->getModulesPath('.staging');
+            $stagingBasePath = $ojtPlugin->getStagingBasePath();
             if (is_dir($stagingBasePath) && count(array_diff(scandir($stagingBasePath), ['.', '..'])) === 0) {
                 rmdir($stagingBasePath);
             }

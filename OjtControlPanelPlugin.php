@@ -53,6 +53,7 @@ class OjtControlPanelPlugin extends GenericPlugin
                 $this->init();
                 $this->setLogger();
                 $this->createModulesFolder();
+                $this->createStagingFolder();
                 $this->registerModules();
 
                 // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
@@ -362,6 +363,18 @@ class OjtControlPanelPlugin extends GenericPlugin
         return $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $path;
     }
 
+    /**
+     * Get staging base path for plugin installation
+     * 
+     * @param string $path Optional subdirectory path
+     * @return string Full path to staging directory
+     */
+    public function getStagingBasePath($path = '')
+    {
+        $basePath = Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'ojtPlugin' . DIRECTORY_SEPARATOR . 'staging';
+        return $path ? $basePath . DIRECTORY_SEPARATOR . $path : $basePath;
+    }
+
     public function registerModules(): void
     {
         $modulesFolder = $this->getDirs($this->getModulesPath());
@@ -441,6 +454,59 @@ class OjtControlPanelPlugin extends GenericPlugin
         }
 
         mkdir(getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath());
+    }
+
+    /**
+     * Create staging folder for plugin installation with permission validation
+     * 
+     * @throws Exception if directory cannot be created or is not writable
+     * @return void
+     */
+    public function createStagingFolder()
+    {
+        $stagingPath = $this->getStagingBasePath();
+        
+        if (is_dir($stagingPath)) {
+            // Verify directory is writable
+            if (!is_writable($stagingPath)) {
+                error_log("Staging directory exists but is not writable: {$stagingPath}");
+            }
+            return;
+        }
+
+        // Create directory recursively
+        if (!mkdir($stagingPath, 0755, true)) {
+            error_log("Failed to create staging directory: {$stagingPath}");
+            throw new Exception("Unable to create staging directory. Please check file permissions.");
+        }
+        
+        // Verify the created directory is writable
+        if (!is_writable($stagingPath)) {
+            error_log("Created staging directory but it's not writable: {$stagingPath}");
+            throw new Exception("Staging directory created but not writable. Please check file permissions.");
+        }
+    }
+
+    /**
+     * Cleanup old .staging directories from modules folder (backward compatibility)
+     * This removes orphaned .staging directories from the old staging location
+     * 
+     * @return void
+     */
+    protected function cleanupOldModuleStagingDirectories()
+    {
+        $oldStagingPath = $this->getModulesPath('.staging');
+        
+        if (!is_dir($oldStagingPath)) {
+            return;
+        }
+        
+        try {
+            $this->recursiveDelete($oldStagingPath);
+            error_log("Cleaned up old staging directory from modules: {$oldStagingPath}");
+        } catch (Exception $e) {
+            error_log("Failed to cleanup old staging directory: " . $e->getMessage());
+        }
     }
 
     // Show available update on Setting -> Website
@@ -743,9 +809,11 @@ class OjtControlPanelPlugin extends GenericPlugin
                 throw new Exception('Failed to Open Files');
             }
 
-            $stagingPath = $this->getModulesPath('.staging' . DIRECTORY_SEPARATOR . $stagingId);
+            $stagingPath = $this->getStagingBasePath($stagingId);
             if (!is_dir($stagingPath)) {
-                mkdir($stagingPath, 0755, true);
+                if (!mkdir($stagingPath, 0755, true)) {
+                    throw new Exception('Failed to create staging directory. Please check file permissions.');
+                }
             }
 
             if (!$zip->extractTo($stagingPath)) {
@@ -803,7 +871,7 @@ class OjtControlPanelPlugin extends GenericPlugin
             throw new RuntimeException("$path does not exist.");
         }
 
-        $filtered += ['.', '..', '.git', 'pluginTemplate'];
+        $filtered += ['.', '..', '.git', 'pluginTemplate', '.staging', 'staging'];
 
         $dirs = [];
         $d = dir($path);
@@ -965,7 +1033,7 @@ class OjtControlPanelPlugin extends GenericPlugin
      */
     public function cleanupOldStagingDirectories($hoursOld = 24): int
     {
-        $stagingBasePath = $this->getModulesPath('.staging');
+        $stagingBasePath = $this->getStagingBasePath();
         
         if (!is_dir($stagingBasePath)) {
             return 0;

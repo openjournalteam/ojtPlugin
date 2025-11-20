@@ -1,3 +1,6 @@
+### 3.1.0.4 : 20 Nov 2025
+- Changed flow installation process to direct to temp/.staging folder
+
 ### 3.1.0.3 : 12 Nov 2025
 - Fixed issue with site plugins not being moved to the global plugins directory
 - Fixed issue with delete plugin for site-wide plugins
