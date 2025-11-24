@@ -1,3 +1,6 @@
+### 2.1.2.5 : 24 November 2025
+- Added permission when deleting plugin
+
 ### 2.1.2.4 : 18 November 2025
 - Fix issue with plugin gallery installation on some server configurations
 
