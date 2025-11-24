@@ -677,6 +677,13 @@ class OjtPageHandler extends Handler
 
         $removePlugin = json_decode($request->getUserVar('plugin'));
 
+        if (!$removePlugin->canEnable) {
+            $json['error'] = 1;
+            $json['msg'] = 'User does not have permission to uninstall this plugin';
+            showJson($json);
+            return;
+        }
+
         if ($request->getUserVar('resetSetting')) {
             $this->resetSetting($removePlugin->class, false);
         }

@@ -110,6 +110,13 @@ Spruce.store("plugins", {
     ajaxResponse(data);
   },
   async uninstall(plugin) {
+    if(!plugin.canEnable){
+      return Toast.fire({
+        title: "User does not have permission to enable this plugin",
+        icon: "warning",
+      });
+    }
+
     try {
       let result = await Swal.fire({
         title: "Are you sure you wish to delete this plugin from the system?",
