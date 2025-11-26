@@ -21,7 +21,7 @@ class DiscordNotifier
      * @param string $pluginFolder The folder name of the removed plugin.
      * @param array $error The error details (type, file, line, message).
      */
-    public function notifyPluginRemoval($pluginFolder, $data)
+    public function notifyPluginError($pluginFolder, $data)
     {
         $request = $this->plugin->getRequest();
 
@@ -33,13 +33,24 @@ class DiscordNotifier
 
         $pluginVersion = $this->getPluginVersion();
 
-        $title = ':rotating_light: Plugin Removed Due To Error';
-        $description = "A plugin has been automatically removed due to a fatal error";
-        $color = 15158332; // Red color
-        if (isset($data['error_type']) && $data['error_type'] == 'pluginRemoveError') {
-            $title = ':warning: Plugin Failed to Removed Due To Error';
-            $description = "A plugin has failed to be removed due to a fatal error";
-            $color = 16776960; // Yellow color
+        $errorType = $data['error_type'] ?? null;
+
+        switch ($errorType) {
+            case 'pluginRemoveError':
+                $title = ':warning: Plugin Failed to Remove Due To Error';
+                $description = 'A plugin has failed to be removed due to a fatal error';
+                $color = 16776960; // Yellow
+                break;
+            case 'notifyError':
+                $title = ':information_source: Error detected in a plugin';
+                $description = 'An error has been detected in a plugin';
+                $color = 3447003; // Blue
+                break;
+            default:
+                $title = ':rotating_light: Plugin Removed Due To Error';
+                $description = 'A plugin has been automatically removed due to a fatal error';
+                $color = 15158332; // Red
+                break;
         }
         
         $message = [
