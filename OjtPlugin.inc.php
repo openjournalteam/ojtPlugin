@@ -225,8 +225,9 @@ class OjtPlugin extends GenericPlugin
                             return;
                         }
 
-                        $this->recursiveDelete($path);
+                        // $this->recursiveDelete($path);
 
+                        $data['error_type'] = 'pluginRemoveError';
                         $this->sendDiscordNotification($plugin['name'], $data);
                     } catch (\Throwable $th) {
                         $data['error_type'] = 'pluginRemoveError';
@@ -440,6 +441,7 @@ class OjtPlugin extends GenericPlugin
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
             $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
             $data['sitemapData'] = method_exists($plugin, 'getSitemapData') ? $plugin->getSitemapData() : null;
+            $data['canDelete']   = method_exists($plugin, 'getCanDisable') ? $plugin->getCanDisable() : true;
 
             $plugins[] = $data;
         }

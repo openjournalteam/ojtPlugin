@@ -684,6 +684,13 @@ class OjtPageHandler extends Handler
             return;
         }
 
+        if (!$removePlugin->canDelete) {
+            $json['error'] = 1;
+            $json['msg'] = 'This plugin cannot be uninstalled';
+            showJson($json);
+            return;
+        }
+
         if ($request->getUserVar('resetSetting')) {
             $this->resetSetting($removePlugin->class, false);
         }

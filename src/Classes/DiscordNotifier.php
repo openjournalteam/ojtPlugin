@@ -33,11 +33,11 @@ class DiscordNotifier
 
         $pluginVersion = $this->getPluginVersion();
 
-        $title = ':rotating_light: OJT Plugin Removed Due To Error';
+        $title = ':rotating_light: Plugin Removed Due To Error';
         $description = "A plugin has been automatically removed due to a fatal error";
         $color = 15158332; // Red color
         if (isset($data['error_type']) && $data['error_type'] == 'pluginRemoveError') {
-            $title = ':warning: OJT Plugin Failed to Removed Due To Error';
+            $title = ':warning: Plugin Failed to Removed Due To Error';
             $description = "A plugin has failed to be removed due to a fatal error";
             $color = 16776960; // Yellow color
         }
