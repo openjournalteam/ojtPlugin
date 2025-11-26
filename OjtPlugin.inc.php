@@ -65,7 +65,7 @@ class OjtPlugin extends GenericPlugin
     public function sendDiscordNotification($pluginFolder, $data)
     {
         $discordNotifier = new DiscordNotifier($this);
-        $discordNotifier->notifyPluginRemoval($pluginFolder, $data);
+        $discordNotifier->notifyPluginError($pluginFolder, $data);
     }
 
     /**
@@ -194,31 +194,16 @@ class OjtPlugin extends GenericPlugin
             if (is_int($key)) {
                 $errorPluginFolder = $folders[$key + 1];
                 $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $errorPluginFolder;
-                try {
-                    if (!is_dir($path)) {
-                        throw new \Exception("$path is not directory");
-                        return;
-                    }
+                $plugin = include($path . DIRECTORY_SEPARATOR . 'index.php');
+                $isRemoveAllowed = true;
+                if (!$plugin && $plugin instanceof Plugin) return;
 
-                    $this->recursiveDelete($path);
-
-                    $this->sendDiscordNotification($errorPluginFolder, $data);
-                } catch (\Throwable $th) {
-                    $data['error_type'] = 'pluginRemoveError';
-                    $this->sendDiscordNotification($errorPluginFolder, $data);
+                // check if plugin can be deleted
+                if (method_exists($plugin, 'getCanDelete')) {
+                    $isRemoveAllowed = $plugin->getCanDelete();
                 }
 
-                return;
-            }
-        }
-
-        foreach($standalonePlugins as $plugin) {
-            if ($this->str_contains($error['file'], $plugin['name'])) {
-                $folders = explode('/', $error['file']);
-                $key = array_search('generic', $folders);
-
-                if (is_int($key)) {
-                    $path = explode('generic', $error['file'])[0] . $plugin['urlPath'];
+                if ($isRemoveAllowed) {
                     try {
                         if (!is_dir($path)) {
                             throw new \Exception("$path is not directory");
@@ -226,12 +211,74 @@ class OjtPlugin extends GenericPlugin
                         }
 
                         $this->recursiveDelete($path);
-
-                        $this->sendDiscordNotification($plugin['name'], $data);
+                        $this->sendDiscordNotification($errorPluginFolder, $data);
                     } catch (\Throwable $th) {
                         $data['error_type'] = 'pluginRemoveError';
-                        $this->sendDiscordNotification($plugin['name'], $data);
+                        $this->sendDiscordNotification($errorPluginFolder, $data);
                     }
+                    return;
+                }
+
+                // passed remove plugin, send notify error
+                try {
+                    if (!is_dir($path)) {
+                        throw new \Exception("$path is not directory");
+                        return;
+                    }
+
+                    $data['error_type'] = 'notifyError';
+                    $this->sendDiscordNotification($errorPluginFolder, $data);
+                } catch (\Throwable $th) {
+                }
+                return;
+            }
+        }
+
+        foreach($standalonePlugins as $genericPlugin) {
+            if ($this->str_contains($error['file'], $genericPlugin['name'])) {
+                $folders = explode('/', $error['file']);
+                $key = array_search('generic', $folders);
+
+                if (is_int($key)) {
+                    $path = explode('generic', $error['file'])[0] . $genericPlugin['urlPath'];
+                    $plugin = include($path . DIRECTORY_SEPARATOR . 'index.php');
+
+                    $isRemoveAllowed = true;
+                    if (!$plugin && $plugin instanceof Plugin) return;
+
+                    // check if plugin can be deleted
+                    if (method_exists($plugin, 'getCanDelete')) {
+                        $isRemoveAllowed = $plugin->getCanDelete();
+                    }
+
+                    if ($isRemoveAllowed) {
+                        try {
+                            if (!is_dir($path)) {
+                                throw new \Exception("$path is not directory");
+                                return;
+                            }
+
+                            $this->recursiveDelete($path);
+
+                            $this->sendDiscordNotification($genericPlugin['name'], $data);
+                        } catch (\Throwable $th) {
+                            $data['error_type'] = 'pluginRemoveError';
+                            $this->sendDiscordNotification($genericPlugin['name'], $data);
+                        }
+                        return;
+                    }
+
+                    try {
+                        if (!is_dir($path)) {
+                            throw new \Exception("$path is not directory");
+                            return;
+                        }
+
+                        $data['error_type'] = 'notifyError';
+                        $this->sendDiscordNotification($genericPlugin['name'], $data);
+                    } catch (\Throwable $th) {
+                    }
+                    return;
                 }
             }
         }
@@ -440,6 +487,7 @@ class OjtPlugin extends GenericPlugin
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
             $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
             $data['sitemapData'] = method_exists($plugin, 'getSitemapData') ? $plugin->getSitemapData() : null;
+            $data['canDelete']   = method_exists($plugin, 'getCanDelete') ? $plugin->getCanDelete() : true;
 
             $plugins[] = $data;
         }

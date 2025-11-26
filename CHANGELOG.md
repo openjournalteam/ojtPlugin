@@ -1,3 +1,6 @@
+### 2.1.2.6 : 26 November 2025
+- Improved validation when uninstalling or trying to uninstall plugin
+
 ### 2.1.2.5 : 24 November 2025
 - Added permission when deleting plugin
 
