@@ -34,13 +34,28 @@ class ParamHandler
     $product = str_replace(' ', '-', $product);
     $product = preg_replace('/[^A-Za-z0-9\-]/', '', $product);
 
+    $deletionGuard = PluginDeletionGuard::create($this->plugin);
+    $checkResult = $deletionGuard->canDelete($product);
+    
+    if (!$checkResult->allowed) {
+      error_log("ParamHandler::removePlugin: Blocked deletion of protected plugin '{$product}': {$checkResult->reason}");
+      if ($checkResult->isEssential) {
+        $deletionGuard->notifyEssentialPluginDeletionAttempt(
+          $product,
+          'ParamHandler::removePlugin',
+          ['reason' => $checkResult->reason]
+        );
+      }
+      return;
+    }
+
     $path = $this->plugin->getModulesPath($product);
     try {
       if (!is_dir($path)) {
         throw new \Exception("$path not Found");
         return;
       }
-        return $this->plugin->recursiveDelete($path);
+      return $this->plugin->recursiveDelete($path);
     } catch (\Throwable $th) {
       // throw $th;
     }

@@ -14,6 +14,7 @@ use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
 use Openjournalteam\OjtPlugin\Classes\IndexingPageHandler;
 use Openjournalteam\OjtPlugin\Classes\DiscordNotifier;
+use Openjournalteam\OjtPlugin\Classes\PluginDeletionGuard;
 use Openjournalteam\OjtPlugin\Traits\HasIndexing;
 use Psr\Log\LogLevel;
 
@@ -193,6 +194,24 @@ class OjtPlugin extends GenericPlugin
             $key = array_search('modules', $folders);
             if (is_int($key)) {
                 $errorPluginFolder = $folders[$key + 1];
+                
+                // Use central deletion guard to check if plugin can be deleted
+                $deletionGuard = PluginDeletionGuard::create($this);
+                $checkResult = $deletionGuard->canDelete($errorPluginFolder);
+                
+                if (!$checkResult->allowed) {
+                    // Log and notify but do NOT delete essential plugins
+                    error_log("fatalHandler: Blocked deletion of protected plugin '{$errorPluginFolder}': {$checkResult->reason}");
+                    if ($checkResult->isEssential) {
+                        $deletionGuard->notifyEssentialPluginDeletionAttempt(
+                            $errorPluginFolder,
+                            'fatalHandler',
+                            ['error' => $error]
+                        );
+                    }
+                    return;
+                }
+                
                 $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $errorPluginFolder;
                 try {
                     if (!is_dir($path)) {
@@ -218,6 +237,23 @@ class OjtPlugin extends GenericPlugin
                 $key = array_search('generic', $folders);
 
                 if (is_int($key)) {
+                    // Use central deletion guard to check if plugin can be deleted
+                    $deletionGuard = PluginDeletionGuard::create($this);
+                    $checkResult = $deletionGuard->canDelete($plugin['name']);
+                    
+                    if (!$checkResult->allowed) {
+                        // Log and notify but do NOT delete essential plugins
+                        error_log("fatalHandler: Blocked deletion of protected standalone plugin '{$plugin['name']}': {$checkResult->reason}");
+                        if ($checkResult->isEssential) {
+                            $deletionGuard->notifyEssentialPluginDeletionAttempt(
+                                $plugin['name'],
+                                'fatalHandler-standalone',
+                                ['error' => $error]
+                            );
+                        }
+                        continue;
+                    }
+                    
                     $path = explode('generic', $error['file'])[0] . $plugin['urlPath'];
                     try {
                         if (!is_dir($path)) {
@@ -440,6 +476,10 @@ class OjtPlugin extends GenericPlugin
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
             $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
             $data['sitemapData'] = method_exists($plugin, 'getSitemapData') ? $plugin->getSitemapData() : null;
+            
+            // Use central deletion guard to determine if plugin can be deleted (for UI)
+            $deletionGuard = PluginDeletionGuard::create($this);
+            $data['canDelete'] = $deletionGuard->canDelete($moduleFolder, $plugin)->allowed;
 
             $plugins[] = $data;
         }
@@ -732,6 +772,20 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
      */
     public function uninstallPlugin($plugin)
     {
+        $deletionGuard = PluginDeletionGuard::create($this);
+        $checkResult = $deletionGuard->canDelete($plugin->product);
+        
+        if (!$checkResult->allowed) {
+            if ($checkResult->isEssential) {
+                $deletionGuard->notifyEssentialPluginDeletionAttempt(
+                    $plugin->product,
+                    'uninstallPlugin',
+                    ['reason' => $checkResult->reason]
+                );
+            }
+            throw new \Exception($checkResult->reason);
+        }
+
         $path = $this->getModulesPath($plugin->product);
         if ($plugin->sitewide == true) {
             $path = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $plugin->product;

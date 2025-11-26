@@ -1,6 +1,7 @@
 <?php
 
 use GuzzleHttp\Exception\BadResponseException;
+use Openjournalteam\OjtPlugin\Classes\PluginDeletionGuard;
 
 import('classes.handler.Handler');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
@@ -621,6 +622,21 @@ class OjtPageHandler extends Handler
             $error = error_get_last();
             if (!in_array($error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
 
+            $deletionGuard = PluginDeletionGuard::create($ojtPlugin);
+            $checkResult = $deletionGuard->canDelete($pluginToInstall->folder);
+            
+            if (!$checkResult->allowed) {
+                error_log("simulateRegisterModules: Blocked deletion of protected plugin '{$pluginToInstall->folder}': {$checkResult->reason}");
+                if ($checkResult->isEssential) {
+                    $deletionGuard->notifyEssentialPluginDeletionAttempt(
+                        $pluginToInstall->folder,
+                        'simulateRegisterModules-shutdown',
+                        ['error' => $error]
+                    );
+                }
+                return;
+            }
+
             // Working directory berubah ketika callback ini berjalan, jadi harus mendapatkan fullpath
             $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $pluginToInstall->folder;
             try {
@@ -677,9 +693,28 @@ class OjtPageHandler extends Handler
 
         $removePlugin = json_decode($request->getUserVar('plugin'));
 
+        // first validation
         if (!$removePlugin->isAuthorized) {
             $json['error'] = 1;
             $json['msg'] = 'User does not have permission to uninstall this plugin';
+            showJson($json);
+            return;
+        }
+
+        // second validation
+        $deletionGuard = PluginDeletionGuard::create($plugin);
+        $checkResult = $deletionGuard->canDelete($removePlugin->product ?? $removePlugin->class);
+        
+        if (!$checkResult->allowed) {
+            if ($checkResult->isEssential) {
+                $deletionGuard->notifyEssentialPluginDeletionAttempt(
+                    $removePlugin->product ?? $removePlugin->class,
+                    'OjtPageHandler::uninstallPlugin',
+                    ['reason' => $checkResult->reason]
+                );
+            }
+            $json['error'] = 1;
+            $json['msg'] = $checkResult->reason;
             showJson($json);
             return;
         }
