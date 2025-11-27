@@ -1,3 +1,6 @@
+### 2.1.2.7 : 27 November 2025
+- Refactor uninstall plugin process to improve stability
+
 ### 2.1.2.6 : 26 November 2025
 - Improved validation when uninstalling or trying to uninstall plugin
 
