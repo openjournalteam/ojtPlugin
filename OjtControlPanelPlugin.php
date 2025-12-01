@@ -415,15 +415,16 @@ class OjtControlPanelPlugin extends GenericPlugin
             $data['enabled']     = $plugin->getEnabled();
 
             if($this->getRequest()->getUser() && method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
-                $data['canEnable']   = $plugin->getCanEnable();
+                $data['isAuthorized']   = $plugin->getCanEnable();
             } else {
-                $data['canEnable']   = $this->getCanEnable();
+                $data['isAuthorized']   = $this->getCanEnable();
             }
 
             $data['open']        = false;
             $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
             $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
+            $data['canDelete']   = method_exists($plugin, 'getCanDelete') ? $plugin->getCanDelete() : true;
 
             $plugins[] = $data;
         }
