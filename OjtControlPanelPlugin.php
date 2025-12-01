@@ -112,7 +112,7 @@ class OjtControlPanelPlugin extends GenericPlugin
 
             $currentUserGroups = UserGroup::query()
                 ->withUserIds([$currentUser->getId()])
-                ->withUserUserGroupStatus(UserUserGroupStatus::STATUS_ACTIVE->value)
+                // ->withUserUserGroupStatus(UserUserGroupStatus::STATUS_ACTIVE->value)
                 ->when($context, fn($query) => $query->withContextIds($context->getId()))
                 ->lazy();
 
