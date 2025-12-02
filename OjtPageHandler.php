@@ -121,6 +121,10 @@ class OjtPageHandler extends Handler
         ];
         $url            = 'https://ticketing.openjournaltheme.com/login/' . base64_encode(implode('+', $params));
 
+        if(version_compare($this->ojtPlugin->getJournalVersion(), '35', '>=')) {
+            $request->redirectUrl($url);
+        }
+
         header('Location: ' . $url, true, 302);
 
         return;

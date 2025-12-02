@@ -1,5 +1,6 @@
 ### 3.1.0.5 : 01 Dec 2025
 - Fixed compatibility issue caused by the removal of `UserUserGroupStatus` scope in OJS 3.5.0-2.
+- Fixed issue support not redirecting properly for OJS 3.5.x.x
 
 ### 3.1.0.4 : 20 Nov 2025
 - Changed flow installation process to direct to temp/.staging folder
