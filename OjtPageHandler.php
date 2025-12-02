@@ -374,6 +374,16 @@ class OjtPageHandler extends Handler
         // Call the hook to allow other plugins to register to ojt control panel modules
         Hook::call('OjtPageHandler::installed::plugins', array($this, &$plugins));
 
+        // Ensure canDelete and isAuthorized are set
+        foreach($plugins as &$plugin) {
+            if(!isset($plugin['canDelete'])) {
+                $plugin['canDelete'] = true;
+            }
+            if(!isset($plugin['isAuthorized'])) {
+                $plugin['isAuthorized'] = true;
+            }
+        }
+
         return $plugins;
     }
 
