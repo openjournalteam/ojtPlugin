@@ -919,6 +919,180 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         return true;
     }
 
+    /**
+     * Get the base path for staging directory
+     * @return string
+     */
+    public function getStagingBasePath()
+    {
+        return Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'ojt_staging';
+    }
+
+    /**
+     * Install plugin to staging directory first
+     * @param string $url Download URL for the plugin
+     * @return array ['stagingPath' => string, 'pluginFolder' => string]
+     * @throws Exception if installation fails
+     */
+    public function installPluginToStaging($url)
+    {
+        $url = str_replace('https', 'http', $url);
+
+        // Download file
+        $file_name = Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'OJTTemporaryFile_' . uniqid() . '.zip';
+        $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
+        $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
+        $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
+
+        // Extract file
+        if (!class_exists('ZipArchive')) {
+            unlink($file_name);
+            throw new Exception('Please Install PHP Zip Extension');
+        }
+
+        $zip = new ZipArchive;
+        if (!$zip->open($file_name)) {
+            unlink($file_name);
+            throw new Exception('Failed to Open Files');
+        }
+
+        // Create staging directory
+        $stagingBasePath = $this->getStagingBasePath();
+        if (!is_dir($stagingBasePath)) {
+            if (!mkdir($stagingBasePath, 0755, true)) {
+                unlink($file_name);
+                throw new Exception('Failed to create staging directory');
+            }
+        }
+
+        // Create unique staging path for this installation
+        $stagingPath = $stagingBasePath . DIRECTORY_SEPARATOR . 'staging_' . uniqid();
+        if (!mkdir($stagingPath, 0755, true)) {
+            unlink($file_name);
+            throw new Exception('Failed to create staging subdirectory');
+        }
+
+        if (!$zip->extractTo($stagingPath)) {
+            unlink($file_name);
+            $this->recursiveDelete($stagingPath);
+            throw new Exception('Failed to Extract Plugin to staging, because of folder permission.');
+        }
+
+        // Detect the plugin folder name from extracted contents
+        $extractedFolders = array_diff(scandir($stagingPath), ['.', '..']);
+        if (empty($extractedFolders)) {
+            unlink($file_name);
+            $this->recursiveDelete($stagingPath);
+            throw new Exception('No plugin folder found in extracted archive');
+        }
+
+        $pluginFolder = reset($extractedFolders);
+
+        $zip->close();
+        unlink($file_name);
+
+        return [
+            'stagingPath' => $stagingPath,
+            'pluginFolder' => $pluginFolder
+        ];
+    }
+
+    /**
+     * Move staged plugin to final destination
+     * @param string $stagingPath Path to staging directory
+     * @param string $pluginFolder Plugin folder name
+     * @param bool $isSiteWide Whether plugin is site-wide
+     * @throws Exception if move fails
+     */
+    public function moveStagedPluginToFinal($stagingPath, $pluginFolder, $isSiteWide)
+    {
+        $sourcePath = $stagingPath . DIRECTORY_SEPARATOR . $pluginFolder;
+
+        if ($isSiteWide) {
+            $destinationPath = getcwd() . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder;
+        } else {
+            $this->createModulesFolder();
+            $destinationPath = getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath($pluginFolder);
+        }
+
+        if (!is_dir($sourcePath)) {
+            throw new Exception("Source plugin directory not found in staging: {$sourcePath}");
+        }
+
+        // Remove existing destination if it exists
+        if (is_dir($destinationPath)) {
+            $this->recursiveDelete($destinationPath);
+        }
+
+        // Move the plugin directory
+        if (!rename($sourcePath, $destinationPath)) {
+            throw new Exception("Failed to move plugin from staging to final destination");
+        }
+
+        // Clean up the staging directory
+        if (is_dir($stagingPath) && count(array_diff(scandir($stagingPath), ['.', '..'])) === 0) {
+            rmdir($stagingPath);
+        }
+
+        $location = $isSiteWide ? 'plugins/generic/' : 'modules/';
+        error_log("Plugin '{$pluginFolder}' installed to {$location}");
+    }
+
+    /**
+     * Instantiate a plugin from the modules directory without throwing an exception
+     * @param string $pluginFolder Plugin folder name
+     * @return Plugin|false Plugin instance or false if not found
+     */
+    public function instantiatePluginWithoutThrow($pluginFolder)
+    {
+        $indexFile = $this->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . 'index.php');
+        if (!file_exists($indexFile)) {
+            return false;
+        }
+        return @include($indexFile);
+    }
+
+    /**
+     * Instantiate a plugin from the global plugins/generic directory
+     * @param string $pluginFolder Plugin folder name
+     * @return Plugin|false Plugin instance or false if not found
+     */
+    public function instantiatePluginFromGlobalDirectory($pluginFolder)
+    {
+        $indexFile = getcwd() . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder . DIRECTORY_SEPARATOR . 'index.php';
+        if (!file_exists($indexFile)) {
+            return false;
+        }
+        return @include($indexFile);
+    }
+
+    /**
+     * Clean up old staging directories
+     * @param int $hoursOld Delete staging directories older than this many hours
+     */
+    public function cleanupOldStagingDirectories($hoursOld = 24)
+    {
+        $stagingBasePath = $this->getStagingBasePath();
+        if (!is_dir($stagingBasePath)) {
+            return;
+        }
+
+        $cutoffTime = time() - ($hoursOld * 3600);
+        $dirs = array_diff(scandir($stagingBasePath), ['.', '..']);
+
+        foreach ($dirs as $dir) {
+            $dirPath = $stagingBasePath . DIRECTORY_SEPARATOR . $dir;
+            if (is_dir($dirPath) && filemtime($dirPath) < $cutoffTime) {
+                try {
+                    $this->recursiveDelete($dirPath);
+                    error_log("Cleaned up old staging directory: {$dirPath}");
+                } catch (Exception $e) {
+                    error_log("Failed to clean up staging directory: " . $e->getMessage());
+                }
+            }
+        }
+    }
+
     public function getJournalVersion()
     {
         $versionDao = DAORegistry::getDAO('VersionDAO');

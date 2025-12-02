@@ -1,3 +1,6 @@
+### 2.1.2.8 : 02 December 2025
+- Fixing issue with installing plugin from gallery on site-wide plugins
+
 ### 2.1.2.7 : 27 November 2025
 - Refactor uninstall plugin process to improve stability
 
