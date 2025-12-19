@@ -63,8 +63,8 @@ function ajaxError(responseText, statusText, xhr, form) {
   toastFire(
     "error",
     responseText?.msg ??
-      responseText?.message ??
-      "Something went wrong, please contact us"
+    responseText?.message ??
+    "Something went wrong, please contact us"
   );
 }
 
@@ -109,12 +109,30 @@ async function loadAjax(name, dom = false) {
         addCss(value);
       });
     }
+
+    if (resp.svelte) {
+      $.each(resp.svelte, function (key, value) {
+        if (key === 'unmount' && window[value] && typeof window[value] === 'function') {
+          window[value]();
+        }
+      })
+    }
+
     if (resp.js) {
       $.each(resp.js, function (key, value) {
         addJs(value);
       });
     }
+
     dom.html(resp.html);
+
+    if (resp.svelte) {
+      $.each(resp.svelte, function (key, value) {
+        if (key === 'mount' && window[value] && typeof window[value] === 'function') {
+          window[value]();
+        }
+      })
+    }
 
     htmx.process('#main-menu')
   });
@@ -184,10 +202,17 @@ function addJs(src, empty = true) {
   isExist = $("script[src='" + src + "']").length ? true : false;
   if (isExist) return;
 
-  var link = $("<script></script>", {
+  const attr = {
     src: src,
-  });
+  }
+
+  if (src.includes('svelte') || src.includes('localhost:5173')) {
+    attr.type = 'module';
+  }
+
+  var link = $("<script></script>", attr);
   moduleJs.append(link);
+  // moduleJs.append(`<script type="module" src></script>`);
 }
 
 function initiateAjaxContent(dom) {

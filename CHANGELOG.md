@@ -1,3 +1,6 @@
+### 2.1.3.0 : 19 December 2025
+- Added new compatibility for plugin with svelte
+
 ### 2.1.2.8 : 02 December 2025
 - Fixing issue with installing plugin from gallery on site-wide plugins
 
