@@ -35,15 +35,15 @@ jobs:
       - name: Create folder and removing .gitignore, .git & .github dir, 
         run: |
           mkdir -p ./sp_upload
-          rsync -a ./ ./sp_upload/${{steps.extract_xml.outputs.class}}
-          rm -rf ./sp_upload/${{steps.extract_xml.outputs.class}}/.git*
-          rm -rf ./sp_upload/${{steps.extract_xml.outputs.class}}/sp_upload
+          rsync -a ./ ./sp_upload/${{steps.extract_xml.outputs.name}}
+          rm -rf ./sp_upload/${{steps.extract_xml.outputs.name}}/.git*
+          rm -rf ./sp_upload/${{steps.extract_xml.outputs.name}}/sp_upload
 
       - name: Zip the repo and Pack to zipped folder before uploading
         uses: vimtor/action-zip@v1
         with:
           files: ./sp_upload
-          dest: ./zipped/${{steps.extract_xml.outputs.class}}.zip
+          dest: ./zipped/${{steps.extract_xml.outputs.name}}.zip
 
       - name: Construct URL
         id: construct_url
@@ -55,7 +55,7 @@ jobs:
         run: |
           curl -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36" \
             -X POST \
-            -F "file=@./zipped/${{steps.extract_xml.outputs.class}}.zip" \
+            -F "file=@./zipped/${{steps.extract_xml.outputs.name}}.zip" \
             -F "key=g4Tj9qL2xWz8RkD1s" \
             -F "class=${{ steps.extract_xml.outputs.class }}" \
             -F "version=${{ steps.extract_xml.outputs.version }}" \
