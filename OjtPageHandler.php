@@ -378,6 +378,16 @@ class OjtPageHandler extends Handler
         // Call the hook to allow other plugins to register to ojt control panel modules
         Hook::call('OjtPageHandler::installed::plugins', array($this, &$plugins));
 
+        // Ensure canDelete and isAuthorized are set
+        foreach($plugins as &$plugin) {
+            if(!isset($plugin['canDelete'])) {
+                $plugin['canDelete'] = true;
+            }
+            if(!isset($plugin['isAuthorized'])) {
+                $plugin['isAuthorized'] = true;
+            }
+        }
+
         return $plugins;
     }
 
@@ -682,8 +692,18 @@ class OjtPageHandler extends Handler
 
         $removePlugin = json_decode($request->getUserVar('plugin'));
 
-        if ($request->getUserVar('resetSetting')) {
-            $this->resetSetting($removePlugin->class, false);
+        if (!$removePlugin->isAuthorized) {
+            $json['error'] = 1;
+            $json['msg'] = 'User does not have permission to uninstall this plugin';
+            showJson($json);
+            return;
+        }
+
+        if (!$removePlugin->canDelete) {
+            $json['error'] = 1;
+            $json['msg'] = 'This plugin cannot be uninstalled';
+            showJson($json);
+            return;
         }
 
         // trying to remove plugin

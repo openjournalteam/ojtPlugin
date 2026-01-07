@@ -1,3 +1,6 @@
+### 3.1.1.1 : 07 Jan 2026
+- Align registered plugin modules with global requirements in the Control Panel
+
 ### 3.1.1.0 : 19 Dec 2025
 - Added new compatibility for plugin with svelte
 
