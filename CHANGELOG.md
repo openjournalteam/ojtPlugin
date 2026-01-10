@@ -1,3 +1,6 @@
+### 3.1.1.2 : 10 Jan 2026
+- Fixed when fatal error plugin not removed
+
 ### 3.1.1.1 : 07 Jan 2026
 - Align registered plugin modules with global requirements in the Control Panel
 

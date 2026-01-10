@@ -49,7 +49,7 @@ class OjtControlPanelPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
-                // register_shutdown_function([$this, 'fatalHandler']);
+                register_shutdown_function([$this, 'fatalHandler']);
                 $this->init();
                 $this->setLogger();
                 $this->createModulesFolder();
