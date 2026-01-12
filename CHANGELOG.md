@@ -1,3 +1,7 @@
+### 2.1.3.1 : 12 January 2025
+- Add Feature report to service panel for plugin registered
+- Fixed Fatal Handler when error is null
+
 ### 2.1.3.0 : 19 December 2025
 - Added new compatibility for plugin with svelte
 
