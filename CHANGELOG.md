@@ -1,3 +1,7 @@
+### 3.1.1.3 : 12 Jan 2026
+- Add Feature report to service panel for plugin registered
+- Fixed Fatal Handler when error is null
+
 ### 3.1.1.2 : 10 Jan 2026
 - Fixed when fatal error plugin not removed
 

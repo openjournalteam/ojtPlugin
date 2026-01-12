@@ -30,6 +30,7 @@ use GuzzleHttp\Exception\BadResponseException;
 use APP\plugins\generic\ojtControlPanel\classes\ErrorHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ParamHandler;
 use APP\plugins\generic\ojtControlPanel\classes\ServiceHandler;
+use APP\plugins\generic\ojtControlPanel\classes\ApiServicePanel;
 use Monolog\Utils;
 use PKP\userGroup\relationships\enums\UserUserGroupStatus;
 use PKP\userGroup\UserGroup;
@@ -190,8 +191,16 @@ class OjtControlPanelPlugin extends GenericPlugin
     function fatalHandler()
     {
         $error = error_get_last();
+
+        // Sometimes fatalHandler called without error
+        if (!is_array($error)) return;
+
         // Fatal error, E_ERROR === 1
         if (!in_array(array_key_exists('type', $error) && $error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
+
+        // Sometime there's no file in error so we need to check it first
+        if (!array_key_exists('file', $error)) return;
+
         if (!str_contains($error['file'], 'ojtControlPanel')) {
             return;
         }
@@ -439,6 +448,48 @@ class OjtControlPanelPlugin extends GenericPlugin
         }
 
         return $this->registeredModule;
+    }
+
+    public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [])
+    {
+        $ojtPlugin = new self();
+        $serviceData = $plugin->getSetting(Application::CONTEXT_SITE, 'service_panel_data');
+
+        if (!$plugin->getEnabled()) return;
+
+        if ($serviceData && isset($serviceData['url'])) {
+            $serviceData['journal_site'] = $serviceData['url'];
+            unset($serviceData['url']);
+            $plugin->updateSetting(Application::CONTEXT_SITE, 'service_panel_data', $serviceData);
+        }
+
+        if ($serviceData) return;
+
+        $apiService = ApiServicePanel::make($plugin);
+
+        if (!isset($params['product-class'])) {
+            $params['product-class'] = get_class($plugin);
+        }
+
+        if ($isGlobalPlugin) {
+            $headers['Client-Url'] = $plugin->getRequest()->getBaseUrl();
+        } else {
+            $headers ['Client-Url'] = $ojtPlugin->getJournalURL();
+        }
+
+        try {
+            $response = $apiService->registerClient($params, $headers);
+
+            if ($response['status']) {
+                $plugin->updateSetting(Application::CONTEXT_SITE, 'service_panel_data', $response['journal_data']);
+            }
+
+            return true;
+        } catch (\Throwable $th) {
+            // throw $th;
+            error_log("Report to Service Panel Error: " . $th->getMessage());
+            return false;
+        }
     }
 
     public function getDefaultPluginIcon()
