@@ -517,6 +517,7 @@ class OjtPlugin extends GenericPlugin
 
         if ($serviceData && isset($serviceData['url'])) {
             $serviceData['journal_site'] = $serviceData['url'];
+            unset($serviceData['url']);
             $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $serviceData);
         }
 
