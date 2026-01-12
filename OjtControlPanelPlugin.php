@@ -455,7 +455,13 @@ class OjtControlPanelPlugin extends GenericPlugin
         $ojtPlugin = new self();
         $serviceData = $plugin->getSetting(Application::CONTEXT_SITE, 'service_panel_data');
 
-        if (!$plugin->getEnabled() || $serviceData) return;
+        if (!$plugin->getEnabled()) return;
+
+        if ($serviceData && isset($serviceData['url'])) {
+            $serviceData['journal_site'] = $serviceData['url'];
+            unset($serviceData['url']);
+            $plugin->updateSetting(Application::CONTEXT_SITE, 'service_panel_data', $serviceData);
+        }
 
         $apiService = ApiServicePanel::make($plugin);
 
