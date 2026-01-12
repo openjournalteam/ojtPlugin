@@ -520,6 +520,8 @@ class OjtPlugin extends GenericPlugin
             $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $serviceData);
         }
 
+        if ($serverData) return;
+
         $apiService = ApiServicePanel::make($plugin);
 
         $params['product-class'] = get_class($plugin);
