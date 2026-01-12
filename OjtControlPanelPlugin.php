@@ -463,6 +463,8 @@ class OjtControlPanelPlugin extends GenericPlugin
             $plugin->updateSetting(Application::CONTEXT_SITE, 'service_panel_data', $serviceData);
         }
 
+        if ($serviceData) return;
+
         $apiService = ApiServicePanel::make($plugin);
 
         if (!isset($params['product-class'])) {
