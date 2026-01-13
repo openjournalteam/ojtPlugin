@@ -56,7 +56,7 @@ Spruce.store("plugins", {
     this.type = "all";
   },
   async togglePlugin(currentPlugin) {
-    if(!currentPlugin.canDelete){
+    if(!currentPlugin.isAuthorized){
       return Toast.fire({
         title: "User does not have permission to enable this plugin",
         icon: "warning",
