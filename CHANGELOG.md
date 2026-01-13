@@ -1,3 +1,6 @@
+### 2.1.3.2 : 12 Jan 2026
+- Add Feature force report to service panel for plugin registered
+
 ### 2.1.3.1 : 12 January 2025
 - Add Feature report to service panel for plugin registered
 - Fixed Fatal Handler when error is null

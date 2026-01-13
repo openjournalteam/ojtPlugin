@@ -508,20 +508,23 @@ class OjtPlugin extends GenericPlugin
         return $this->registeredModule;
     }
 
-    public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [])
+    public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [], $force = false)
     {
         $ojtPlugin = new self();
-        $serviceData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
-
+        
         if (!$plugin->getEnabled()) return;
+        
+        if (!$force) {
+            $serviceData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
+            
+            if ($serviceData && isset($serviceData['url'])) {
+                $serviceData['journal_site'] = $serviceData['url'];
+                unset($serviceData['url']);
+                $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $serviceData);
+            }
 
-        if ($serviceData && isset($serviceData['url'])) {
-            $serviceData['journal_site'] = $serviceData['url'];
-            unset($serviceData['url']);
-            $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $serviceData);
+            if ($serviceData) return;
         }
-
-        if ($serviceData) return;
 
         $apiService = ApiServicePanel::make($plugin);
 
