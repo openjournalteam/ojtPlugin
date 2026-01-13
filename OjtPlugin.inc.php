@@ -521,7 +521,7 @@ class OjtPlugin extends GenericPlugin
             $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $serviceData);
         }
 
-        if ($serverData) return;
+        if ($serviceData) return;
 
         $apiService = ApiServicePanel::make($plugin);
 
