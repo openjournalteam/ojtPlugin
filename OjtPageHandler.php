@@ -537,10 +537,7 @@ class OjtPageHandler extends Handler
             if ($pluginInstance instanceof Plugin) {
                 if ($license && !$update) {
                     $pluginInstance->updateSetting($this->contextId, 'license', $license);
-
-                    if (method_exists($pluginInstance, 'updateStatusValidation')) {
-                        $pluginInstance->updateStatusValidation($downloadLink['status_validation']);
-                    }
+                    $pluginInstance->updateSetting($this->contextId, 'status_validated', $downloadLink['status_validation']);
                 }
                 Hook::call('OJT::pluginInstalled', array($pluginInstance));
             }

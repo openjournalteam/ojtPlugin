@@ -815,7 +815,8 @@ class OjtControlPanelPlugin extends GenericPlugin
 
             if (isset($response['error']) && $response['error']) throw new Exception($response['msg']);
 
-            $result['product'] = $response['data']['download_link'];
+            $result['product']           = $response['data']['download_link'];
+            $result['status_validation'] = $response['data']['status_validation'] ?? 0;
 
             $dependencies = [];
             foreach ($response['data']['dependencies'] as $dependency) {
