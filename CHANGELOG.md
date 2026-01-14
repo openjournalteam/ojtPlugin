@@ -1,3 +1,31 @@
+### 3.1.1.4 : 12 Jan 2026
+- Add Feature force report to service panel for plugin registered
+
+### 3.1.1.3 : 12 Jan 2026
+- Add Feature report to service panel for plugin registered
+- Fixed Fatal Handler when error is null
+
+### 3.1.1.2 : 10 Jan 2026
+- Fixed when fatal error plugin not removed
+
+### 3.1.1.1 : 07 Jan 2026
+- Align registered plugin modules with global requirements in the Control Panel
+
+### 3.1.1.0 : 19 Dec 2025
+- Added new compatibility for plugin with svelte
+
+### 3.1.0.5 : 01 Dec 2025
+- Fixed compatibility issue caused by the removal of `UserUserGroupStatus` scope in OJS 3.5.0-2.
+- Fixed issue support not redirecting properly for OJS 3.5.x.x
+
+### 3.1.0.4 : 20 Nov 2025
+- Changed flow installation process to direct to temp/.staging folder
+
+### 3.1.0.3 : 12 Nov 2025
+- Fixed issue with site plugins not being moved to the global plugins directory
+- Fixed issue with delete plugin for site-wide plugins
+- Fixed issue with HTTP validation
+
 ### 3.1.0.2 : 13 Oct 2025
 - Added a new Hook for global plugins can register itself to the OJT Control Panel page.
 
