@@ -24,7 +24,6 @@ class OjtPlugin extends GenericPlugin
     public $registeredModule;
 
     const API = "https://sp.openjournaltheme.com/api/v1";
-
     const SERVICE_API = "https://sp.openjournaltheme.com/";
 
     public function register($category, $path, $mainContextId = null)
@@ -66,7 +65,7 @@ class OjtPlugin extends GenericPlugin
     public function sendDiscordNotification($pluginFolder, $data)
     {
         $discordNotifier = new DiscordNotifier($this);
-        $discordNotifier->notifyPluginRemoval($pluginFolder, $data);
+        $discordNotifier->notifyPluginError($pluginFolder, $data);
     }
 
     /**
@@ -195,31 +194,16 @@ class OjtPlugin extends GenericPlugin
             if (is_int($key)) {
                 $errorPluginFolder = $folders[$key + 1];
                 $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $errorPluginFolder;
-                try {
-                    if (!is_dir($path)) {
-                        throw new \Exception("$path is not directory");
-                        return;
-                    }
+                $plugin = include($path . DIRECTORY_SEPARATOR . 'index.php');
+                $isRemoveAllowed = true;
+                if (!$plugin && $plugin instanceof Plugin) return;
 
-                    $this->recursiveDelete($path);
-
-                    $this->sendDiscordNotification($errorPluginFolder, $data);
-                } catch (\Throwable $th) {
-                    $data['error_type'] = 'pluginRemoveError';
-                    $this->sendDiscordNotification($errorPluginFolder, $data);
+                // check if plugin can be deleted
+                if (method_exists($plugin, 'getCanDelete')) {
+                    $isRemoveAllowed = $plugin->getCanDelete();
                 }
 
-                return;
-            }
-        }
-
-        foreach ($standalonePlugins as $plugin) {
-            if ($this->str_contains($error['file'], $plugin['name'])) {
-                $folders = explode('/', $error['file']);
-                $key = array_search('generic', $folders);
-
-                if (is_int($key)) {
-                    $path = explode('generic', $error['file'])[0] . $plugin['urlPath'];
+                if ($isRemoveAllowed) {
                     try {
                         if (!is_dir($path)) {
                             throw new \Exception("$path is not directory");
@@ -227,12 +211,74 @@ class OjtPlugin extends GenericPlugin
                         }
 
                         $this->recursiveDelete($path);
-
-                        $this->sendDiscordNotification($plugin['name'], $data);
+                        $this->sendDiscordNotification($errorPluginFolder, $data);
                     } catch (\Throwable $th) {
                         $data['error_type'] = 'pluginRemoveError';
-                        $this->sendDiscordNotification($plugin['name'], $data);
+                        $this->sendDiscordNotification($errorPluginFolder, $data);
                     }
+                    return;
+                }
+
+                // passed remove plugin, send notify error
+                try {
+                    if (!is_dir($path)) {
+                        throw new \Exception("$path is not directory");
+                        return;
+                    }
+
+                    $data['error_type'] = 'notifyError';
+                    $this->sendDiscordNotification($errorPluginFolder, $data);
+                } catch (\Throwable $th) {
+                }
+                return;
+            }
+        }
+
+        foreach($standalonePlugins as $genericPlugin) {
+            if ($this->str_contains($error['file'], $genericPlugin['name'])) {
+                $folders = explode('/', $error['file']);
+                $key = array_search('generic', $folders);
+
+                if (is_int($key)) {
+                    $path = explode('generic', $error['file'])[0] . $genericPlugin['urlPath'];
+                    $plugin = include($path . DIRECTORY_SEPARATOR . 'index.php');
+
+                    $isRemoveAllowed = true;
+                    if (!$plugin && $plugin instanceof Plugin) return;
+
+                    // check if plugin can be deleted
+                    if (method_exists($plugin, 'getCanDelete')) {
+                        $isRemoveAllowed = $plugin->getCanDelete();
+                    }
+
+                    if ($isRemoveAllowed) {
+                        try {
+                            if (!is_dir($path)) {
+                                throw new \Exception("$path is not directory");
+                                return;
+                            }
+
+                            $this->recursiveDelete($path);
+
+                            $this->sendDiscordNotification($genericPlugin['name'], $data);
+                        } catch (\Throwable $th) {
+                            $data['error_type'] = 'pluginRemoveError';
+                            $this->sendDiscordNotification($genericPlugin['name'], $data);
+                        }
+                        return;
+                    }
+
+                    try {
+                        if (!is_dir($path)) {
+                            throw new \Exception("$path is not directory");
+                            return;
+                        }
+
+                        $data['error_type'] = 'notifyError';
+                        $this->sendDiscordNotification($genericPlugin['name'], $data);
+                    } catch (\Throwable $th) {
+                    }
+                    return;
                 }
             }
         }
@@ -431,9 +477,9 @@ class OjtPlugin extends GenericPlugin
             $data['enabled']     = $plugin->getEnabled();
 
             if (method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
-                $data['canEnable']   = $plugin->getCanEnable();
+                $data['isAuthorized']   = $plugin->getCanEnable();
             } else {
-                $data['canEnable']   = $this->getCanEnable();
+                $data['isAuthorized']   = $this->getCanEnable();
             }
 
             $data['open']        = false;
@@ -441,6 +487,7 @@ class OjtPlugin extends GenericPlugin
             $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
             $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
             $data['sitemapData'] = method_exists($plugin, 'getSitemapData') ? $plugin->getSitemapData() : null;
+            $data['canDelete']   = method_exists($plugin, 'getCanDelete') ? $plugin->getCanDelete() : true;
 
             $plugins[] = $data;
         }
@@ -461,12 +508,23 @@ class OjtPlugin extends GenericPlugin
         return $this->registeredModule;
     }
 
-    public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [])
+    public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [], $force = false)
     {
         $ojtPlugin = new self();
-        $serviceData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
+        
+        if (!$plugin->getEnabled()) return;
+        
+        if (!$force) {
+            $serviceData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
+            
+            if ($serviceData && isset($serviceData['url'])) {
+                $serviceData['journal_site'] = $serviceData['url'];
+                unset($serviceData['url']);
+                $plugin->updateSetting(CONTEXT_SITE, 'service_panel_data', $serviceData);
+            }
 
-        if (!$plugin->getEnabled() || $serviceData) return;
+            if ($serviceData) return;
+        }
 
         $apiService = ApiServicePanel::make($plugin);
 
@@ -639,7 +697,14 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         $page = $params[0];
         $op   = &$params[1];
 
-        if ($page === 'ojt' && $op === 'api') {
+        // Force http or https based on host
+        $request = Application::get()->getRequest();
+        $serverHost = $request->getServerHost(null, false);
+        $host = explode(':', (string) $serverHost)[0];
+        $shouldUseHttpProtocol = $this->shouldUseHttpProtocolForHost($host);
+        $request->_protocol = $shouldUseHttpProtocol ? 'http' : 'https';
+
+        if($page === 'ojt' && $op === 'api') {
             define('HANDLER_CLASS', 'OjtPluginApiHandler');
             $this->import('OjtPluginApiHandler');
 
@@ -669,6 +734,19 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
                 IndexingPageHandler::setPlugin($this, $plugin);
 
                 return true;
+        }
+
+        return false;
+    }
+
+    private function shouldUseHttpProtocolForHost(string $host)
+    {
+        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+            return true;
+        }
+
+        if (preg_match('/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/', $host)) {
+            return true;
         }
 
         return false;
@@ -714,6 +792,9 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
     public function uninstallPlugin($plugin)
     {
         $path = $this->getModulesPath($plugin->product);
+        if ($plugin->sitewide == true) {
+            $path = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $plugin->product;
+        }
         try {
             if (!is_dir($path)) {
                 throw new \Exception("$plugin->name not Found");
@@ -847,6 +928,180 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         unlink($file_name);
 
         return true;
+    }
+
+    /**
+     * Get the base path for staging directory
+     * @return string
+     */
+    public function getStagingBasePath()
+    {
+        return Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'ojt_staging';
+    }
+
+    /**
+     * Install plugin to staging directory first
+     * @param string $url Download URL for the plugin
+     * @return array ['stagingPath' => string, 'pluginFolder' => string]
+     * @throws Exception if installation fails
+     */
+    public function installPluginToStaging($url)
+    {
+        $url = str_replace('https', 'http', $url);
+
+        // Download file
+        $file_name = Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'OJTTemporaryFile_' . uniqid() . '.zip';
+        $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
+        $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
+        $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
+
+        // Extract file
+        if (!class_exists('ZipArchive')) {
+            unlink($file_name);
+            throw new Exception('Please Install PHP Zip Extension');
+        }
+
+        $zip = new ZipArchive;
+        if (!$zip->open($file_name)) {
+            unlink($file_name);
+            throw new Exception('Failed to Open Files');
+        }
+
+        // Create staging directory
+        $stagingBasePath = $this->getStagingBasePath();
+        if (!is_dir($stagingBasePath)) {
+            if (!mkdir($stagingBasePath, 0755, true)) {
+                unlink($file_name);
+                throw new Exception('Failed to create staging directory');
+            }
+        }
+
+        // Create unique staging path for this installation
+        $stagingPath = $stagingBasePath . DIRECTORY_SEPARATOR . 'staging_' . uniqid();
+        if (!mkdir($stagingPath, 0755, true)) {
+            unlink($file_name);
+            throw new Exception('Failed to create staging subdirectory');
+        }
+
+        if (!$zip->extractTo($stagingPath)) {
+            unlink($file_name);
+            $this->recursiveDelete($stagingPath);
+            throw new Exception('Failed to Extract Plugin to staging, because of folder permission.');
+        }
+
+        // Detect the plugin folder name from extracted contents
+        $extractedFolders = array_diff(scandir($stagingPath), ['.', '..']);
+        if (empty($extractedFolders)) {
+            unlink($file_name);
+            $this->recursiveDelete($stagingPath);
+            throw new Exception('No plugin folder found in extracted archive');
+        }
+
+        $pluginFolder = reset($extractedFolders);
+
+        $zip->close();
+        unlink($file_name);
+
+        return [
+            'stagingPath' => $stagingPath,
+            'pluginFolder' => $pluginFolder
+        ];
+    }
+
+    /**
+     * Move staged plugin to final destination
+     * @param string $stagingPath Path to staging directory
+     * @param string $pluginFolder Plugin folder name
+     * @param bool $isSiteWide Whether plugin is site-wide
+     * @throws Exception if move fails
+     */
+    public function moveStagedPluginToFinal($stagingPath, $pluginFolder, $isSiteWide)
+    {
+        $sourcePath = $stagingPath . DIRECTORY_SEPARATOR . $pluginFolder;
+
+        if ($isSiteWide) {
+            $destinationPath = getcwd() . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder;
+        } else {
+            $this->createModulesFolder();
+            $destinationPath = getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath($pluginFolder);
+        }
+
+        if (!is_dir($sourcePath)) {
+            throw new Exception("Source plugin directory not found in staging: {$sourcePath}");
+        }
+
+        // Remove existing destination if it exists
+        if (is_dir($destinationPath)) {
+            $this->recursiveDelete($destinationPath);
+        }
+
+        // Move the plugin directory
+        if (!rename($sourcePath, $destinationPath)) {
+            throw new Exception("Failed to move plugin from staging to final destination");
+        }
+
+        // Clean up the staging directory
+        if (is_dir($stagingPath) && count(array_diff(scandir($stagingPath), ['.', '..'])) === 0) {
+            rmdir($stagingPath);
+        }
+
+        $location = $isSiteWide ? 'plugins/generic/' : 'modules/';
+        error_log("Plugin '{$pluginFolder}' installed to {$location}");
+    }
+
+    /**
+     * Instantiate a plugin from the modules directory without throwing an exception
+     * @param string $pluginFolder Plugin folder name
+     * @return Plugin|false Plugin instance or false if not found
+     */
+    public function instantiatePluginWithoutThrow($pluginFolder)
+    {
+        $indexFile = $this->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . 'index.php');
+        if (!file_exists($indexFile)) {
+            return false;
+        }
+        return @include($indexFile);
+    }
+
+    /**
+     * Instantiate a plugin from the global plugins/generic directory
+     * @param string $pluginFolder Plugin folder name
+     * @return Plugin|false Plugin instance or false if not found
+     */
+    public function instantiatePluginFromGlobalDirectory($pluginFolder)
+    {
+        $indexFile = getcwd() . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder . DIRECTORY_SEPARATOR . 'index.php';
+        if (!file_exists($indexFile)) {
+            return false;
+        }
+        return @include($indexFile);
+    }
+
+    /**
+     * Clean up old staging directories
+     * @param int $hoursOld Delete staging directories older than this many hours
+     */
+    public function cleanupOldStagingDirectories($hoursOld = 24)
+    {
+        $stagingBasePath = $this->getStagingBasePath();
+        if (!is_dir($stagingBasePath)) {
+            return;
+        }
+
+        $cutoffTime = time() - ($hoursOld * 3600);
+        $dirs = array_diff(scandir($stagingBasePath), ['.', '..']);
+
+        foreach ($dirs as $dir) {
+            $dirPath = $stagingBasePath . DIRECTORY_SEPARATOR . $dir;
+            if (is_dir($dirPath) && filemtime($dirPath) < $cutoffTime) {
+                try {
+                    $this->recursiveDelete($dirPath);
+                    error_log("Cleaned up old staging directory: {$dirPath}");
+                } catch (Exception $e) {
+                    error_log("Failed to clean up staging directory: " . $e->getMessage());
+                }
+            }
+        }
     }
 
     public function getJournalVersion()

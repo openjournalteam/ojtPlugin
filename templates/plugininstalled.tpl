@@ -75,6 +75,9 @@
               <th scope="col" class="ojt-py-3 ojt-px-6">
                 Enabled
               </th>
+              <th scope="col" class="ojt-py-3 ojt-px-6">
+                Action
+              </th>
             </tr>
           </thead>
           <tbody x-ref="tablepluginlist">
@@ -86,13 +89,13 @@
                 </th>
                 <td class="ojt-py-4 ojt-px-6 ojt-max-w-[50%]">
                   <div class="ojt-flex ojt-items-center">
-                    <svg @click="plugin.open = !plugin.open"
+                    {* <svg @click="plugin.open = !plugin.open"
                       class="ojt-w-6 ojt-h-6 ojt-shrink-0 ojt-mr-2 ojt-cursor-pointer" :class="{ 'ojt-rotate-180' :
                       plugin.open }" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path fill-rule="evenodd"
                         d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                         clip-rule="evenodd"></path>
-                    </svg>
+                    </svg> *}
                     <div>
                       <template x-if="!plugin.enabled || (plugin.enabled && !plugin?.page)">
                         <span x-text="plugin.name" :class="{ 'ojt-font-bold' : plugin.enabled }"></span>
@@ -104,11 +107,11 @@
                       </template>
                     </div>
                   </div>
-                  <div x-show.transition="plugin.open" class="ojt-mt-4 ojt-flex ojt-items-center ojt-gap-4">
-                    <a :href="plugin.documentation" x-show="plugin.documentation" target="_blank"
-                      class="ojt-text-blue-600 ojt-text-sm ojt-font-bold hover:ojt-underline">Documentation</a>
-                    <a href="#" @click.prevent="$store.plugins.uninstall(plugin)"
-                      class="ojt-text-danger-600 ojt-text-sm ojt-font-bold hover:ojt-underline">Delete</a>
+                  <div class="ojt-mt-2 ojt-flex ojt-items-center ojt-gap-4">
+                    <a :href="plugin.documentation" x-show="plugin.documentation" target="_blank" class="ojt-text-blue-600 ojt-text-sm hover:ojt-underline ojt-flex ojt-flex-row ojt-gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" height="15" width="15" viewBox="0 0 384 512"><path d="M64 48l112 0 0 88c0 39.8 32.2 72 72 72l88 0 0 240c0 8.8-7.2 16-16 16L64 464c-8.8 0-16-7.2-16-16L48 64c0-8.8 7.2-16 16-16zM224 67.9l92.1 92.1-68.1 0c-13.3 0-24-10.7-24-24l0-68.1zM64 0C28.7 0 0 28.7 0 64L0 448c0 35.3 28.7 64 64 64l256 0c35.3 0 64-28.7 64-64l0-261.5c0-17-6.7-33.3-18.7-45.3L242.7 18.7C230.7 6.7 214.5 0 197.5 0L64 0zm56 256c-13.3 0-24 10.7-24 24s10.7 24 24 24l144 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-144 0zm0 96c-13.3 0-24 10.7-24 24s10.7 24 24 24l144 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-144 0z"/></svg>
+                      Documentation
+                    </a>
                     {* <button type="button" @click="$store.plugins.uninstall(plugin)"
                       class="ojt-py-2 ojt-px-3 ojt-text-xs ojt-font-medium ojt-text-center ojt-text-white ojt-bg-danger-700 ojt-rounded-lg hover:ojt-bg-danger-800 focus:ojt-ring-4 focus:ojt-outline-none focus:ojt-ring-danger-300">Delete</button> *}
                   </div>
@@ -121,11 +124,11 @@
                 </td>
                 <td class="ojt-py-4 ojt-px-6">
                   <div class="ojt-flex ojt-place-items-center">
-                    <div class="lg:ojt-mx-auto">
+                    <div class="">
                       <input type="checkbox" x-model="plugin.enabled" x-on:click.prevent class="cbx ojt-hidden"
-                        style="display: none;" disabled />
-                      <label for="cbx" class="toggle" @click="plugin.canEnable && $store.plugins.togglePlugin(plugin);"
-                        :id="'toggleplugin' + plugin.product" :class="{ 'ojt-cursor-not-allowed ojt-opacity-30' : !plugin.canEnable }">
+                        style="display: none;" />
+                      <label for="cbx" class="toggle" @click="$store.plugins.togglePlugin(plugin);"
+                        :id="'toggleplugin' + plugin.product" :class="{ldelim} 'ojt-cursor-not-allowed ojt-opacity-30' : !plugin.isAuthorized {rdelim}">
                         <span>
                           <svg width="10px" height="10px" viewBox="0 0 10 10">
                             <path
@@ -136,6 +139,14 @@
                       </label>
                     </div>
                   </div>
+                </td>
+                <td class="ojt-py-4 ojt-px-6">
+                  <a title="Uninstall Plugin" href="#" @click.prevent="$store.plugins.uninstall(plugin)" 
+                    class="ojt-text-danger-500 hover:ojt-text-danger-800 ojt-text-sm hover:ojt-underline"
+                    :id="'toggleplugin' + plugin.product" :class="{ldelim} 'ojt-cursor-not-allowed ojt-opacity-30' : !plugin.canDelete {rdelim}">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="ojt-icon" viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/></svg>
+                    {* Delete *}
+                  </a>
                 </td>
               </tr>
             </template>

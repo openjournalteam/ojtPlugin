@@ -1,3 +1,37 @@
+### 2.1.3.2 : 12 Jan 2026
+- Add Feature force report to service panel for plugin registered
+
+### 2.1.3.1 : 12 January 2025
+- Add Feature report to service panel for plugin registered
+- Fixed Fatal Handler when error is null
+
+### 2.1.3.0 : 19 December 2025
+- Added new compatibility for plugin with svelte
+
+### 2.1.2.8 : 02 December 2025
+- Fixing issue with installing plugin from gallery on site-wide plugins
+
+### 2.1.2.7 : 27 November 2025
+- Refactor uninstall plugin process to improve stability
+
+### 2.1.2.6 : 26 November 2025
+- Improved validation when uninstalling or trying to uninstall plugin
+
+### 2.1.2.5 : 24 November 2025
+- Added permission when deleting plugin
+
+### 2.1.2.4 : 18 November 2025
+- Fix issue with plugin gallery installation on some server configurations
+
+### 2.1.2.3 : 12 November 2025
+- Change Layout of Plugin Installed Page
+- Added Documentation button if the plugin has documentation URL
+- Fixed issue with HTTP validation
+
+### 2.1.2.2 : 06 November 2025
+- Fixed issue with site plugins not being moved to the global plugins directory
+- Fixed issue with delete plugin for site-wide plugins
+
 ### 2.1.2.1 : 08 October 2025
 - Compatible with Windows OS
 

@@ -314,17 +314,28 @@ class OjtPageHandler extends Handler
 
             $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
             $ojtplugin = $this->ojtPlugin;
-            $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao) {
+            $pluginGenericPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR;
+            $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao, $pluginGenericPath) {
                 $pluginFolder = $plugin['folder'];
                 $pluginVersion = $plugin['version'];
+                
                 $targetPlugin = @include($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "index.php"));
+                $isSiteWide = false;
+                if (!$targetPlugin) {
+                    $targetPlugin = @include($pluginGenericPath . $pluginFolder . DIRECTORY_SEPARATOR . "index.php");
+                    $isSiteWide = true;
+                }
 
                 $plugin['update'] = false;
                 $plugin['license'] = $pluginSettingsDao->getSetting($this->ojtPlugin->getCurrentContextId(), $plugin['class'], 'license') ?? null;
 
                 if ($targetPlugin) {
                     import('lib.pkp.classes.site.VersionCheck');
-                    $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
+                    if ($isSiteWide) {
+                        $version = VersionCheck::parseVersionXML($pluginGenericPath . $pluginFolder . DIRECTORY_SEPARATOR . "version.xml");
+                    } else {
+                        $version = VersionCheck::parseVersionXML($ojtplugin->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . "version.xml"));
+                    }
                     $plugin['update'] = version_compare($version['release'], $pluginVersion, '<');
                 }
 
@@ -336,10 +347,10 @@ class OjtPageHandler extends Handler
 
             return showJson($plugins);
         } catch (\Throwable $th) {
-            return showJson([
-                'error' => 1,
-                'msg' => $th->getMessage()
-            ]);
+            // return showJson([
+            //     'error' => 1,
+            //     'msg' => $th->getMessage()
+            // ]);
         }
     }
 
@@ -372,6 +383,16 @@ class OjtPageHandler extends Handler
 
         // Call the hook to allow other plugins to register to ojt control panel modules
         HookRegistry::call('OjtPageHandler::installed::plugins', array($this, &$plugins));
+
+        // Ensure canDelete and isAuthorized are set
+        foreach($plugins as &$plugin) {
+            if(!isset($plugin['canDelete'])) {
+                $plugin['canDelete'] = true;
+            }
+            if(!isset($plugin['isAuthorized'])) {
+                $plugin['isAuthorized'] = true;
+            }
+        }
 
         return $plugins;
     }
@@ -425,21 +446,111 @@ class OjtPageHandler extends Handler
         return showJson($json);
     }
 
+    /**
+     * Detect if a plugin is site-wide by parsing its main file from staging directory
+     * 
+     * This method parses the PHP file content instead of including it to avoid
+     * namespace/path mismatch issues when the plugin is still in staging.
+     * 
+     * @param string $stagingPath Full path to staging directory
+     * @param string $pluginFolder Name of the plugin folder within staging
+     * @return bool True if plugin has isSitePlugin() method returning true
+     */
+    protected function detectSiteWidePluginFromStaging($stagingPath, $pluginFolder)
+    {
+        try {
+            // Get the plugin path within staging
+            $pluginPath = $stagingPath . DIRECTORY_SEPARATOR . $pluginFolder;
+            
+            if (!is_dir($pluginPath)) {
+                return false;
+            }
+            
+            $files = scandir($pluginPath);
+            $mainPluginFile = null;
+            
+            foreach ($files as $file) {
+                // Match files ending with "Plugin.inc.php"
+                if (preg_match('/Plugin\.inc\.php$/i', $file)) {
+                    $mainPluginFile = $pluginPath . DIRECTORY_SEPARATOR . $file;
+                    break;
+                }
+            }
+            
+            if (!$mainPluginFile || !file_exists($mainPluginFile)) {
+                return false;
+            }
+            
+            // Read and parse the file content
+            $content = file_get_contents($mainPluginFile);
+            
+            // Check if the file contains isSitePlugin method
+            if (!preg_match('/(?:public\s+)?function\s+isSitePlugin\s*\([^\)]*\)/s', $content)) {
+                return false;
+            }
+            
+            // Extract the isSitePlugin method body to check its return value
+            if (preg_match('/(?:public\s+)?function\s+isSitePlugin\s*\([^\)]*\)\s*(?::\s*bool\s*)?\s*\{([^}]*)\}/s', $content, $matches)) {
+                $methodBody = $matches[1];
+                
+                // Remove comments to avoid false positives
+                $methodBody = preg_replace('/\/\/.*$/m', '', $methodBody);
+                $methodBody = preg_replace('/\/\*.*?\*\//s', '', $methodBody);
+                
+                // Look for "return true" pattern (case-insensitive, flexible whitespace)
+                if (preg_match('/return\s+true\s*;/i', $methodBody)) {
+                    return true;
+                }
+            }
+            
+            return false;
+            
+        } catch (Exception $e) {
+            error_log("Error detecting site-wide plugin from staging '{$pluginFolder}': " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Install a plugin from the marketplace
+     * 
+     * Workflow with staging validation:
+     * 1. Download and extract dependencies to staging directory
+     * 2. Detect if each dependency is site-wide by parsing PHP file (avoids namespace issues)
+     * 3. Move dependencies to correct location (plugins/generic/ or modules/)
+     * 4. Download and extract main plugin to staging
+     * 5. Detect if main plugin is site-wide and move to correct location
+     * 6. Instantiate plugin from correct location
+     * 7. Apply license and trigger hooks
+     * 8. Clean up old staging directories
+     * 
+     * @param array $args Handler arguments
+     * @param object $request PKP Request object
+     * @return string JSON response
+     */
     public function installPlugin($args, $request)
     {
+        $stagingInfo = null;
+        
         try {
             $ojtPlugin = $this->ojtPlugin;
             $fileManager = new FileManager();
             $pluginToInstall = json_decode($request->getUserVar('plugin'));
-            $indexFile = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $pluginToInstall->folder . DIRECTORY_SEPARATOR . "index.php");
             $license = $request->getUserVar('license') ?? false;
             $update = $request->getUserVar('update');
-            if ($update && $fileManager->fileExists($indexFile)) {
-                $pluginInstance = include($indexFile);
-
-
-                // licenseMain is old version validation
-                // the updated one is license
+            $pluginFolder = $pluginToInstall->folder;
+            
+            // Clean up old staging directories (older than 24 hours)
+            // $ojtPlugin->cleanupOldStagingDirectories(24);
+            
+            // Check if plugin already exists (for update scenarios)
+            $pluginInstance = $ojtPlugin->instantiatePluginWithoutThrow($pluginFolder);
+            if (!$pluginInstance) {
+                $pluginInstance = $ojtPlugin->instantiatePluginFromGlobalDirectory($pluginFolder);
+            }
+            
+            if ($update && $pluginInstance) {
+                // Try newer 'license' setting first, then fall back to 'licenseMain' for backward compatibility
                 $license = $pluginInstance->getSetting($this->contextId, 'license');
 
                 if (!$license) {
@@ -450,26 +561,71 @@ class OjtPageHandler extends Handler
             $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license, $this->baseUrl);
             if (!$downloadLink) throw new Exception("There's a problem on the server, please try again later.");
 
-            // trying to install dependencies
+            // Install dependencies using staging workflow
             foreach ($downloadLink['dependencies'] as $dependency) {
-                $indexDependency = $ojtPlugin->getModulesPath(DIRECTORY_SEPARATOR . $dependency['folder'] . DIRECTORY_SEPARATOR . "index.php");
-
-                if (!$fileManager->fileExists($indexDependency)) {
-                    $ojtPlugin->installPlugin($dependency['link']);
+                $dependencyFolder = $dependency['folder'];
+                
+                // Check if dependency exists in modules directory
+                $indexDependency = $ojtPlugin->getModulesPath($dependencyFolder . DIRECTORY_SEPARATOR . "index.php");
+                
+                // Check if dependency exists in global plugins directory (for site-wide plugins)
+                $globalIndexDependency = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $dependencyFolder . DIRECTORY_SEPARATOR . 'index.php';
+                $absoluteGlobalIndexDependency = getcwd() . DIRECTORY_SEPARATOR . $globalIndexDependency;
+                
+                $dependencyExistsInModules = $fileManager->fileExists($indexDependency);
+                $dependencyExistsGlobally = file_exists($absoluteGlobalIndexDependency);
+                
+                if ($dependencyExistsInModules || $dependencyExistsGlobally) {
+                    $location = $dependencyExistsGlobally ? 'plugins/generic/' : 'modules/';
+                    error_log("Dependency '{$dependencyFolder}' already exists in {$location}. Skipping reinstallation.");
+                    continue;
                 }
 
-                if (!$fileManager->fileExists($indexDependency)) throw new Exception("Index file dependency not found.");
+                // Install dependency to staging
+                $depStagingInfo = $ojtPlugin->installPluginToStaging($dependency['link']);
+                
+                // Detect if dependency is site-wide by parsing PHP file (not including)
+                $isSiteWideDependency = $this->detectSiteWidePluginFromStaging(
+                    $depStagingInfo['stagingPath'], 
+                    $depStagingInfo['pluginFolder']
+                );
+                
+                // Move dependency to correct final location
+                $ojtPlugin->moveStagedPluginToFinal(
+                    $depStagingInfo['stagingPath'],
+                    $depStagingInfo['pluginFolder'],
+                    $isSiteWideDependency
+                );
+                
+                error_log("Dependency '{$dependencyFolder}' installed as " . ($isSiteWideDependency ? 'site-wide' : 'regular') . " plugin");
             }
 
-            // trying to install plugin
-            $ojtPlugin->installPlugin($downloadLink['product']);
+            // Install main plugin to staging
+            $stagingInfo = $ojtPlugin->installPluginToStaging($downloadLink['product']);
+            
+            // Detect if main plugin is site-wide by parsing PHP file (not including)
+            $isSiteWidePlugin = $this->detectSiteWidePluginFromStaging(
+                $stagingInfo['stagingPath'],
+                $stagingInfo['pluginFolder']
+            );
+            
+            // Move main plugin to correct final location
+            $ojtPlugin->moveStagedPluginToFinal(
+                $stagingInfo['stagingPath'],
+                $stagingInfo['pluginFolder'],
+                $isSiteWidePlugin
+            );
+            
+            // Re-instantiate plugin from the correct final location (namespace now matches path)
+            if ($isSiteWidePlugin) {
+                $pluginInstance = $ojtPlugin->instantiatePluginFromGlobalDirectory($pluginFolder);
+            } else {
+                // For non-site-wide plugins, run simulateRegisterModules for error handling
+                $this->simulateRegisterModules($pluginToInstall);
+                $pluginInstance = $ojtPlugin->instantiatePluginWithoutThrow($pluginFolder);
+            }
 
-            $this->simulateRegisterModules($pluginToInstall);
-
-            if (!$fileManager->fileExists($indexFile)) throw new Exception("Index file not found.");
-
-            $pluginInstance         = $pluginInstance ?? include($indexFile);
-            // Applying input license to plugin setting
+            // Apply license setting (backward compatible with licenseMain)
             if ($pluginInstance instanceof Plugin && $license && !$update) {
                 $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
 
@@ -477,12 +633,30 @@ class OjtPageHandler extends Handler
                     $pluginInstance->updateStatusValidation($downloadLink['status_validation']);
                 }
             }
-
+            
+            // Clean up staging base path if empty
+            $stagingBasePath = $ojtPlugin->getStagingBasePath();
+            if (is_dir($stagingBasePath) && count(array_diff(scandir($stagingBasePath), ['.', '..'])) === 0) {
+                rmdir($stagingBasePath);
+            }
 
             $json['error']  = 0;
-            $json['msg']    =  !$update ? 'Plugin Installed' : 'Plugin Updated';
+            $json['msg']    = !$update ? 'Plugin Installed' : 'Plugin Updated';
             return showJson($json);
         } catch (Exception $e) {
+            // Clean up staging directory on failure
+            if (isset($stagingInfo) && isset($stagingInfo['stagingPath']) && is_dir($stagingInfo['stagingPath'])) {
+                $ojtPlugin->recursiveDelete($stagingInfo['stagingPath']);
+            }
+            
+            // Clean up staging base path if empty
+            if (isset($ojtPlugin)) {
+                $stagingBasePath = $ojtPlugin->getStagingBasePath();
+                if (is_dir($stagingBasePath) && count(array_diff(scandir($stagingBasePath), ['.', '..'])) === 0) {
+                    rmdir($stagingBasePath);
+                }
+            }
+            
             $json['error']  = 1;
             $json['msg']    = $e->getMessage();
             return showJson($json);
@@ -559,6 +733,20 @@ class OjtPageHandler extends Handler
         $plugin = $this->ojtPlugin;
 
         $removePlugin = json_decode($request->getUserVar('plugin'));
+
+        if (!$removePlugin->isAuthorized) {
+            $json['error'] = 1;
+            $json['msg'] = 'User does not have permission to uninstall this plugin';
+            showJson($json);
+            return;
+        }
+
+        if (!$removePlugin->canDelete) {
+            $json['error'] = 1;
+            $json['msg'] = 'This plugin cannot be uninstalled';
+            showJson($json);
+            return;
+        }
 
         if ($request->getUserVar('resetSetting')) {
             $this->resetSetting($removePlugin->class, false);
