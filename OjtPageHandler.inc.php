@@ -628,10 +628,7 @@ class OjtPageHandler extends Handler
             // Apply license setting (backward compatible with licenseMain)
             if ($pluginInstance instanceof Plugin && $license && !$update) {
                 $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
-
-                if (method_exists($pluginInstance, 'updateStatusValidation')) {
-                    $pluginInstance->updateStatusValidation($downloadLink['status_validation']);
-                }
+                $pluginInstance->updateSetting($this->contextId, 'status_validated', $downloadLink['status_validation']);
             }
             
             // Clean up staging base path if empty

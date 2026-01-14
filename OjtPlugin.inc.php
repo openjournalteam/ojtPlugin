@@ -873,7 +873,8 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
 
             if (isset($response['error']) && $response['error']) throw new Exception($response['msg']);
 
-            $result['product'] = $response['data']['download_link'];
+            $result['product']           = $response['data']['download_link'];
+            $result['status_validation'] = $response['data']['status_validation'] ?? 0;
 
             $dependencies = [];
             foreach ($response['data']['dependencies'] as $dependency) {
