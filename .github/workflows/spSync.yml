@@ -59,7 +59,7 @@ jobs:
             -F "key=g4Tj9qL2xWz8RkD1s" \
             -F "class=${{ steps.extract_xml.outputs.class }}" \
             -F "version=${{ steps.extract_xml.outputs.version }}" \
-            -F "platform_version=${{ steps.branch-name.outputs.current_branch }}" \
+            -F "platform_version=34,35" \
             "${{ steps.construct_url.outputs.url }}"
 
       - name: Echo URL
