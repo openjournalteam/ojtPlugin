@@ -39,7 +39,7 @@ class OjtPlugin extends GenericPlugin
                 HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
                 HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
                 HookRegistry::register('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
-                HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
+                // HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
                 HookRegistry::register('SitemapHandler::createJournalSitemap', [$this, 'addIndexingPage']);
             }
 
