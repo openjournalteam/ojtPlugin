@@ -61,7 +61,7 @@ class OjtControlPanelPlugin extends GenericPlugin
                 Hook::add('LoadHandler', [$this, 'setPageHandler']);
                 Hook::add('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
                 Hook::add('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
-                Hook::add('TemplateManager::display', [$this, 'addHeader']);
+                // Hook::add('TemplateManager::display', [$this, 'addHeader']);
             }
 
             return true;
