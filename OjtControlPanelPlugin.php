@@ -196,7 +196,7 @@ class OjtControlPanelPlugin extends GenericPlugin
         if (!is_array($error)) return;
 
         // Fatal error, E_ERROR === 1
-        if (!in_array(array_key_exists('type', $error) && $error['type'], [E_COMPILE_ERROR, E_ERROR])) return;
+        if (!isset($error['type']) || !in_array($error['type'], [E_ERROR, E_COMPILE_ERROR], true)) return;
 
         // Sometime there's no file in error so we need to check it first
         if (!array_key_exists('file', $error)) return;
@@ -204,6 +204,8 @@ class OjtControlPanelPlugin extends GenericPlugin
         if (!str_contains($error['file'], 'ojtControlPanel')) {
             return;
         }
+
+        error_log('OJTErrorPlugin : ' . $error['message'] . ', File : ' . $error['file'] . ' - ' . $error['line']);
 
         /**
          * Get folder name from error file

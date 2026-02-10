@@ -1,3 +1,6 @@
+### 3.1.1.6 : 10 Feb 2026
+- Add Feature force report to service panel for plugin registered
+
 ### 3.1.1.4 : 12 Jan 2026
 - Add Feature force report to service panel for plugin registered
 
