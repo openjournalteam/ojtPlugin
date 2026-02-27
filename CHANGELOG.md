@@ -1,3 +1,6 @@
+### 3.1.1.7 : 27 Feb 2026
+- Fix error when plugin not found in global directory but exist in site plugin directory, now it will return null instead of throw exception
+
 ### 3.1.1.6 : 10 Feb 2026
 - Add Feature force report to service panel for plugin registered
 

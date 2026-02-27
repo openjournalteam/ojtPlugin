@@ -1008,7 +1008,8 @@ class OjtControlPanelPlugin extends GenericPlugin
             $versionFile = $globalPluginPath . DIRECTORY_SEPARATOR . "version.xml";
             
             if (!$fileManager->fileExists($versionFile)) {
-                throw new Exception("Plugin version file not found in global directory: {$versionFile}");
+                // throw new Exception("Plugin version file not found in global directory: {$versionFile}");
+                return null;
             }
 
             $version = VersionCheck::getValidPluginVersionInfo($versionFile);
