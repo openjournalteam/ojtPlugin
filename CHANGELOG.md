@@ -1,3 +1,7 @@
+### 3.1.1.8 : 9 Mar 2026
+- Added a new helper function to simplify internal utility operations.
+- Fixed an issue where registered subscription URLs were incorrectly generated due to locale handling.
+
 ### 3.1.1.7 : 27 Feb 2026
 - Fix error when plugin not found in global directory but exist in site plugin directory, now it will return null instead of throw exception
 

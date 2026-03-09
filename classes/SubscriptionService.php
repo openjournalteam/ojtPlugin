@@ -260,7 +260,10 @@ class SubscriptionService
   {
     switch ($this->mode) {
       case static::SINGLE_JOURNAL:
-        return $this->getRequest()->getDispatcher()->url($this->getRequest(), Application::ROUTE_PAGE, $this->getRequest()->getContext()->getPath());
+        $hasMultipleLocales = $this->getRequest()->getContext()->getSupportedSubmissionLocaleNames();
+        $baseUrl = $this->getRequest()->getDispatcher()->url($this->getRequest(), Application::ROUTE_PAGE, $this->getRequest()->getContext()->getPath());
+        $baseUrl = strip_base_url_has_locale($baseUrl, $hasMultipleLocales);
+        return $baseUrl;
         break;
       case static::INSTITUTIONAL:
         return $this->getRequest()->getBaseUrl();

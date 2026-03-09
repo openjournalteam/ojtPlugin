@@ -92,3 +92,17 @@ if (!function_exists('str_contains')) {
         return $needle !== '' && mb_strpos($haystack, $needle) !== false;
     }
 }
+
+if (!function_exists('strip_base_url_has_locale')) {
+    function strip_base_url_has_locale(string $baseUrl, array $locales)
+    {
+        foreach (array_keys($locales) as $locale) {
+            $suffix = '/' . $locale;
+            if (str_ends_with($baseUrl, $suffix)) {
+                return substr($baseUrl, 0, -strlen($suffix));
+            }
+        }
+    
+        return $baseUrl;
+    }
+}
