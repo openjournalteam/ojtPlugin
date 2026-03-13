@@ -312,7 +312,7 @@ class OjtPageHandler extends Handler
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url, $params);
 
-            $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
+            $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO'); /** @var \PluginSettingsDAO $pluginSettingsDao */
             $ojtplugin = $this->ojtPlugin;
             $pluginGenericPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR;
             $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao, $pluginGenericPath) {
@@ -419,7 +419,7 @@ class OjtPageHandler extends Handler
         $pluginClassName = $request->getUserVar('className');
         $isEnabled       = ($request->getUserVar('enabled') == 'true') ? true : false;
 
-        $targetPlugin = PluginRegistry::getPlugin($pluginType, $pluginClassName);
+        $targetPlugin = PluginRegistry::getPlugin($pluginType, $pluginClassName); /** @var \LazyLoadPlugin $targetPlugin */
 
         if (!$targetPlugin && !is_object($targetPlugin)) {
             $json['error'] = 1;
