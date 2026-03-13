@@ -77,6 +77,17 @@ if (!function_exists('cleanHtml')) {
     }
 }
 
+if (!function_exists('ojt_str_contains')) {
+    function ojt_str_contains($haystack, $needle)
+    {
+        if (!$haystack) {
+            return false;
+        }
+
+        return $needle !== '' && mb_strpos($haystack, $needle) !== false;
+    }
+}
+
 if (!function_exists('vd')) {
     function vd($value)
     {
