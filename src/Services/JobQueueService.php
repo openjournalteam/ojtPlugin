@@ -14,7 +14,8 @@ use Throwable;
 class JobQueueService
 {
     const CONNECTION = 'ojtPluginPersistent';
-    const TABLE = 'ojt_plugin_jobs';
+    const JOBS_TABLE = 'ojt_jobs';
+    const FAILED_JOBS_TABLE = 'ojt_failed_jobs';
 
     /** @var bool */
     protected static $queueConnectionBooted = false;
@@ -54,7 +55,7 @@ class JobQueueService
             'enqueuedAt' => time(),
         ];
 
-        $job = 'OjtWorkerBeeJobHandler@fire';
+        $job = 'Openjournalteam\\OjtPlugin\\Jobs\\Handlers\\JobHandler@fire';
         try {
             if ($delaySeconds > 0) {
                 $jobId = Queue::later($delaySeconds, $job, $data, $queueName, self::CONNECTION);
@@ -132,8 +133,8 @@ class JobQueueService
      */
     public function stats($queueName = 'default')
     {
-        MigrationManager::make($this)->runMigrations();
-        $query = Capsule::table(self::TABLE)->where('queue', '=', (string) $queueName);
+        MigrationManager::make($this->plugin)->runMigrations();
+        $query = Capsule::table(self::JOBS_TABLE)->where('queue', '=', (string) $queueName);
 
         return [
             'pending' => (int) (clone $query)->whereNull('reserved_at')->count(),
@@ -162,14 +163,14 @@ class JobQueueService
             return;
         }
 
-        MigrationManager::make($this)->runMigrations();
+        MigrationManager::make($this->plugin)->runMigrations();
 
         // Register runtime queue connection via container config.
         $laravelContainer = Registry::get('laravelContainer');
         if (isset($laravelContainer['config'])) {
             $laravelContainer['config']['queue.connections.' . self::CONNECTION] = [
                 'driver' => 'database',
-                'table' => self::TABLE,
+                'table' => self::JOBS_TABLE,
                 'connection' => 'default',
                 'queue' => 'default',
             ];
@@ -177,7 +178,7 @@ class JobQueueService
             $laravelContainer['config'] = [
                 'queue.connections.' . self::CONNECTION => [
                     'driver' => 'database',
-                    'table' => self::TABLE,
+                    'table' => self::JOBS_TABLE,
                     'connection' => 'default',
                     'queue' => 'default',
                 ],
@@ -253,7 +254,7 @@ class JobQueueService
         }
 
         try {
-            Capsule::table(self::TABLE)
+            Capsule::table(self::JOBS_TABLE)
                 ->where('id', '=', (int) $jobId)
                 ->update(['context_id' => (int) $contextId]);
         } catch (Throwable $e) {
