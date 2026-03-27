@@ -2,8 +2,6 @@
 
 namespace Openjournalteam\OjtPlugin\Jobs;
 
-use OpenJournalteam\OjtPlugin\Jobs\JobInterface;
-
 abstract class BaseJob implements JobInterface
 {
     /** @var \LazyLoadPlugin */
@@ -43,6 +41,10 @@ abstract class BaseJob implements JobInterface
             return null;
         }
 
+        if ($this->isRequireRuntimeBaseUrl()) {
+            $payload = $this->ensureRuntimeBaseUrl($payload);
+        }
+
         if (!isset($options['queue'])) {
             $options['queue'] = $this->getQueue();
         }
@@ -61,15 +63,41 @@ abstract class BaseJob implements JobInterface
             return self::$ojtPlugin ?: null;
         }
 
-        import('plugins.generic.ojtPlugin.modules.ojtWorkerBee.OjtWorkerBeePlugin');
         $plugin = \OjtPlugin::get();
-        if (!$plugin || !$plugin->isEnabledForRuntime()) {
-            error_log('OjtBlazingCachePro: OjtWorkerBee plugin is not installed or enabled.');
+        if (!$plugin || !$plugin->jobQueueService()->isEnabledForRuntime()) {
+            error_log('OjtPlugin: job queue service is not enabled for runtime.');
             self::$ojtPlugin = false;
             return null;
         }
 
         self::$ojtPlugin = $plugin;
         return $plugin;
+    }
+
+    /**
+     * Attach runtime base URL when dispatched from web request.
+     *
+     * @param array $payload
+     * @return array
+     */
+    protected function ensureRuntimeBaseUrl(array $payload)
+    {
+        if (!empty($payload['baseUrl']) || !empty($payload['runtimeBaseUrl'])) {
+            return $payload;
+        }
+
+        try {
+            $request = \Application::get()->getRequest();
+            if ($request && method_exists($request, 'getBaseUrl')) {
+                $baseUrl = trim((string) $request->getBaseUrl());
+                if ($baseUrl !== '') {
+                    $payload['runtimeBaseUrl'] = $baseUrl;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Ignore and allow JobUrlResolver to fall back to config/env.
+        }
+
+        return $payload;
     }
 }

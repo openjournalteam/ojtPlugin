@@ -6,13 +6,13 @@ import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 use Openjournalteam\OjtPlugin\Classes\ApiServicePanel;
 use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\DiscordNotifier;
+use Openjournalteam\OjtPlugin\Migrations\MigrationManager;
 use Openjournalteam\OjtPlugin\Services\JobQueueService;
 use Openjournalteam\OjtPlugin\Services\HookService;
 use Openjournalteam\OjtPlugin\Services\InstallerService;
 use Openjournalteam\OjtPlugin\Services\LoggingService;
 use Openjournalteam\OjtPlugin\Services\ModulesService;
 use Openjournalteam\OjtPlugin\Traits\HasIndexing;
-use VersionDAO;
 
 class OjtPlugin extends \GenericPlugin
 {
@@ -34,13 +34,13 @@ class OjtPlugin extends \GenericPlugin
             if ($this->getEnabled()) {
                 // register_shutdown_function([$this, 'fatalHandler']);
                 $this->init();
+                MigrationManager::make($this)->runMigrations();
                 $this->jobQueueService();
                 $this->loggingService()->setLogger();
                 $this->modulesService()->createModulesFolder();
                 $this->modulesService()->registerModules();
                 $this->hookService()->registerHooks();
             }
-
 
             return true;
         }
@@ -367,10 +367,6 @@ class OjtPlugin extends \GenericPlugin
         return $this->hookService()->settingsWebsite($hookName, $args);
     }
 
-    public function addIndexingPage($hookName, $args)
-    {
-        return $this->hookService()->addIndexingPage($hookName, $args);
-    }
 
     public function getModulesPath($path = '')
     {

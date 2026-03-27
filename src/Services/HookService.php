@@ -20,7 +20,7 @@ class HookService
         \HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
         \HookRegistry::register('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
         // \HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
-        \HookRegistry::register('SitemapHandler::createJournalSitemap', [$this, 'addIndexingPage']);
+        \HookRegistry::register('SitemapHandler::createJournalSitemap', [$this->plugin, 'addIndexingPage']);
     }
 
     public function fixThemeNotLoadedOnFrontend($hookName, $args)
@@ -170,8 +170,5 @@ class HookService
         return false;
     }
 
-    public function addIndexingPage($hookName, $args)
-    {
-        return $this->plugin->addIndexingPage($hookName, $args);
-    }
+    // addIndexingPage handled directly by OjtPlugin (trait).
 }
