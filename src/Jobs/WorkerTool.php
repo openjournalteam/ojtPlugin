@@ -87,7 +87,7 @@ class WorkerTool extends \CommandLineTool
 
         $events = $laravelContainer['events'];
 
-        \HookRegistry::register('OjtWorkerBee::jobFailed', [$this, 'onWorkerBeeJobFailed']);
+        \HookRegistry::register('OjtPlugin::jobFailed', [$this, 'onWorkerBeeJobFailed']);
 
         $events->listen('Illuminate\Queue\Events\JobProcessing', function ($event) {
             $jobId = $this->getEventJobId($event);
@@ -164,7 +164,7 @@ class WorkerTool extends \CommandLineTool
     }
 
     /**
-     * Persist failed job details to ojt_worker_bee_failed_jobs (Laravel-like).
+     * Persist failed job details to failed jobs table (Laravel-like).
      *
      * @param mixed $event
      * @return void
@@ -219,7 +219,7 @@ class WorkerTool extends \CommandLineTool
             $contextId = (int) $payloadData['contextId'];
         }
 
-        Capsule::table('ojt_worker_bee_failed_jobs')->insert([
+        Capsule::table($this->getFailedJobsTableName())->insert([
             'connection' => $connection,
             'queue' => $queue,
             'payload' => (string) $payloadRaw,
@@ -237,11 +237,12 @@ class WorkerTool extends \CommandLineTool
     protected function ensureFailedJobsTable()
     {
         $schema = Capsule::schema();
-        if ($schema->hasTable('ojt_worker_bee_failed_jobs')) {
+        $table = $this->getFailedJobsTableName();
+        if ($schema->hasTable($table)) {
             return;
         }
 
-        $schema->create('ojt_worker_bee_failed_jobs', function (Blueprint $table) {
+        $schema->create($table, function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->text('connection');
             $table->text('queue');
@@ -251,6 +252,16 @@ class WorkerTool extends \CommandLineTool
             $table->timestamp('failed_at')->useCurrent();
             $table->index(['context_id']);
         });
+    }
+
+    /**
+     * Get failed jobs table name.
+     *
+     * @return string
+     */
+    protected function getFailedJobsTableName()
+    {
+        return \Openjournalteam\OjtPlugin\Services\JobQueueService::FAILED_JOBS_TABLE;
     }
 
     /**
