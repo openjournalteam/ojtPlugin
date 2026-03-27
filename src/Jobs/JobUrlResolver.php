@@ -1,8 +1,10 @@
 <?php
 
+namespace Openjournalteam\OjtPlugin\Jobs;
+
 use Illuminate\Database\Capsule\Manager as Capsule;
 
-class OjtBlazingCacheProJobUrlResolver
+class JobUrlResolver
 {
     /** @var array<int,string> */
     protected static $contextPathCache = [];
@@ -67,6 +69,11 @@ class OjtBlazingCacheProJobUrlResolver
             $candidates[] = trim((string) $explicitBaseUrl);
         }
 
+        $serverBase = $this->getServerBaseUrlCandidate();
+        if ($serverBase !== '') {
+            $candidates[] = $serverBase;
+        }
+
         $envBase = getenv('OJT_BLAZING_CACHE_BASE_URL');
         if ($envBase !== false && trim((string) $envBase) !== '') {
             $candidates[] = trim((string) $envBase);
@@ -109,6 +116,50 @@ class OjtBlazingCacheProJobUrlResolver
         }
 
         return $this->inferLocalBaseUrlFromProject();
+    }
+
+    /**
+     * Build base URL from server globals (web runtime).
+     *
+     * @return string
+     */
+    protected function getServerBaseUrlCandidate()
+    {
+        if (PHP_SAPI === 'cli') {
+            return '';
+        }
+
+        $host = '';
+        if (!empty($_SERVER['HTTP_HOST'])) {
+            $host = (string) $_SERVER['HTTP_HOST'];
+        } elseif (!empty($_SERVER['SERVER_NAME'])) {
+            $host = (string) $_SERVER['SERVER_NAME'];
+        }
+
+        if ($host === '') {
+            return '';
+        }
+
+        $scheme = 'http';
+        if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+            $scheme = strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']);
+        } elseif (!empty($_SERVER['REQUEST_SCHEME'])) {
+            $scheme = strtolower((string) $_SERVER['REQUEST_SCHEME']);
+        } elseif (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+            $scheme = 'https';
+        }
+
+        $basePath = '';
+        if (!empty($_SERVER['SCRIPT_NAME'])) {
+            $basePath = rtrim(dirname((string) $_SERVER['SCRIPT_NAME']), '/');
+        }
+
+        $url = $scheme . '://' . $host;
+        if ($basePath !== '' && $basePath !== '.') {
+            $url .= $basePath;
+        }
+
+        return $url;
     }
 
     /**
