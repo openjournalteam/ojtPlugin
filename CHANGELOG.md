@@ -1,3 +1,8 @@
+### 2.2.0.0 : 30 March 2026
+- Added jobs ecosystem for OJT plugins (register, dispatch, and process background jobs)
+- Optimized `OjtPlugin` by separating core logic into dedicated services
+- Improved worker and queue handling stability
+
 ### 2.1.3.2 : 12 Jan 2026
 - Add Feature force report to service panel for plugin registered
 
