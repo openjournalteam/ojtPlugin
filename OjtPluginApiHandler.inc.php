@@ -156,10 +156,19 @@ class OjtPluginApiHandler extends Handler
             return new JSONMessage(false, 'Latest version is lower than current version. Current: ' . $version['release'] . ', Latest: ' . $latestVersion);
         }
 
-        // Check if latest version is equal to current version
+        // Check if latest version is equal to current version.
+        // Return 200 with the installed versions so the Service Panel can
+        // record what the journal currently has, even when no update is needed.
         if (version_compare($latestVersion, $version['release'], '=')) {
-            http_response_code(409); // Conflict
-            return new JSONMessage(false, 'Plugin is already up to date. Current version: ' . $version['release']);
+            header('Content-Type: application/json');
+            http_response_code(200);
+            return json_encode([
+                'ojs_version'     => $this->ojtPlugin->getJournalVersion(),
+                'product_version' => $version['release'],
+                'updated_on'      => $version['date'] ?? null,
+                'update_success'  => false,
+                'message'         => 'Plugin is already up to date. Current version: ' . $version['release'],
+            ]);
         }
 
         $dataPlugin = [
@@ -180,6 +189,7 @@ class OjtPluginApiHandler extends Handler
             $response = [
                 'ojs_version' => $ojsVersion,
                 'product_version' => $latestVersion,
+                'updated_on' => date('Y-m-d H:i:s'),
                 'update_success' => true,
                 'message' => 'Plugin updated successfully'
             ];
