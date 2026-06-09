@@ -70,13 +70,13 @@ class OjtPluginApiHandler extends Handler
 
     public function checkUpdatePlugin($args, $request)
     {
-        if (!$request->isPost()) {
+        if(!$request->isPost()) {
             http_response_code(405); // Method Not Allowed
             return new JSONMessage(false, 'This endpoint only accepts POST requests.');
         }
 
         $getBearerToken = $this->getAuthorizationHeader();
-
+        
         if (empty($getBearerToken)) {
             http_response_code(401); // Unauthorized
             return new JSONMessage(false, 'Authorization header is missing or empty.');
@@ -91,7 +91,7 @@ class OjtPluginApiHandler extends Handler
 
         $pluginClass = $args['pluginClass'] ?? null;
         $getAllPlugins = PluginRegistry::getAllPlugins();
-        if (!isset($getAllPlugins[$pluginClass])) {
+        if(!isset($getAllPlugins[$pluginClass])) {
             http_response_code(404); // Not Found
             return new JSONMessage(false, 'Plugin class not found: ' . $pluginClass);
         }
@@ -99,7 +99,7 @@ class OjtPluginApiHandler extends Handler
 
         // check token
         $getServicePanelData = $plugin->getSetting(CONTEXT_SITE, 'service_panel_data');
-        if ($getServicePanelData['token'] == null) {
+        if($getServicePanelData['token'] == null) {
             http_response_code(403); // Forbidden
             return new JSONMessage(false, 'Service panel token is not set for this plugin.');
         }
@@ -134,27 +134,26 @@ class OjtPluginApiHandler extends Handler
         $linkDownload = $data['link_download'];
         $ojsVersion = $data['ojs_version'];
 
+        // validate OJS version
         if ($ojsVersion != $this->ojtPlugin->getJournalVersion()) {
             http_response_code(400); // Bad Request
             return new JSONMessage(false, 'OJS version mismatch. Expected: ' . $this->ojtPlugin->getJournalVersion() . ', Received: ' . $ojsVersion);
+        }
+
+        // validate link download if https
+        if (stripos($linkDownload, 'https://') !== 0) {
+            http_response_code(400); // Bad Request
+            return new JSONMessage(false, 'Download link must start with "https://".');
         }
 
         // validate plugin version
         import('lib.pkp.classes.site.VersionCheck');
         $version = VersionCheck::parseVersionXML($plugin->getPluginPath() . '/version.xml');
 
-        // Check if latest version is lower than current version.
-        // Still report the installed versions so the Service Panel can record
-        // what the journal currently has.
+        // Check if latest version is lower than current version
         if (version_compare($latestVersion, $version['release'], '<')) {
-            header('Content-Type: application/json');
             http_response_code(409); // Conflict
-            return json_encode([
-                'ojs_version'     => $this->ojtPlugin->getJournalVersion(),
-                'product_version' => $version['release'],
-                'update_success'  => false,
-                'message'         => 'Latest version is lower than current version. Current: ' . $version['release'] . ', Latest: ' . $latestVersion,
-            ]);
+            return new JSONMessage(false, 'Latest version is lower than current version. Current: ' . $version['release'] . ', Latest: ' . $latestVersion);
         }
 
         // Check if latest version is equal to current version.
@@ -166,6 +165,7 @@ class OjtPluginApiHandler extends Handler
             return json_encode([
                 'ojs_version'     => $this->ojtPlugin->getJournalVersion(),
                 'product_version' => $version['release'],
+                'updated_on'      => $version['date'] ?? null,
                 'update_success'  => false,
                 'message'         => 'Plugin is already up to date. Current version: ' . $version['release'],
             ]);
@@ -180,7 +180,7 @@ class OjtPluginApiHandler extends Handler
 
         try {
             $updateResult = $this->downloadAndExtractPlugin($linkDownload, $dataPlugin);
-
+            
             if (!$updateResult['success']) {
                 http_response_code(500);
                 return new JSONMessage(false, $updateResult['message']);
@@ -197,6 +197,7 @@ class OjtPluginApiHandler extends Handler
             header('Content-Type: application/json');
             http_response_code(200);
             return json_encode($response);
+
         } catch (Exception $e) {
             error_log('Plugin update failed: ' . $e->getMessage());
             http_response_code(500);
@@ -209,7 +210,7 @@ class OjtPluginApiHandler extends Handler
         if (is_array($handler) && count($handler) === 2) {
             $controller = $handler[0];
             $method = $handler[1];
-
+            
             // if not using controller, the method is available in this class
             if ($controller === $this) {
                 if (method_exists($this, $method)) {
@@ -218,7 +219,7 @@ class OjtPluginApiHandler extends Handler
                     return new JSONMessage(false, "Method '$method' not found in handler");
                 }
             }
-
+            
             // if using controller
             if (is_string($controller) && class_exists($controller)) {
                 $controllerInstance = new $controller();
@@ -229,7 +230,7 @@ class OjtPluginApiHandler extends Handler
                 }
             }
         }
-
+        
         return new JSONMessage(false, "Invalid route handler configuration");
     }
 
@@ -280,7 +281,7 @@ class OjtPluginApiHandler extends Handler
         $pluginClass = $dataPlugin['class'];
         $pluginCategory = $dataPlugin['category'];
         $pluginPath = $dataPlugin['path'];
-
+        
         // put in files directory
         $filesDir = Config::getVar('files', 'files_dir');
         if (!$filesDir || !is_writable($filesDir)) {
@@ -289,9 +290,9 @@ class OjtPluginApiHandler extends Handler
                 'message' => 'Files directory is not configured or not writable'
             ];
         }
-
+        
         $tempFileName = $filesDir . DIRECTORY_SEPARATOR . 'plugin-' . $pluginClass . '.zip';
-
+        
         try {
             // Download the plugin ZIP file
             $downloadResult = $this->downloadFile($url, $tempFileName);
@@ -301,19 +302,20 @@ class OjtPluginApiHandler extends Handler
 
             // Extract the plugin
             $extractResult = $this->extractPlugin($tempFileName, $pluginPath);
-
+            
             // Clean up temporary file
             if (file_exists($tempFileName)) {
                 unlink($tempFileName);
             }
-
+            
             return $extractResult;
+
         } catch (Exception $e) {
             // Clean up on error
             if (file_exists($tempFileName)) {
                 unlink($tempFileName);
             }
-
+            
             return [
                 'success' => false,
                 'message' => 'Download failed: ' . $e->getMessage()
@@ -374,6 +376,7 @@ class OjtPluginApiHandler extends Handler
             }
 
             return ['success' => true, 'message' => 'File downloaded successfully'];
+
         } catch (Exception $e) {
             if (file_exists($destination)) {
                 unlink($destination);
@@ -397,7 +400,7 @@ class OjtPluginApiHandler extends Handler
         try {
             $zip = new ZipArchive();
             $result = $zip->open($zipFile);
-
+            
             if ($result !== true) {
                 $errorMessages = [
                     ZipArchive::ER_OK => 'No error',
@@ -471,6 +474,7 @@ class OjtPluginApiHandler extends Handler
                 'success' => true,
                 'message' => 'Plugin extracted successfully to ' . $pluginFolder
             ];
+
         } catch (Exception $e) {
             return [
                 'success' => false,
@@ -479,3 +483,5 @@ class OjtPluginApiHandler extends Handler
         }
     }
 }
+
+?>
