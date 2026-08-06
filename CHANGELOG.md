@@ -1,3 +1,9 @@
+### 2.2.0.1 : 06 August 2026
+- Restricted OJT module deletion and plugin uninstall actions to site administrators
+- Hid module removal controls from journal managers
+- Fixed removal of modules containing read-only Git object files
+- Restricted replacement of existing plugins during installation to site administrators
+
 ### 2.2.0.0 : 30 March 2026
 - Added jobs ecosystem for OJT plugins (register, dispatch, and process background jobs)
 - Optimized `OjtPlugin` by separating core logic into dedicated services

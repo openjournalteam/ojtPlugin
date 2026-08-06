@@ -125,6 +125,22 @@ class OjtPlugin extends \GenericPlugin
         return $currentUser->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
     }
 
+    /**
+     * Plugin removal is a site-admin-only operation.
+     *
+     * Keep this separate from getCanDisable(), because journal managers are
+     * allowed to enable and disable plugins but must not be able to remove
+     * plugin files from the server.
+     *
+     * @return bool
+     */
+    public function isCurrentUserSiteAdmin()
+    {
+        $currentUser = $this->getRequest()->getUser();
+
+        return $currentUser && $currentUser->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
+    }
+
     public function isCurrentUserAreJournalManager()
     {
         $currentUser = $this->getRequest()->getUser();
@@ -179,9 +195,58 @@ class OjtPlugin extends \GenericPlugin
             'php-version' => PHP_VERSION,
         ]);
 
+        // Some upstreams (or intervening proxies / WAFs) emit a malformed response
+        // header — e.g. a raw CSP directive such as "default-src 'self';" sent as its
+        // own header line with no field name. PSR-7 rejects the header name and Guzzle
+        // raises an InvalidArgumentException while building the response; left unhandled
+        // it becomes a fatal error that takes down the whole page. Neutralise ONLY that
+        // specific case here (log it and return a 502) so a bad upstream header can never
+        // crash OJS. Every other transfer error is left to propagate unchanged.
+        // unshift() keeps this guard OUTERMOST so the default http_errors middleware
+        // runs inside it and never re-processes the recovery 502 we may return below.
+        $stack = \GuzzleHttp\HandlerStack::create();
+        $stack->unshift(function (callable $handler) {
+            $isMalformedHeader = function ($reason) {
+                $candidates = [$reason];
+                if ($reason instanceof \Throwable) {
+                    $candidates[] = $reason->getPrevious();
+                }
+                foreach ($candidates as $candidate) {
+                    if ($candidate instanceof \InvalidArgumentException
+                        && strpos($candidate->getMessage(), 'is not valid header name') !== false) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            return function ($request, array $options) use ($handler, $isMalformedHeader) {
+                $recover = function ($reason) use ($request, $isMalformedHeader) {
+                    if (!$isMalformedHeader($reason)) {
+                        return \GuzzleHttp\Promise\Create::rejectionFor($reason);
+                    }
+                    error_log('[ojtPlugin] Upstream returned a malformed response header for '
+                        . (string) $request->getUri() . '; returning HTTP 502 instead of crashing.');
+                    return new \GuzzleHttp\Psr7\Response(502, [], 'Malformed upstream response header');
+                };
+
+                try {
+                    $promise = $handler($request, $options);
+                } catch (\Throwable $e) {
+                    if (!$isMalformedHeader($e)) {
+                        throw $e;
+                    }
+                    return new \GuzzleHttp\Promise\FulfilledPromise($recover($e));
+                }
+
+                return $promise->then(null, $recover);
+            };
+        }, 'ojt_malformed_header_guard');
+
         return new \GuzzleHttp\Client([
             'timeout' => 60,
-            'headers' => $headers
+            'headers' => $headers,
+            'handler' => $stack,
         ]);
     }
 

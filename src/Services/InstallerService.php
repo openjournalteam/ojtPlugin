@@ -213,6 +213,15 @@ class InstallerService
      */
     public function moveStagedPluginToFinal($stagingPath, $pluginFolder, $isSiteWide)
     {
+        if (!is_string($pluginFolder)
+            || $pluginFolder === ''
+            || $pluginFolder === '.'
+            || $pluginFolder === '..'
+            || strpbrk($pluginFolder, '/\\\\') !== false
+            || strpos($pluginFolder, "\0") !== false) {
+            throw new Exception('Invalid plugin folder');
+        }
+
         $sourcePath = $stagingPath . DIRECTORY_SEPARATOR . $pluginFolder;
 
         if ($isSiteWide) {
@@ -228,6 +237,9 @@ class InstallerService
 
         // Remove existing destination if it exists
         if (is_dir($destinationPath)) {
+            if (!$this->plugin->isCurrentUserSiteAdmin()) {
+                throw new Exception('Only site administrators can replace an installed plugin');
+            }
             $this->recursiveDelete($destinationPath);
         }
 
@@ -306,6 +318,10 @@ class InstallerService
      */
     public function uninstallPlugin($plugin)
     {
+        if (!$this->plugin->isCurrentUserSiteAdmin()) {
+            throw new Exception('Only site administrators can uninstall plugins');
+        }
+
         $path = $this->plugin->getModulesPath($plugin->product);
         if ($plugin->sitewide == true) {
             $path = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $plugin->product;
@@ -333,11 +349,19 @@ class InstallerService
             return false;
         }
 
+        $parentDirectory = dirname($dirPath);
+        if (!is_writable($parentDirectory)) {
+            throw new Exception("Can't remove plugins, please check folder permission for: " . $parentDirectory);
+        }
+
         $paths = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
 
         foreach ($paths as $path) {
-            if (!$path->isWritable()) {
-                throw new Exception("Can't remove plugins, please check folder permission for: " . $path->getPathname());
+            // Removing a file requires write/execute permission on its parent
+            // directory; the file itself may legitimately be read-only (for
+            // example, Git object files are commonly mode 0444).
+            if (!is_writable($path->getPath())) {
+                throw new Exception("Can't remove plugins, please check folder permission for: " . $path->getPath());
             };
         }
 
