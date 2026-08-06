@@ -156,7 +156,7 @@ class OjtPageHandler extends Handler
     {
         $this->ojtPlugin->updateSetting(Application::CONTEXT_SITE, 'enable_diagnostic', filter_var($request->getUserVar('enable_diagnostic'), FILTER_VALIDATE_BOOLEAN));
         $this->ojtPlugin->updateSetting($this->contextId, 'show_support_link_ojs', filter_var($request->getUserVar('show_support_link_ojs'), FILTER_VALIDATE_BOOLEAN));
-        
+
         $json['error'] = 0;
         $json['msg']   = 'Save Success';
         return showJson($json);
@@ -273,7 +273,7 @@ class OjtPageHandler extends Handler
 
     public function checkUpdate($args, $request)
     {
-        $url = 'https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update';
+        $url = 'https://sp.openjournaltheme.com/api/v1/product/control-panel';
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url);
             $json = json_decode((string) $response->getBody(), true);
@@ -537,6 +537,7 @@ class OjtPageHandler extends Handler
             if ($pluginInstance instanceof Plugin) {
                 if ($license && !$update) {
                     $pluginInstance->updateSetting($this->contextId, 'license', $license);
+                    $pluginInstance->updateSetting($this->contextId, 'status_validated', $downloadLink['status_validation']);
                 }
                 Hook::call('OJT::pluginInstalled', array($pluginInstance));
             }

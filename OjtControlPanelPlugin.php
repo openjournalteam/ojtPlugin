@@ -43,7 +43,7 @@ class OjtControlPanelPlugin extends GenericPlugin
 {
     public $registeredModule;
 
-    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
+    const API = "https://sp.openjournaltheme.com/api/v1";
     const SERVICE_API = "https://sp.openjournaltheme.com/";
 
     public function register($category, $path, $mainContextId = null)
@@ -838,7 +838,8 @@ class OjtControlPanelPlugin extends GenericPlugin
 
             if (isset($response['error']) && $response['error']) throw new Exception($response['msg']);
 
-            $result['product'] = $response['data']['download_link'];
+            $result['product']           = $response['data']['download_link'];
+            $result['status_validation'] = $response['data']['status_validation'] ?? 0;
 
             $dependencies = [];
             foreach ($response['data']['dependencies'] as $dependency) {

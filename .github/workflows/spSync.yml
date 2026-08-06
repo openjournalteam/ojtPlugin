@@ -1,0 +1,67 @@
+name: SyncToSp
+# Controls when the action will run.
+on:
+  push:
+    branches:
+      - "34"
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@master
+
+      - name: Get branch name
+        id: branch-name
+        uses: tj-actions/branch-name@v6
+
+      - name: Install xmllint to read version.xml
+        run: sudo apt-get update -y && sudo apt-get install -y libxml2-utils
+
+      - name: Extract data from the version.xml
+        id: extract_xml
+        run: |
+          name=$(xmllint --xpath "string(/version/application)" version.xml)
+          version=$(xmllint --xpath "string(/version/release)" version.xml)
+          class=$(xmllint --xpath "string(/version/class)" version.xml)
+          echo "name=$name" >> $GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "class=$class" >> $GITHUB_OUTPUT
+
+      - name: Create folder and removing .gitignore, .git & .github dir, 
+        run: |
+          mkdir -p ./sp_upload
+          rsync -a ./ ./sp_upload/${{steps.extract_xml.outputs.name}}
+          rm -rf ./sp_upload/${{steps.extract_xml.outputs.name}}/.git*
+          rm -rf ./sp_upload/${{steps.extract_xml.outputs.name}}/sp_upload
+
+      - name: Zip the repo and Pack to zipped folder before uploading
+        uses: vimtor/action-zip@v1
+        with:
+          files: ./sp_upload
+          dest: ./zipped/${{steps.extract_xml.outputs.name}}.zip
+
+      - name: Construct URL
+        id: construct_url
+        run: |
+          url="https://sp.openjournaltheme.com/api/v1/product/update-version"
+          echo "url=$url" >> $GITHUB_OUTPUT
+
+      - name: Upload to SP with zip file
+        run: |
+          curl -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36" \
+            -X POST \
+            -F "file=@./zipped/${{steps.extract_xml.outputs.name}}.zip" \
+            -F "key=g4Tj9qL2xWz8RkD1s" \
+            -F "class=${{ steps.extract_xml.outputs.class }}" \
+            -F "version=${{ steps.extract_xml.outputs.version }}" \
+            -F "platform_version=34,35" \
+            "${{ steps.construct_url.outputs.url }}"
+
+      - name: Echo URL
+        run: |
+          echo "The URL is: ${{ steps.construct_url.outputs.url }}"
