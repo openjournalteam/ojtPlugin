@@ -1,3 +1,9 @@
+### 3.1.1.9 : 6 Aug 2026
+- Restrict plugin uninstall/removal to site administrators, including direct request paths and module-removal query parameters.
+- Hide the plugin deletion action from non-administrators in the control panel.
+- Prevent non-administrators from replacing an existing installed plugin during installation.
+- Validate plugin folder names before resolving filesystem paths.
+
 ### 3.1.1.8 : 9 Mar 2026
 - Added a new helper function to simplify internal utility operations.
 - Fixed an issue where registered subscription URLs were incorrectly generated due to locale handling.

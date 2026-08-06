@@ -100,6 +100,7 @@ class OjtPageHandler extends Handler
         Hook::call('OjtPageHandler::index', array(&$ojtPlugin));
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
+        $templateMgr->assign('canDeletePlugins', $plugin->isCurrentUserSiteAdmin());
         $templateMgr->assign('journal', $this->contextId ? $request->getContext() : $request->getSite());
 
         $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
@@ -379,10 +380,9 @@ class OjtPageHandler extends Handler
         Hook::call('OjtPageHandler::installed::plugins', array($this, &$plugins));
 
         // Ensure canDelete and isAuthorized are set
+        $isSiteAdmin = $this->ojtPlugin->isCurrentUserSiteAdmin();
         foreach($plugins as &$plugin) {
-            if(!isset($plugin['canDelete'])) {
-                $plugin['canDelete'] = true;
-            }
+            $plugin['canDelete'] = $isSiteAdmin && ($plugin['canDelete'] ?? true);
             if(!isset($plugin['isAuthorized'])) {
                 $plugin['isAuthorized'] = true;
             }
@@ -690,7 +690,19 @@ class OjtPageHandler extends Handler
     {
         $plugin = $this->ojtPlugin;
 
+        if (!$plugin->isCurrentUserSiteAdmin()) {
+            $json['error'] = 1;
+            $json['msg'] = 'Only site administrators can uninstall plugins';
+            return showJson($json);
+        }
+
         $removePlugin = json_decode($request->getUserVar('plugin'));
+
+        if (!$removePlugin || !isset($removePlugin->isAuthorized, $removePlugin->canDelete)) {
+            $json['error'] = 1;
+            $json['msg'] = 'Invalid plugin data';
+            return showJson($json);
+        }
 
         if (!$removePlugin->isAuthorized) {
             $json['error'] = 1;

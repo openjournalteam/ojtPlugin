@@ -91,10 +91,21 @@ class OjtControlPanelPlugin extends GenericPlugin
     {
         if($this->isCurrentUserAreJournalManager()) return true;
 
-        $currentUser = $this->getRequest()->getUser();
-        if(!$currentUser) return false;
+        return $this->isCurrentUserSiteAdmin();
+    }
 
-        if(version_compare($this->getJournalVersion(), '35', '>=')) {
+    /**
+     * Check whether the current user is a site administrator.
+     *
+     * Plugin deletion and replacement are site-level operations and must not
+     * be authorized by the journal manager role.
+     */
+    public function isCurrentUserSiteAdmin(): bool
+    {
+        $currentUser = $this->getRequest()->getUser();
+        if (!$currentUser) return false;
+
+        if (version_compare($this->getJournalVersion(), '35', '>=')) {
             return $currentUser->hasRole([Role::ROLE_ID_SITE_ADMIN], Application::SITE_CONTEXT_ID);
         }
 
@@ -769,6 +780,16 @@ class OjtControlPanelPlugin extends GenericPlugin
      */
     public function uninstallPlugin($plugin): bool
     {
+        if (!$this->isCurrentUserSiteAdmin()) {
+            throw new Exception('Only site administrators can uninstall plugins');
+        }
+
+        if (!is_object($plugin) || !isset($plugin->product) || !is_string($plugin->product)
+            || $plugin->product === '' || $plugin->product === '.' || $plugin->product === '..'
+            || !preg_match('/^[A-Za-z0-9._-]+$/D', $plugin->product)) {
+            throw new Exception('Invalid plugin folder');
+        }
+
         $path = $this->getModulesPath($plugin->product);
         if ($plugin->sitewide == true) {
             $path = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $plugin->product;
@@ -1051,6 +1072,11 @@ class OjtControlPanelPlugin extends GenericPlugin
     public function moveStagedPluginToFinal($stagingPath, $pluginFolder, $isSiteWide = false): bool
     {
         try {
+            if (!is_string($pluginFolder) || $pluginFolder === '' || $pluginFolder === '.' || $pluginFolder === '..'
+                || !preg_match('/^[A-Za-z0-9._-]+$/D', $pluginFolder)) {
+                throw new Exception('Invalid plugin folder');
+            }
+
             $sourcePath = $stagingPath . DIRECTORY_SEPARATOR . $pluginFolder;
             
             if (!is_dir($sourcePath)) {
@@ -1064,6 +1090,9 @@ class OjtControlPanelPlugin extends GenericPlugin
             }
             
             if (is_dir($destinationPath)) {
+                if (!$this->isCurrentUserSiteAdmin()) {
+                    throw new Exception('Only site administrators can replace an installed plugin');
+                }
                 $this->recursiveDelete($destinationPath);
             }
             
