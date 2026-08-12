@@ -10,6 +10,12 @@ abstract class BaseJob implements JobInterface
     /** @var \OjtPlugin|false|null */
     protected static $ojtPlugin = null;
 
+    /** @var string|null Laravel queue job id while handling a job. */
+    protected $runtimeQueueJobId;
+
+    /** @var string|null Dispatch tracking token used during the binding race. */
+    protected $runtimeTrackingToken;
+
     public function __construct($plugin)
     {
         $this->plugin = $plugin;
@@ -29,6 +35,64 @@ abstract class BaseJob implements JobInterface
     public function isRequireRuntimeBaseUrl()
     {
         return false;
+    }
+
+    /**
+     * Set by OjtJobs while a worker is executing this handler.
+     *
+     * @param mixed $job
+     * @return void
+     */
+    public function setRuntimeJob($job)
+    {
+        $this->runtimeQueueJobId = ($job && method_exists($job, 'getJobId'))
+            ? $job->getJobId()
+            : null;
+        $payload = ($job && method_exists($job, 'payload')) ? $job->payload() : [];
+        if (isset($payload['data']['trackingToken'])) {
+            $this->runtimeTrackingToken = (string) $payload['data']['trackingToken'];
+        } elseif (isset($payload['data']['data']['trackingToken'])) {
+            $this->runtimeTrackingToken = (string) $payload['data']['data']['trackingToken'];
+        }
+    }
+
+    /**
+     * Clear worker-only state after a handler returns.
+     */
+    public function clearRuntimeJob()
+    {
+        $this->runtimeQueueJobId = null;
+        $this->runtimeTrackingToken = null;
+    }
+
+    /**
+     * Report progress to the Background Jobs panel.
+     */
+    public function progress($percent)
+    {
+        if (!$this->runtimeQueueJobId) {
+            return;
+        }
+
+        $ojtPlugin = $this->getOjtPlugin();
+        if ($ojtPlugin) {
+            $ojtPlugin->jobQueueService()->updateProgress($this->runtimeQueueJobId, $percent, $this->runtimeTrackingToken);
+        }
+    }
+
+    /**
+     * Allow long-running handlers to stop cooperatively after a Stop action.
+     */
+    public function shouldStop()
+    {
+        if (!$this->runtimeQueueJobId) {
+            return false;
+        }
+
+        $ojtPlugin = $this->getOjtPlugin();
+        return $ojtPlugin
+            ? $ojtPlugin->jobQueueService()->isCancellationRequested($this->runtimeQueueJobId, $this->runtimeTrackingToken)
+            : false;
     }
 
     /**

@@ -27,6 +27,7 @@ class OjtPlugin extends \GenericPlugin
 
     const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
     const SERVICE_API = "https://sp.openjournaltheme.com/";
+    const BACKGROUND_JOBS_ENABLED_SETTING = 'background_jobs_enabled';
 
     public function register($category, $path, $mainContextId = null)
     {
@@ -564,6 +565,28 @@ class OjtPlugin extends \GenericPlugin
         );
 
         return (bool) $result->current();
+    }
+
+    public function areBackgroundJobsEnabled()
+    {
+        $value = $this->getSetting(CONTEXT_SITE, self::BACKGROUND_JOBS_ENABLED_SETTING);
+        if ($value === null || $value === '') {
+            return true;
+        }
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        return in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    public function setBackgroundJobsEnabled($enabled)
+    {
+        return $this->updateSetting(
+            CONTEXT_SITE,
+            self::BACKGROUND_JOBS_ENABLED_SETTING,
+            $enabled ? 1 : 0
+        );
     }
 
     public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [], $force = false)

@@ -24,6 +24,9 @@ class WorkerTool extends \CommandLineTool
     /** @var array */
     protected $failedJobIds = [];
 
+    /** @var \Openjournalteam\OjtPlugin\Services\JobQueueService|null */
+    protected $queueService;
+
     public function __construct($argv = [])
     {
         parent::__construct($argv);
@@ -32,7 +35,7 @@ class WorkerTool extends \CommandLineTool
 
     public function usage()
     {
-        echo "Usage: php plugins/generic/ojtPlugin/modules/ojtWorkerBee/tools/worker.php [options]\n";
+        echo "Usage: php plugins/generic/ojtPlugin/tools/worker.php [options]\n";
         echo "Options:\n";
         echo "  --queue=NAME         Queue name (default: default)\n";
         echo "  --sleep=SECONDS      Poll sleep seconds (default: 3)\n";
@@ -51,13 +54,17 @@ class WorkerTool extends \CommandLineTool
             exit(1);
         }
 
-        $this->registerQueueLogging();
+        if (!$plugin->areBackgroundJobsEnabled()) {
+            fwrite(STDOUT, "OJT background jobs are disabled.\n");
+            return;
+        }
 
-        $service = $plugin->jobQueueService();
+        $this->queueService = $plugin->jobQueueService();
+        $this->registerQueueLogging();
 
         if ($this->options['once']) {
             try {
-                $service->runNext($this->options['queue'], $this->options);
+                $this->queueService->runNext($this->options['queue'], $this->options);
             } catch (\Throwable $e) {
                 // Keep CLI output readable; details are persisted in failed jobs table.
                 $time = date('Y-m-d H:i:s');
@@ -67,7 +74,7 @@ class WorkerTool extends \CommandLineTool
         }
 
         try {
-            $service->daemon($this->options['queue'], $this->options);
+            $this->queueService->daemon($this->options['queue'], $this->options);
         } catch (\Throwable $e) {
             // Keep CLI output readable; details are persisted in failed jobs table.
             $time = date('Y-m-d H:i:s');
@@ -92,7 +99,14 @@ class WorkerTool extends \CommandLineTool
         $events->listen('Illuminate\Queue\Events\JobProcessing', function ($event) {
             $jobId = $this->getEventJobId($event);
             $jobType = $this->getEventJobType($event);
+            $trackingToken = $this->getEventTrackingToken($event);
             $this->jobStartTimes[$jobId] = microtime(true);
+            if ($this->queueService) {
+                $attempts = isset($event->job) && method_exists($event->job, 'attempts')
+                    ? $event->job->attempts()
+                    : null;
+                $this->queueService->markProcessing($jobId, $attempts, $trackingToken);
+            }
             $this->logLine('processing', $jobId, $jobType);
         });
 
@@ -106,7 +120,14 @@ class WorkerTool extends \CommandLineTool
                 return;
             }
             $jobType = $this->getEventJobType($event);
+            $trackingToken = $this->getEventTrackingToken($event);
             $duration = $this->consumeDuration($jobId);
+            if ($this->queueService) {
+                $attempts = isset($event->job) && method_exists($event->job, 'attempts')
+                    ? $event->job->attempts()
+                    : null;
+                $this->queueService->markCompleted($jobId, $attempts, $trackingToken);
+            }
             $this->logLine('success', $jobId, $jobType, $duration);
         });
 
@@ -116,10 +137,14 @@ class WorkerTool extends \CommandLineTool
                 return;
             }
             $jobType = $this->getEventJobType($event);
+            $trackingToken = $this->getEventTrackingToken($event);
             $duration = $this->consumeDuration($jobId);
             $error = isset($event->exception) ? $event->exception->getMessage() : 'unknown error';
             $this->failedJobIds[$jobId] = true;
-            $this->persistFailedJob($event);
+            $failedJobId = $this->persistFailedJob($event);
+            if ($this->queueService) {
+                $this->queueService->markFailed($jobId, $error, $failedJobId, false, $trackingToken);
+            }
             $this->logLine('failed', $jobId, $jobType, $duration, $error);
         });
     }
@@ -157,7 +182,22 @@ class WorkerTool extends \CommandLineTool
             $exceptionText = $error;
         }
 
-        $this->persistFailedJobFromData($job, $data, $payload, $exceptionText, $jobType);
+        $attempts = ($job && method_exists($job, 'attempts')) ? (int) $job->attempts() : 0;
+        $maxAttempts = isset($data['maxAttempts'])
+            ? max(1, (int) $data['maxAttempts'])
+            : max(1, (int) $this->options['tries']);
+
+        // Laravel will release the job for another attempt. Do not expose an
+        // intermediate retry as a final failure in the control panel.
+        if ($attempts > 0 && $attempts < $maxAttempts) {
+            return false;
+        }
+
+        $failedJobId = $this->persistFailedJobFromData($job, $data, $payload, $exceptionText, $jobType);
+        if ($this->queueService && $jobId !== 'n/a') {
+            $trackingToken = isset($data['trackingToken']) ? (string) $data['trackingToken'] : null;
+            $this->queueService->markFailed($jobId, $message, $failedJobId, false, $trackingToken);
+        }
         $this->logLine('failed', $jobId, $jobType, $duration, $message);
 
         return false;
@@ -181,10 +221,12 @@ class WorkerTool extends \CommandLineTool
 
             $payloadData = method_exists($job, 'payload') ? $job->payload() : [];
             $exception = isset($event->exception) ? (string) $event->exception : 'Unknown exception';
-            $this->persistFailedJobFromData($job, $payloadData, $payloadData, $exception);
+            return $this->persistFailedJobFromData($job, $payloadData, $payloadData, $exception);
         } catch (\Throwable $e) {
             error_log('OjtWorkerBee failed-job persistence error: ' . $e->getMessage());
         }
+
+        return null;
     }
 
     /**
@@ -195,7 +237,7 @@ class WorkerTool extends \CommandLineTool
      * @param array $payloadData
      * @param string|null $exception
      * @param string|null $jobType
-     * @return void
+     * @return int|null
      */
     protected function persistFailedJobFromData($job, array $data = [], array $payloadData = [], $exception = null, $jobType = null)
     {
@@ -219,9 +261,11 @@ class WorkerTool extends \CommandLineTool
             $contextId = (int) $payloadData['contextId'];
         }
 
-        Capsule::table($this->getFailedJobsTableName())->insert([
+        $queueJobId = ($job && method_exists($job, 'getJobId')) ? (int) $job->getJobId() : null;
+        return Capsule::table($this->getFailedJobsTableName())->insertGetId([
             'connection' => $connection,
             'queue' => $queue,
+            'queue_job_id' => $queueJobId ?: null,
             'payload' => (string) $payloadRaw,
             'exception' => $exceptionText,
             'context_id' => $contextId,
@@ -239,6 +283,12 @@ class WorkerTool extends \CommandLineTool
         $schema = Capsule::schema();
         $table = $this->getFailedJobsTableName();
         if ($schema->hasTable($table)) {
+            if (!$schema->hasColumn($table, 'queue_job_id')) {
+                $schema->table($table, function (Blueprint $table) {
+                    $table->unsignedBigInteger('queue_job_id')->nullable()->after('queue');
+                    $table->index(['queue_job_id']);
+                });
+            }
             return;
         }
 
@@ -246,11 +296,13 @@ class WorkerTool extends \CommandLineTool
             $table->bigIncrements('id');
             $table->text('connection');
             $table->text('queue');
+            $table->unsignedBigInteger('queue_job_id')->nullable();
             $table->longText('payload');
             $table->longText('exception');
             $table->unsignedInteger('context_id')->nullable();
             $table->timestamp('failed_at')->useCurrent();
             $table->index(['context_id']);
+            $table->index(['queue_job_id']);
         });
     }
 
@@ -312,6 +364,30 @@ class WorkerTool extends \CommandLineTool
         }
 
         return 'unknown';
+    }
+
+    /**
+     * Extract the private tracking token from a queue payload.
+     */
+    protected function getEventTrackingToken($event)
+    {
+        if (!isset($event->job) || !method_exists($event->job, 'payload')) {
+            return null;
+        }
+
+        $payload = $event->job->payload();
+        if (!is_array($payload)) {
+            return null;
+        }
+
+        if (isset($payload['data']['trackingToken'])) {
+            return (string) $payload['data']['trackingToken'];
+        }
+        if (isset($payload['data']['data']['trackingToken'])) {
+            return (string) $payload['data']['data']['trackingToken'];
+        }
+
+        return null;
     }
 
     /**

@@ -114,6 +114,7 @@ class OjtJobs
         $payload = &$args[1];
         $handled = &$args[2];
         $result = &$args[3];
+        $queueJob = isset($args[4]) ? $args[4] : null;
         $data = isset($args[5]) && is_array($args[5]) ? $args[5] : [];
 
         if (empty(self::$jobsByType[$jobType])) {
@@ -124,8 +125,17 @@ class OjtJobs
             if (!method_exists($job, 'handle')) {
                 continue;
             }
-            $result = $job->handle(is_array($payload) ? $payload : [], $data);
-            $handled = true;
+            if (method_exists($job, 'setRuntimeJob')) {
+                $job->setRuntimeJob($queueJob);
+            }
+            try {
+                $result = $job->handle(is_array($payload) ? $payload : [], $data);
+                $handled = true;
+            } finally {
+                if (method_exists($job, 'clearRuntimeJob')) {
+                    $job->clearRuntimeJob();
+                }
+            }
             return false;
         }
 
