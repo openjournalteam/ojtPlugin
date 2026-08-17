@@ -106,6 +106,22 @@ class OjtJobs
     }
 
     /**
+     * Dispatch a registered job by type. This is used by the generic schedule
+     * runner, which stores the job type rather than a plugin object.
+     */
+    public static function dispatchByType($jobType, array $payload = [], array $options = [])
+    {
+        foreach ((array) (self::$jobsByType[(string) $jobType] ?? []) as $job) {
+            if (method_exists($job, 'dispatch')) {
+                return $job->dispatch($payload, $options);
+            }
+        }
+
+        error_log('OjtJobs: no registered job handler for type "' . (string) $jobType . '".');
+        return null;
+    }
+
+    /**
      * WorkerBee process callback.
      */
     public static function handleProcessJob($hookName, $args)
@@ -129,8 +145,19 @@ class OjtJobs
                 $job->setRuntimeJob($queueJob);
             }
             try {
+                if (method_exists($job, 'markScheduledRunStarted')) {
+                    $job->markScheduledRunStarted(is_array($payload) ? $payload : []);
+                }
                 $result = $job->handle(is_array($payload) ? $payload : [], $data);
+                if (method_exists($job, 'markScheduledRunCompleted')) {
+                    $job->markScheduledRunCompleted(is_array($payload) ? $payload : [], $result);
+                }
                 $handled = true;
+            } catch (\Throwable $e) {
+                if (method_exists($job, 'markScheduledRunFailed')) {
+                    $job->markScheduledRunFailed(is_array($payload) ? $payload : [], $e->getMessage());
+                }
+                throw $e;
             } finally {
                 if (method_exists($job, 'clearRuntimeJob')) {
                     $job->clearRuntimeJob();

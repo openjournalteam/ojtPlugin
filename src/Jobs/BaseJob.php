@@ -96,6 +96,41 @@ abstract class BaseJob implements JobInterface
     }
 
     /**
+     * Keep the schedule history in sync with the WorkerBee lifecycle.
+     */
+    public function markScheduledRunStarted(array $payload = [])
+    {
+        $runId = $this->getScheduledRunId($payload);
+        $ojtPlugin = $runId ? $this->getOjtPlugin() : null;
+        if ($ojtPlugin) {
+            $ojtPlugin->scheduleService()->markRunStarted($runId);
+        }
+    }
+
+    public function markScheduledRunCompleted(array $payload = [], $result = [])
+    {
+        $runId = $this->getScheduledRunId($payload);
+        $ojtPlugin = $runId ? $this->getOjtPlugin() : null;
+        if ($ojtPlugin) {
+            $ojtPlugin->scheduleService()->markRunCompleted($runId, $result);
+        }
+    }
+
+    public function markScheduledRunFailed(array $payload = [], $message = '', $details = [])
+    {
+        $runId = $this->getScheduledRunId($payload);
+        $ojtPlugin = $runId ? $this->getOjtPlugin() : null;
+        if ($ojtPlugin) {
+            $ojtPlugin->scheduleService()->markRunFailed($runId, $message, $details);
+        }
+    }
+
+    protected function getScheduledRunId(array $payload = [])
+    {
+        return isset($payload['scheduleRunId']) ? (int) $payload['scheduleRunId'] : 0;
+    }
+
+    /**
      * @copydoc JobInterface::dispatch()
      */
     public function dispatch(array $payload = [], array $options = [])

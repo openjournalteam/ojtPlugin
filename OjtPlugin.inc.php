@@ -8,6 +8,7 @@ use Openjournalteam\OjtPlugin\Classes\ParamHandler;
 use Openjournalteam\OjtPlugin\Classes\DiscordNotifier;
 use Openjournalteam\OjtPlugin\Migrations\MigrationManager;
 use Openjournalteam\OjtPlugin\Services\JobQueueService;
+use Openjournalteam\OjtPlugin\Services\ScheduleService;
 use Openjournalteam\OjtPlugin\Services\HookService;
 use Openjournalteam\OjtPlugin\Services\InstallerService;
 use Openjournalteam\OjtPlugin\Services\LoggingService;
@@ -24,6 +25,8 @@ class OjtPlugin extends \GenericPlugin
     private ?LoggingService $loggingService = null;
     private ?ModulesService $modulesService = null;
     private ?JobQueueService $jobQueueService = null;
+    private ?ScheduleService $scheduleService = null;
+    private bool $legacyScheduledTasksDisabled = false;
 
     const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
     const SERVICE_API = "https://sp.openjournaltheme.com/";
@@ -37,6 +40,7 @@ class OjtPlugin extends \GenericPlugin
                 $this->init();
                 MigrationManager::make($this)->runMigrations();
                 $this->jobQueueService();
+                $this->disableLegacyScheduledTasks();
                 $this->loggingService()->setLogger();
                 $this->modulesService()->createModulesFolder();
                 $this->modulesService()->registerModules();
@@ -105,6 +109,58 @@ class OjtPlugin extends \GenericPlugin
             $this->jobQueueService = new JobQueueService($this);
         }
         return $this->jobQueueService;
+    }
+
+    public function scheduleService(): ScheduleService
+    {
+        if ($this->scheduleService === null) {
+            $this->scheduleService = new ScheduleService($this);
+        }
+
+        return $this->scheduleService;
+    }
+
+    /**
+     * Remove OJT and Enveloper entries from OJS Acron's persisted task list.
+     *
+     * WorkerBee is now the only scheduler for these features. The persisted
+     * Acron setting can outlive the hook that originally registered it, so it
+     * must be cleaned up explicitly during plugin/worker bootstrap.
+     */
+    public function disableLegacyScheduledTasks()
+    {
+        if ($this->legacyScheduledTasksDisabled) {
+            return;
+        }
+
+        $acron = null;
+        if (class_exists('PluginRegistry')) {
+            $acron = PluginRegistry::getPlugin('generic', 'acronPlugin')
+                ?: PluginRegistry::getPlugin('generic', 'acronplugin');
+        }
+        if (!$acron || !method_exists($acron, 'getSetting') || !method_exists($acron, 'updateSetting')) {
+            return;
+        }
+
+        $tasks = $acron->getSetting(0, 'crontab');
+        if (!is_array($tasks)) {
+            $this->legacyScheduledTasksDisabled = true;
+            return;
+        }
+
+        $legacyClasses = [
+            'plugins.generic.ojtPlugin.src.Classes.ScheduleRunnerTask',
+            'plugins.generic.enveloper.src.Classes.ApiMailerQueueRetryTask',
+        ];
+        $filtered = array_values(array_filter($tasks, function ($task) use ($legacyClasses) {
+            return !in_array((string) ($task['className'] ?? ''), $legacyClasses, true);
+        }));
+
+        if (count($filtered) !== count($tasks)) {
+            $acron->updateSetting(0, 'crontab', $filtered, 'object');
+        }
+
+        $this->legacyScheduledTasksDisabled = true;
     }
 
     /**
@@ -690,7 +746,14 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         $fullUrl =  $this->getRequest()->getBaseUrl() . '/'  . $this->getPluginPath() . '/' . $path;
 
         if ($withVersion) {
-            return $fullUrl . '?v=' . $this->getPluginVersion();
+            // Include the asset mtime during plugin development so a changed
+            // Alpine bundle is not hidden behind the old plugin-version URL.
+            $assetPath = $this->getPluginPath() . DIRECTORY_SEPARATOR . ltrim($path, '/\\');
+            $assetVersion = $this->getPluginVersion();
+            if (is_file($assetPath)) {
+                $assetVersion .= '.' . filemtime($assetPath);
+            }
+            return $fullUrl . '?v=' . rawurlencode($assetVersion);
         }
 
         return $fullUrl;

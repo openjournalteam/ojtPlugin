@@ -24,6 +24,9 @@ class WorkerTool extends \CommandLineTool
     /** @var array */
     protected $failedJobIds = [];
 
+    /** @var int Unix timestamp of the last OJT schedule poll. */
+    protected $lastSchedulePollAt = 0;
+
     /** @var \Openjournalteam\OjtPlugin\Services\JobQueueService|null */
     protected $queueService;
 
@@ -64,6 +67,7 @@ class WorkerTool extends \CommandLineTool
 
         if ($this->options['once']) {
             try {
+                $this->pollSchedules(true);
                 $this->queueService->runNext($this->options['queue'], $this->options);
             } catch (\Throwable $e) {
                 // Keep CLI output readable; details are persisted in failed jobs table.
@@ -134,19 +138,76 @@ class WorkerTool extends \CommandLineTool
         $events->listen('Illuminate\Queue\Events\JobFailed', function ($event) {
             $jobId = $this->getEventJobId($event);
             if (isset($this->failedJobIds[$jobId])) {
+                unset($this->failedJobIds[$jobId]);
                 return;
             }
             $jobType = $this->getEventJobType($event);
             $trackingToken = $this->getEventTrackingToken($event);
             $duration = $this->consumeDuration($jobId);
             $error = isset($event->exception) ? $event->exception->getMessage() : 'unknown error';
-            $this->failedJobIds[$jobId] = true;
+            $this->rememberFailedJobId($jobId);
             $failedJobId = $this->persistFailedJob($event);
             if ($this->queueService) {
                 $this->queueService->markFailed($jobId, $error, $failedJobId, false, $trackingToken);
             }
             $this->logLine('failed', $jobId, $jobType, $duration, $error);
         });
+
+        // WorkerBee is the scheduler heartbeat. OJT schedules are checked
+        // independently of OJS's legacy scheduled_tasks configuration.
+        $events->listen('Illuminate\\Queue\\Events\\Looping', function () {
+            $this->pollSchedules();
+        });
+    }
+
+    /**
+     * Dispatch due OJT schedules without requiring one OS cron entry per
+     * plugin or schedule. ScheduleService atomically claims each due time,
+     * so multiple workers cannot dispatch the same occurrence.
+     */
+    protected function pollSchedules($force = false)
+    {
+        $now = time();
+        if (!$force && $this->lastSchedulePollAt > 0 && ($now - $this->lastSchedulePollAt) < 60) {
+            return;
+        }
+        $this->lastSchedulePollAt = $now;
+
+        $plugin = \OjtPlugin::get();
+        if (!$plugin || !method_exists($plugin, 'scheduleService')) {
+            return;
+        }
+
+        if (method_exists($plugin, 'disableLegacyScheduledTasks')) {
+            $plugin->disableLegacyScheduledTasks();
+        }
+
+        try {
+            $summary = $plugin->scheduleService()->runDueSchedules();
+            if (!empty($summary['dispatched'])) {
+                fwrite(STDOUT, sprintf(
+                    "[%s] OJT schedule poll dispatched %d job(s).%s",
+                    date('Y-m-d H:i:s'),
+                    (int) $summary['dispatched'],
+                    PHP_EOL
+                ));
+            }
+            foreach ((array) ($summary['errors'] ?? []) as $error) {
+                fwrite(STDERR, sprintf(
+                    "[%s] OJT schedule error: %s%s",
+                    date('Y-m-d H:i:s'),
+                    (string) $error,
+                    PHP_EOL
+                ));
+            }
+        } catch (\Throwable $e) {
+            fwrite(STDERR, sprintf(
+                "[%s] OJT schedule poll failed: %s%s",
+                date('Y-m-d H:i:s'),
+                $e->getMessage(),
+                PHP_EOL
+            ));
+        }
     }
 
     /**
@@ -169,9 +230,6 @@ class WorkerTool extends \CommandLineTool
             return false;
         }
 
-        $this->failedJobIds[$jobId] = true;
-        $duration = $this->consumeDuration($jobId);
-
         $message = 'unknown error';
         $exceptionText = null;
         if ($error instanceof \Throwable) {
@@ -193,6 +251,9 @@ class WorkerTool extends \CommandLineTool
             return false;
         }
 
+        $this->rememberFailedJobId($jobId);
+        $duration = $this->consumeDuration($jobId);
+
         $failedJobId = $this->persistFailedJobFromData($job, $data, $payload, $exceptionText, $jobType);
         if ($this->queueService && $jobId !== 'n/a') {
             $trackingToken = isset($data['trackingToken']) ? (string) $data['trackingToken'] : null;
@@ -201,6 +262,18 @@ class WorkerTool extends \CommandLineTool
         $this->logLine('failed', $jobId, $jobType, $duration, $message);
 
         return false;
+    }
+
+    protected function rememberFailedJobId($jobId)
+    {
+        if ($jobId === 'n/a' || $jobId === '') {
+            return;
+        }
+
+        $this->failedJobIds[(string) $jobId] = true;
+        if (count($this->failedJobIds) > 1000) {
+            $this->failedJobIds = array_slice($this->failedJobIds, -500, null, true);
+        }
     }
 
     /**
@@ -289,6 +362,12 @@ class WorkerTool extends \CommandLineTool
                     $table->index(['queue_job_id']);
                 });
             }
+            if (!$schema->hasColumn($table, 'retry_claimed_at')) {
+                $schema->table($table, function (Blueprint $table) {
+                    $table->timestamp('retry_claimed_at')->nullable()->after('failed_at');
+                    $table->index(['retry_claimed_at']);
+                });
+            }
             return;
         }
 
@@ -301,8 +380,10 @@ class WorkerTool extends \CommandLineTool
             $table->longText('exception');
             $table->unsignedInteger('context_id')->nullable();
             $table->timestamp('failed_at')->useCurrent();
+            $table->timestamp('retry_claimed_at')->nullable();
             $table->index(['context_id']);
             $table->index(['queue_job_id']);
+            $table->index(['retry_claimed_at']);
         });
     }
 

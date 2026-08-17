@@ -306,36 +306,46 @@
                     </div>
 
                     <div x-show="view === 'scheduled'" x-transition:enter="ojt-transition ojt-duration-200 ojt-ease-out" x-transition:enter-start="ojt-opacity-0 ojt-translate-y-1" x-transition:enter-end="ojt-opacity-100 ojt-translate-y-0" x-transition:leave="ojt-transition ojt-duration-150 ojt-ease-in" x-transition:leave-start="ojt-opacity-100 ojt-translate-y-0" x-transition:leave-end="ojt-opacity-0 ojt-translate-y-1" class="ojt-overflow-hidden ojt-rounded-xl ojt-border ojt-border-gray-200 ojt-bg-white ojt-mt-4">
+                      <div x-show="scheduleLoading" class="ojt-p-10 ojt-text-center ojt-text-sm ojt-text-gray-400">Loading schedules…</div>
                       <template x-for="schedule in schedules" :key="schedule.id">
-                        <div class="ojt-flex ojt-flex-wrap ojt-items-center ojt-gap-3 ojt-border-b ojt-border-gray-200 ojt-p-4 last:ojt-border-b-0 sm:ojt-p-5">
+                        <div class="ojt-border-b ojt-border-gray-200 last:ojt-border-b-0">
+                          <div class="ojt-flex ojt-flex-wrap ojt-items-center ojt-gap-3 ojt-p-4 sm:ojt-p-5">
                           <div class="ojt-flex ojt-h-10 ojt-w-10 ojt-flex-none ojt-items-center ojt-justify-center ojt-rounded-lg ojt-bg-primary-50 ojt-text-primary-600">
                             <svg class="ojt-h-5 ojt-w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6" /><path d="M12 8v4l2.5 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
                           </div>
                           <div class="ojt-min-w-0 ojt-flex-1">
                             <div class="ojt-flex ojt-flex-wrap ojt-items-center ojt-gap-2">
-                              <span class="ojt-text-base ojt-font-semibold" :class="schedule.enabled ? 'ojt-text-gray-800' : 'ojt-text-gray-400'" x-text="schedule.name"></span>
-                              <code class="ojt-rounded ojt-bg-primary-50 ojt-px-2 ojt-py-0.5 ojt-text-xs ojt-font-semibold ojt-text-primary-600" x-text="schedule.cron"></code>
+                              <span class="ojt-text-sm ojt-font-semibold" :class="schedule.enabled ? 'ojt-text-gray-800' : 'ojt-text-gray-400'" x-text="schedule.name"></span>
+                              <span x-show="schedule.lastStatus" class="ojt-inline-flex ojt-items-center ojt-rounded-full ojt-px-2 ojt-py-0.5 ojt-text-[10px] ojt-font-semibold" :class="scheduleLastStatusClasses(schedule.lastStatus)" x-text="schedule.lastStatusLabel"></span>
                             </div>
-                            <div class="ojt-mt-1 ojt-flex ojt-flex-wrap ojt-items-center ojt-gap-x-2 ojt-gap-y-1 ojt-text-sm ojt-text-gray-400">
-                              <span x-text="schedule.human"></span><span>·</span><span>Next: <strong class="ojt-font-semibold ojt-text-gray-600" x-text="schedule.next"></strong></span><span>·</span><span>Last: <strong class="ojt-font-semibold ojt-text-gray-600" x-text="schedule.last"></strong></span>
+                            <div class="ojt-mt-1 ojt-flex ojt-flex-wrap ojt-items-center ojt-gap-x-2 ojt-gap-y-1 ojt-text-xs ojt-text-gray-400">
+                              <span class="ojt-font-medium ojt-text-gray-600" x-text="schedule.human"></span><span>·</span><span>Next run: <strong class="ojt-font-semibold ojt-text-gray-600" x-text="schedule.next"></strong></span><span>·</span><span>Last run: <strong class="ojt-font-semibold ojt-text-gray-600" x-text="schedule.last"></strong></span>
                             </div>
                           </div>
                           <div class="ojt-flex ojt-items-center ojt-gap-3">
-                            <button type="button" @click="schedule.enabled = !schedule.enabled" class="ojt-relative ojt-h-6 ojt-w-11 ojt-rounded-full ojt-transition-colors" :class="schedule.enabled ? 'ojt-bg-primary-600' : 'ojt-bg-gray-300'" :aria-label="schedule.enabled ? 'Pause schedule' : 'Activate schedule'">
+                            <div class="ojt-flex ojt-items-center ojt-gap-2">
+                            <button type="button" @click="confirmScheduleToggle(schedule)" class="ojt-relative ojt-h-6 ojt-w-11 ojt-rounded-full ojt-transition-colors" :class="schedule.enabled ? 'ojt-bg-primary-600' : 'ojt-bg-gray-300'" :aria-label="schedule.enabled ? 'Pause schedule' : 'Activate schedule'">
                               <span class="ojt-absolute ojt-left-0 ojt-top-0.5 ojt-h-5 ojt-w-5 ojt-rounded-full ojt-bg-white ojt-shadow-sm ojt-transition-transform" :class="schedule.enabled ? 'ojt-translate-x-5' : 'ojt-translate-x-0.5'"></span>
                             </button>
-                            <span class="ojt-hidden ojt-text-sm ojt-font-semibold sm:ojt-inline" :class="schedule.enabled ? 'ojt-text-primary-600' : 'ojt-text-gray-400'" x-text="schedule.enabled ? 'Active' : 'Paused'"></span>
-                            <button type="button" class="ojt-ml-1 ojt-inline-flex ojt-h-9 ojt-w-9 ojt-items-center ojt-justify-center ojt-border-l ojt-border-gray-200 ojt-pl-3 ojt-text-gray-500 hover:ojt-text-primary-600" aria-label="Run schedule now" title="Run schedule now">
+                            <span class="ojt-hidden ojt-text-xs ojt-font-semibold sm:ojt-inline" :class="schedule.enabled ? 'ojt-text-primary-600' : 'ojt-text-gray-400'" x-text="schedule.enabled ? 'Active' : 'Paused'"></span>
+                            </div>
+                            <div class="ojt-flex ojt-items-center ojt-gap-1 ojt-border-l ojt-border-gray-200 ojt-pl-3">
+                            <button type="button" @click="openScheduleHistory(schedule)" class="ojt-relative ojt-inline-flex ojt-h-9 ojt-w-9 ojt-items-center ojt-justify-center ojt-rounded-lg ojt-border ojt-border-gray-200 ojt-bg-white ojt-text-gray-500 ojt-transition-colors hover:ojt-border-primary-300 hover:ojt-bg-primary-50 hover:ojt-text-primary-600" aria-label="View schedule history" :title="'View schedule history' + (schedule.failedCount ? ' — ' + schedule.failedCount + ' failed run' + (schedule.failedCount === 1 ? '' : 's') : '')">
+                              <svg class="ojt-h-5 ojt-w-5" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.25 8.75a5.75 5.75 0 1 1 1.6 4.05" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /><path d="M4.25 8.75V5.4m0 3.35h3.35" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /><path d="M10 7.25v3.05l2.15 1.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                              <span x-show="schedule.failedCount > 0" class="ojt-absolute ojt-right-0.5 ojt-top-0.5 ojt-h-2 ojt-w-2 ojt-rounded-full ojt-bg-danger-500" aria-hidden="true"></span>
+                            </button>
+                            <button type="button" @click="confirmRunSchedule(schedule)" class="ojt-inline-flex ojt-h-9 ojt-w-9 ojt-items-center ojt-justify-center ojt-rounded-lg ojt-border ojt-border-gray-200 ojt-bg-white ojt-text-gray-500 ojt-transition-colors hover:ojt-border-primary-300 hover:ojt-bg-primary-50 hover:ojt-text-primary-600" aria-label="Run schedule now" title="Run schedule now">
                               <svg class="ojt-h-5 ojt-w-5" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 5.25 6 4.75-6 4.75V5.25Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
                             </button>
-                            <button type="button" class="ojt-inline-flex ojt-h-9 ojt-w-9 ojt-items-center ojt-justify-center ojt-text-gray-500 hover:ojt-text-primary-600" aria-label="Edit schedule" title="Edit schedule">
+                            <button type="button" @click="editSchedule(schedule)" class="ojt-inline-flex ojt-h-9 ojt-w-9 ojt-items-center ojt-justify-center ojt-rounded-lg ojt-border ojt-border-gray-200 ojt-bg-white ojt-text-gray-500 ojt-transition-colors hover:ojt-border-primary-300 hover:ojt-bg-primary-50 hover:ojt-text-primary-600" aria-label="Edit schedule" title="Edit schedule">
                               <svg class="ojt-h-5 ojt-w-5" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m12.75 4.25 3 3M5 15l.65-2.95L12.2 5.5a1.4 1.4 0 0 1 2 0l.3.3a1.4 1.4 0 0 1 0 2L7.95 14.35 5 15Z" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" /></svg>
                             </button>
+                            </div>
                           </div>
                         </div>
                       </template>
-                      <div x-show="schedules.length === 0" class="ojt-p-10 ojt-text-center ojt-text-sm ojt-text-gray-400">
-                        Scheduled job integration is not available yet.
+                      <div x-show="!scheduleLoading && schedules.length === 0" class="ojt-p-10 ojt-text-center ojt-text-sm ojt-text-gray-400">
+                        No schedules have been registered by the installed plugins.
                       </div>
                     </div>
 

@@ -17,6 +17,8 @@ class JobQueueService
     const JOBS_TABLE = 'ojt_jobs';
     const FAILED_JOBS_TABLE = 'ojt_failed_jobs';
     const JOB_RUNS_TABLE = 'ojt_job_tracking';
+    const QUEUE_RETRY_AFTER_SECONDS = 900;
+    const WORKER_TIMEOUT_BUFFER_SECONDS = 60;
 
     /** @var bool */
     protected static $queueConnectionBooted = false;
@@ -420,6 +422,8 @@ class JobQueueService
             && !$this->plugin->areBackgroundJobsEnabled()) {
             return ['success' => false, 'message' => 'Background jobs are disabled.'];
         }
+        $this->ensureRuntimeTables();
+        $this->ensureRetryClaimColumn();
         $run = $this->findRun($runId, $contextId);
         if (!$run || $run->status !== 'failed') {
             return ['success' => false, 'message' => 'Only failed jobs can be retried.'];
@@ -443,17 +447,56 @@ class JobQueueService
             return ['success' => false, 'message' => 'The failed job payload is invalid.'];
         }
 
+        $retryClaimedAt = $this->now();
+        $retryClaimCutoff = date('Y-m-d H:i:s', time() - self::QUEUE_RETRY_AFTER_SECONDS);
+        $trackingToken = null;
         try {
-            $this->bootQueueConnection();
-            $trackingToken = bin2hex(random_bytes(16));
-            $data['trackingToken'] = $trackingToken;
-            $this->recordDispatched(null, $run->job_type, $run->queue, $run->context_id, [
-                'displayName' => $run->display_name,
-                'maxAttempts' => $run->max_attempts,
-            ], time(), $trackingToken);
-            $jobId = Queue::push($jobName, $data, (string) $run->queue, self::CONNECTION);
-            $this->bindTrackingToken($trackingToken, $jobId);
-            Capsule::table(self::FAILED_JOBS_TABLE)->where('id', '=', (int) $failed->id)->delete();
+            $jobId = Capsule::connection()->transaction(function () use (
+                $failed,
+                $retryClaimedAt,
+                $retryClaimCutoff,
+                $run,
+                $jobName,
+                $data,
+                &$trackingToken
+            ) {
+                $claimed = Capsule::table(self::FAILED_JOBS_TABLE)
+                    ->where('id', '=', (int) $failed->id)
+                    ->where(function ($query) use ($retryClaimCutoff) {
+                        $query->whereNull('retry_claimed_at')
+                            ->orWhere('retry_claimed_at', '<=', $retryClaimCutoff);
+                    })
+                    ->update(['retry_claimed_at' => $retryClaimedAt]);
+                if (!$claimed) {
+                    return null;
+                }
+
+                $this->bootQueueConnection();
+                $trackingToken = bin2hex(random_bytes(16));
+                $data['trackingToken'] = $trackingToken;
+                $this->recordDispatched(null, $run->job_type, $run->queue, $run->context_id, [
+                    'displayName' => $run->display_name,
+                    'maxAttempts' => $run->max_attempts,
+                ], time(), $trackingToken);
+                $jobId = Queue::push($jobName, $data, (string) $run->queue, self::CONNECTION);
+                if (!$jobId) {
+                    throw new \RuntimeException('Queue backend did not return a job id.');
+                }
+
+                $this->bindTrackingToken($trackingToken, $jobId);
+                $deleted = Capsule::table(self::FAILED_JOBS_TABLE)
+                    ->where('id', '=', (int) $failed->id)
+                    ->where('retry_claimed_at', '=', $retryClaimedAt)
+                    ->delete();
+                if (!$deleted) {
+                    throw new \RuntimeException('Failed-job record changed during retry.');
+                }
+
+                return $jobId;
+            });
+            if (!$jobId) {
+                return ['success' => false, 'message' => 'This failed job is already being retried.'];
+            }
 
             return ['success' => true, 'message' => 'Job added back to the queue.', 'jobId' => $jobId];
         } catch (Throwable $e) {
@@ -899,6 +942,22 @@ class JobQueueService
                 $table->longText('details')->nullable();
             });
         }
+
+        $this->ensureRetryClaimColumn();
+    }
+
+    protected function ensureRetryClaimColumn()
+    {
+        $schema = Capsule::schema();
+        if (!$schema->hasTable(self::FAILED_JOBS_TABLE)
+            || $schema->hasColumn(self::FAILED_JOBS_TABLE, 'retry_claimed_at')) {
+            return;
+        }
+
+        $schema->table(self::FAILED_JOBS_TABLE, function ($table) {
+            $table->timestamp('retry_claimed_at')->nullable()->after('failed_at');
+            $table->index(['retry_claimed_at']);
+        });
     }
 
     /**
@@ -1145,6 +1204,7 @@ class JobQueueService
                 'table' => self::JOBS_TABLE,
                 'connection' => 'default',
                 'queue' => 'default',
+                'retry_after' => self::QUEUE_RETRY_AFTER_SECONDS,
             ];
         } else {
             $laravelContainer['config'] = [
@@ -1153,6 +1213,7 @@ class JobQueueService
                     'table' => self::JOBS_TABLE,
                     'connection' => 'default',
                     'queue' => 'default',
+                    'retry_after' => self::QUEUE_RETRY_AFTER_SECONDS,
                 ],
             ];
         }
@@ -1165,6 +1226,10 @@ class JobQueueService
         $sleep = isset($options['sleep']) ? max(0, (int) $options['sleep']) : 3;
         $tries = isset($options['tries']) ? max(1, (int) $options['tries']) : 3;
         $timeout = isset($options['timeout']) ? max(1, (int) $options['timeout']) : 60;
+        $timeout = min(
+            $timeout,
+            self::QUEUE_RETRY_AFTER_SECONDS - self::WORKER_TIMEOUT_BUFFER_SECONDS
+        );
         $memory = isset($options['memory']) ? max(64, (int) $options['memory']) : 128;
 
         return new WorkerOptions(
