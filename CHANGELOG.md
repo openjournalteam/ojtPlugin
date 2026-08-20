@@ -1,3 +1,7 @@
+### 2.2.0.2 : 20 August 2026
+- Update bug report endpoints in `OjtPageHandler` and `ServiceHandler` to dynamically use `ApiServicePanel` instead of hardcoded URLs.
+- Allow HTTP protocol for local domain extensions (`.localhost`, `.test`, `.local`) in host protocol detection.
+
 ### 2.2.0.1 : 06 August 2026
 - Restricted OJT module deletion and plugin uninstall actions to site administrators
 - Hid module removal controls from journal managers

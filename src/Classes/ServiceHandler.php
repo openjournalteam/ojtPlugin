@@ -11,8 +11,8 @@ class ServiceHandler extends AbstractProcessingHandler
   {
 
     try {
-      $url = 'https://sp.openjournaltheme.com/api/v1/report';
       $ojtPlugin = OjtPlugin::get();
+      $url = ApiServicePanel::make($ojtPlugin)->getApiUrl('report');
       if (!$ojtPlugin->isAllowSendLog() || getcwd() == '/') {
         // if (false || getcwd() == '/') {
         return;
