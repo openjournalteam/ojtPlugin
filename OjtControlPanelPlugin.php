@@ -495,7 +495,6 @@ class OjtControlPanelPlugin extends GenericPlugin
 
         try {
             $response = $apiService->registerClient($params, $headers);
-            dd($response, $params, $headers);
 
             if ($response['status']) {
                 $plugin->updateSetting(Application::CONTEXT_SITE, 'service_panel_data', $response['journal_data']);
