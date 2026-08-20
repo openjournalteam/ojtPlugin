@@ -6,6 +6,7 @@ use APP\core\Application;
 use APP\core\Request;
 use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
 use Exception;
+use PKP\config\Config;
 
 class SubscriptionService
 {
@@ -18,10 +19,18 @@ class SubscriptionService
   protected $baseUrl;
   protected $request;
 
+  protected $serviceApiUrl;
+
+  protected $productionServiceApiUrl = 'https://sp.openjournaltheme.com/';
+  protected $localServiceApiUrl = 'http://127.0.0.1:8000/';
+
   public function __construct($plugin, $mode = null)
   {
     $this->plugin = $plugin;
     $this->mode = $mode ?? static::SINGLE_JOURNAL;
+
+    $appEnv = Config::getVar('ojt_control_panel', 'app_env') ?: Config::getVar('ojt_advance_security', 'app_env');
+    $this->serviceApiUrl = ($appEnv === 'local') ? $this->localServiceApiUrl : $this->productionServiceApiUrl;
   }
 
   public function getModeLabel($mode = null)
@@ -56,7 +65,7 @@ class SubscriptionService
 
   public function getSubscriptionApi($method = '')
   {
-    return OjtControlPanelPlugin::SERVICE_API . 'api/v2/subscription/' . $method;
+    return rtrim($this->serviceApiUrl, '/') . '/api/v2/subscription/' . $method;
   }
 
   public static function init($plugin, $mode = null)

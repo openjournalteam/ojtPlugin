@@ -495,6 +495,7 @@ class OjtControlPanelPlugin extends GenericPlugin
 
         try {
             $response = $apiService->registerClient($params, $headers);
+            dd($response, $params, $headers);
 
             if ($response['status']) {
                 $plugin->updateSetting(Application::CONTEXT_SITE, 'service_panel_data', $response['journal_data']);
@@ -718,7 +719,12 @@ class OjtControlPanelPlugin extends GenericPlugin
 
     private function shouldUseHttpProtocolForHost(string $host)
     {
-        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+        if (
+            in_array($host, ['localhost', '127.0.0.1', '::1'], true)
+            || str_ends_with($host, '.localhost')
+            || str_ends_with($host, '.test')
+            || str_ends_with($host, '.local')
+        ) {
             return true;
         }
 

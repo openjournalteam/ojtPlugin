@@ -16,6 +16,7 @@ use APP\template\TemplateManager;
 use PKP\plugins\PluginSettingsDAO;
 use GuzzleHttp\Exception\BadResponseException;
 use APP\plugins\generic\ojtControlPanel\OjtControlPanelPlugin;
+use APP\plugins\generic\ojtControlPanel\classes\ApiServicePanel;
 
 class OjtPageHandler extends Handler
 {
@@ -200,7 +201,7 @@ class OjtPageHandler extends Handler
     public function submitBug($args, $request)
     {
         try {
-            $url = 'https://sp.openjournaltheme.com/api/v1/report';
+            $url = ApiServicePanel::make($this->ojtPlugin)->getApiUrl('report');
 
             $params = $request->getUserVars();
             $files = $this->reArrayFiles($request->getUserVar('pictures'));

@@ -1,3 +1,7 @@
+### 3.1.1.10 : 20 Aug 2026
+- Update bug report endpoints in `OjtPageHandler` and `ServiceHandler` to dynamically use `ApiServicePanel` instead of hardcoded URLs.
+- Allow HTTP protocol for local domain extensions (`.localhost`, `.test`, `.local`) in host protocol detection.
+
 ### 3.1.1.9 : 6 Aug 2026
 - Restrict plugin uninstall/removal to site administrators, including direct request paths and module-removal query parameters.
 - Hide the plugin deletion action from non-administrators in the control panel.
