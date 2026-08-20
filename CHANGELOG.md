@@ -1,3 +1,14 @@
+### 2.2.0.2 : 20 August 2026
+- Added an administrator Background Jobs panel for queue monitoring, progress
+  tracking, job details, pause/resume, stop, retry, and bulk controls
+- Added schedule management with cron/timezone configuration, enable/pause,
+  manual execution, execution history, retry handling, and stale-run recovery
+- Added shared OJT WorkerBee registration and scheduling hooks for OJT plugins
+- Improved queue reliability with job deduplication, continuation tracking,
+  stronger error handling, and an increased default worker timeout
+- Added database migration support for job tracking, schedules, and schedule
+  execution history
+
 ### 2.2.0.1 : 06 August 2026
 - Restricted OJT module deletion and plugin uninstall actions to site administrators
 - Hid module removal controls from journal managers
