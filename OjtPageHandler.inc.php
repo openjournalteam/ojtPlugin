@@ -1,6 +1,7 @@
 <?php
 
 use GuzzleHttp\Exception\BadResponseException;
+use Openjournalteam\OjtPlugin\Classes\ApiServicePanel;
 
 import('classes.handler.Handler');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
@@ -24,9 +25,8 @@ class OjtPageHandler extends Handler
 
         $this->addRoleAssignment(
             ROLE_ID_MANAGER,
-            ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'getExclusivePlugins', 'save', 'installPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
+            ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'getExclusivePlugins', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
         );
-
         $this->ojtPlugin = OjtPlugin::get();
 
         $this->contextId = $this->ojtPlugin->getCurrentContextId();
@@ -118,7 +118,6 @@ class OjtPageHandler extends Handler
         HookRegistry::call('OjtPageHandler::index', array(&$ojtPlugin));
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
-        $templateMgr->assign('canDeletePlugins', $plugin->isCurrentUserSiteAdmin());
         $templateMgr->assign('journal', $this->contextId ? $request->getContext() : $request->getSite());
         $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
         $templateMgr->assign('pluginInstalledHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl')));
@@ -429,7 +428,7 @@ class OjtPageHandler extends Handler
     public function submitBug($args, $request)
     {
         try {
-            $url = 'http://127.0.0.1:8000/api/v1/report';
+            $url = ApiServicePanel::make($this->ojtPlugin)->getApiUrl('report');
 
             $params = $request->getUserVars();
             $files = $this->reArrayFiles($_FILES['pictures']);
@@ -621,9 +620,10 @@ class OjtPageHandler extends Handler
         HookRegistry::call('OjtPageHandler::installed::plugins', array($this, &$plugins));
 
         // Ensure canDelete and isAuthorized are set
-        $isSiteAdmin = $this->ojtPlugin->isCurrentUserSiteAdmin();
         foreach($plugins as &$plugin) {
-            $plugin['canDelete'] = $isSiteAdmin && ($plugin['canDelete'] ?? true);
+            if(!isset($plugin['canDelete'])) {
+                $plugin['canDelete'] = true;
+            }
             if(!isset($plugin['isAuthorized'])) {
                 $plugin['isAuthorized'] = true;
             }
@@ -962,13 +962,6 @@ class OjtPageHandler extends Handler
     public function uninstallPlugin($args, $request)
     {
         $plugin = $this->ojtPlugin;
-
-        if (!$plugin->isCurrentUserSiteAdmin()) {
-            $json['error'] = 1;
-            $json['msg'] = 'Only site administrators can uninstall plugins';
-            showJson($json);
-            return;
-        }
 
         $removePlugin = json_decode($request->getUserVar('plugin'));
 

@@ -55,7 +55,7 @@
                 <div x-show="tab==='tab1'" class="ojt-text-gray-500">
                   <main>
                     <!-- === Remove and replace with your own content... === -->
-                    <form x-data='settingForm({$settings|@json_encode})' method="POST">
+                    <form x-data='settingForm({$settings|@json_encode|escape:"html"})' method="POST">
                       <div class="ojt-mb-6">
                         <div class="ojt-flex ojt-items-center">
                           <input id="default-checkbox" type="checkbox" x-model="data.enable_diagnostic"

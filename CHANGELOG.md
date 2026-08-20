@@ -1,4 +1,4 @@
-### 2.2.0.2 : 20 August 2026
+### 2.2.0.3 : 20 August 2026
 - Added an administrator Background Jobs panel for queue monitoring, progress
   tracking, job details, pause/resume, stop, retry, and bulk controls
 - Added schedule management with cron/timezone configuration, enable/pause,
@@ -8,6 +8,10 @@
   stronger error handling, and an increased default worker timeout
 - Added database migration support for job tracking, schedules, and schedule
   execution history
+
+### 2.2.0.2 : 20 August 2026
+- Update bug report endpoints in `OjtPageHandler` and `ServiceHandler` to dynamically use `ApiServicePanel` instead of hardcoded URLs.
+- Allow HTTP protocol for local domain extensions (`.localhost`, `.test`, `.local`) in host protocol detection.
 
 ### 2.2.0.1 : 06 August 2026
 - Restricted OJT module deletion and plugin uninstall actions to site administrators

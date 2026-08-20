@@ -1,4 +1,4 @@
-<div x-data='token_handler({$formData|@json_encode})' class="max-w-screen-xl  2xl:mx-auto flex">
+<div x-data='token_handler({$formData|@json_encode|escape:"html"})' class="max-w-screen-xl  2xl:mx-auto flex">
     <div class="flex p-4 w-4/6 bg-white rounded-lg shadow-lg border mx-auto">
         <div class="w-full mx-auto">
             <form class="flex flex-col gap-4" x-ref="form">
