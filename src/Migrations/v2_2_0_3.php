@@ -6,7 +6,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 
-class v2_2_0_2 extends Migration
+class v2_2_0_3 extends Migration
 {
     const JOB_TRACKING_TABLE = 'ojt_job_tracking';
     const FAILED_JOBS_TABLE = 'ojt_failed_jobs';
