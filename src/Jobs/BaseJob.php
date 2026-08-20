@@ -103,8 +103,9 @@ abstract class BaseJob implements JobInterface
         $runId = $this->getScheduledRunId($payload);
         $ojtPlugin = $runId ? $this->getOjtPlugin() : null;
         if ($ojtPlugin) {
-            $ojtPlugin->scheduleService()->markRunStarted($runId);
+            return $ojtPlugin->scheduleService()->markRunStarted($runId);
         }
+        return true;
     }
 
     public function markScheduledRunCompleted(array $payload = [], $result = [])
@@ -112,8 +113,9 @@ abstract class BaseJob implements JobInterface
         $runId = $this->getScheduledRunId($payload);
         $ojtPlugin = $runId ? $this->getOjtPlugin() : null;
         if ($ojtPlugin) {
-            $ojtPlugin->scheduleService()->markRunCompleted($runId, $result);
+            return $ojtPlugin->scheduleService()->markRunCompleted($runId, $result);
         }
+        return true;
     }
 
     public function markScheduledRunFailed(array $payload = [], $message = '', $details = [])
@@ -121,8 +123,9 @@ abstract class BaseJob implements JobInterface
         $runId = $this->getScheduledRunId($payload);
         $ojtPlugin = $runId ? $this->getOjtPlugin() : null;
         if ($ojtPlugin) {
-            $ojtPlugin->scheduleService()->markRunFailed($runId, $message, $details);
+            return $ojtPlugin->scheduleService()->markRunFailed($runId, $message, $details);
         }
+        return true;
     }
 
     protected function getScheduledRunId(array $payload = [])

@@ -146,10 +146,14 @@ class OjtJobs
             }
             try {
                 if (method_exists($job, 'markScheduledRunStarted')) {
-                    $job->markScheduledRunStarted(is_array($payload) ? $payload : []);
+                    $runStarted = $job->markScheduledRunStarted(is_array($payload) ? $payload : []);
+                    if ($runStarted === false) {
+                        throw new Exception('Scheduled run is no longer active.');
+                    }
                 }
                 $result = $job->handle(is_array($payload) ? $payload : [], $data);
-                if (method_exists($job, 'markScheduledRunCompleted')) {
+                if (method_exists($job, 'markScheduledRunCompleted')
+                    && !(is_array($result) && !empty($result['scheduled_continuation']))) {
                     $job->markScheduledRunCompleted(is_array($payload) ? $payload : [], $result);
                 }
                 $handled = true;

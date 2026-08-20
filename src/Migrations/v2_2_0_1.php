@@ -67,6 +67,14 @@ class v2_2_0_1 extends Migration
             });
         }
 
+        if ($schema->hasTable(self::JOB_TRACKING_TABLE)
+            && !$schema->hasColumn(self::JOB_TRACKING_TABLE, 'dedupe_key')) {
+            $schema->table(self::JOB_TRACKING_TABLE, function (Blueprint $table) {
+                $table->string('dedupe_key', 191)->nullable()->after('tracking_token');
+                $table->unique(['dedupe_key'], 'ojt_job_tracking_dedupe_unique');
+            });
+        }
+
         if (!$schema->hasTable(self::SCHEDULES_TABLE)) {
             $schema->create(self::SCHEDULES_TABLE, function (Blueprint $table) {
                 $table->bigIncrements('id');
@@ -142,6 +150,21 @@ class v2_2_0_1 extends Migration
                 $table->index(['retry_claimed_at']);
             });
         }
+
+        if ($schema->hasTable('ojtg_activities')) {
+            $hasActivityDateIndex = false;
+            foreach (Capsule::select('SHOW INDEX FROM `ojtg_activities`') as $index) {
+                if ((string) ($index->Key_name ?? '') === 'ojtg_activities_created_activity') {
+                    $hasActivityDateIndex = true;
+                    break;
+                }
+            }
+            if (!$hasActivityDateIndex) {
+                Capsule::statement(
+                    'ALTER TABLE `ojtg_activities` ADD INDEX `ojtg_activities_created_activity` (`created_at`, `activity_id`)'
+                );
+            }
+        }
     }
 
     public function down()
@@ -161,6 +184,14 @@ class v2_2_0_1 extends Migration
             $schema->table(self::FAILED_JOBS_TABLE, function (Blueprint $table) {
                 $table->dropIndex(['retry_claimed_at']);
                 $table->dropColumn('retry_claimed_at');
+            });
+        }
+
+        if ($schema->hasTable(self::JOB_TRACKING_TABLE)
+            && $schema->hasColumn(self::JOB_TRACKING_TABLE, 'dedupe_key')) {
+            $schema->table(self::JOB_TRACKING_TABLE, function (Blueprint $table) {
+                $table->dropUnique('ojt_job_tracking_dedupe_unique');
+                $table->dropColumn('dedupe_key');
             });
         }
 

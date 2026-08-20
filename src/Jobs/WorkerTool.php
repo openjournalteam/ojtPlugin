@@ -12,7 +12,7 @@ class WorkerTool extends \CommandLineTool
         'queue' => 'default',
         'sleep' => 3,
         'tries' => 3,
-        'timeout' => 60,
+        'timeout' => 180,
         'memory' => 128,
         'once' => false,
         'stopWhenEmpty' => false,
@@ -43,7 +43,7 @@ class WorkerTool extends \CommandLineTool
         echo "  --queue=NAME         Queue name (default: default)\n";
         echo "  --sleep=SECONDS      Poll sleep seconds (default: 3)\n";
         echo "  --tries=INT          Max tries per job (default: 3)\n";
-        echo "  --timeout=SECONDS    Job timeout (default: 60)\n";
+        echo "  --timeout=SECONDS    Job timeout (default: 180)\n";
         echo "  --memory=MB          Worker memory limit (default: 128)\n";
         echo "  --once               Process only one job then exit\n";
         echo "  --stop-when-empty    Exit daemon when queue is empty\n";

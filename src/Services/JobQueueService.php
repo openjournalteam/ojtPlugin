@@ -55,6 +55,10 @@ class JobQueueService
         $queueName = (string) ($options['queue'] ?? 'default');
         $delaySeconds = (int) ($options['delaySeconds'] ?? 0);
         $contextId = $this->resolveContextId($options, $payload);
+        $dedupeKey = trim((string) ($options['dedupeKey'] ?? ''));
+        if ($dedupeKey !== '') {
+            $dedupeKey = substr((string) $jobType . ':' . $dedupeKey, 0, 191);
+        }
         $trackingToken = bin2hex(random_bytes(16));
         $data = [
             'jobType' => (string) $jobType,
@@ -66,7 +70,20 @@ class JobQueueService
         ];
 
         $job = 'Openjournalteam\\OjtPlugin\\Jobs\\Handlers\\JobHandler@fire';
-        $this->recordDispatched(null, $jobType, $queueName, $contextId, $options, time() + $delaySeconds, $trackingToken, $payload);
+        $tracking = $this->recordDispatched(
+            null,
+            $jobType,
+            $queueName,
+            $contextId,
+            $options,
+            time() + $delaySeconds,
+            $trackingToken,
+            $payload,
+            $dedupeKey
+        );
+        if (is_array($tracking) && !empty($tracking['duplicate'])) {
+            return $tracking['job_id'] ?: 'deduplicated';
+        }
         try {
             if ($delaySeconds > 0) {
                 $jobId = Queue::later($delaySeconds, $job, $data, $queueName, self::CONNECTION);
@@ -609,7 +626,7 @@ class JobQueueService
     /**
      * Insert the UI tracking row after Laravel inserts the queue row.
      */
-    protected function recordDispatched($jobId, $jobType, $queueName, $contextId, array $options, $availableAt, $trackingToken = null, array $payload = [])
+    protected function recordDispatched($jobId, $jobType, $queueName, $contextId, array $options, $availableAt, $trackingToken = null, array $payload = [], $dedupeKey = null)
     {
         if (!$jobId && !$trackingToken) {
             return;
@@ -622,6 +639,7 @@ class JobQueueService
                 'queue_job_id' => $jobId ? (int) $jobId : null,
                 'context_id' => $contextId ? (int) $contextId : null,
                 'tracking_token' => $trackingToken,
+                'dedupe_key' => $dedupeKey ?: null,
                 'queue' => (string) $queueName,
                 'job_type' => (string) $jobType,
                 'display_name' => $this->displayName($jobType, $options),
@@ -635,9 +653,22 @@ class JobQueueService
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
+            return ['duplicate' => false];
         } catch (Throwable $e) {
+            if ($dedupeKey !== null && $dedupeKey !== '') {
+                $existing = Capsule::table(self::JOB_RUNS_TABLE)
+                    ->where('dedupe_key', '=', $dedupeKey)
+                    ->first();
+                if ($existing) {
+                    return [
+                        'duplicate' => true,
+                        'job_id' => $existing->queue_job_id ? (int) $existing->queue_job_id : null,
+                    ];
+                }
+            }
             error_log('OjtWorkerBee job tracking insert failed: ' . $e->getMessage());
         }
+        return null;
     }
 
     protected function bindTrackingToken($trackingToken, $jobId)
@@ -1225,7 +1256,7 @@ class JobQueueService
     {
         $sleep = isset($options['sleep']) ? max(0, (int) $options['sleep']) : 3;
         $tries = isset($options['tries']) ? max(1, (int) $options['tries']) : 3;
-        $timeout = isset($options['timeout']) ? max(1, (int) $options['timeout']) : 60;
+        $timeout = isset($options['timeout']) ? max(1, (int) $options['timeout']) : 180;
         $timeout = min(
             $timeout,
             self::QUEUE_RETRY_AFTER_SECONDS - self::WORKER_TIMEOUT_BUFFER_SECONDS

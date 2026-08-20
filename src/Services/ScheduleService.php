@@ -13,6 +13,8 @@ class ScheduleService
     const JOB_RUNS_TABLE = 'ojt_job_tracking';
     const DISPATCH_RETRY_BASE_SECONDS = 60;
     const DISPATCH_RETRY_MAX_SECONDS = 3600;
+    const STALE_PROCESSING_SECONDS = 1800;
+    const STALE_QUEUED_SECONDS = 3600;
     const MAX_DISPATCHES_PER_POLL = 20;
     const MAX_CRON_LENGTH = 100;
     const MAX_CRON_TERMS = 64;
@@ -165,25 +167,32 @@ class ScheduleService
     public function runNow($scheduleId, $contextId = 0, $allowGlobal = false)
     {
         $this->ensureSchema();
-        $row = $this->findSchedule($scheduleId);
-        if (!$row || !$this->canMutateSchedule($row, $contextId, $allowGlobal)) {
-            return ['success' => false, 'message' => 'Schedule not found.'];
-        }
 
-        $activeRun = Capsule::table(self::RUNS_TABLE)
-            ->where('schedule_id', '=', (int) $scheduleId)
-            ->whereIn('status', ['dispatching', 'queued', 'processing'])
-            ->orderBy('id', 'desc')
-            ->first();
-        if ($activeRun) {
-            return [
-                'success' => false,
-                'message' => 'This schedule already has a queued or running execution.',
-                'runId' => (int) $activeRun->id,
-            ];
-        }
+        return Capsule::connection()->transaction(function () use ($scheduleId, $contextId, $allowGlobal) {
+            $row = Capsule::table(self::TABLE)
+                ->where('id', '=', (int) $scheduleId)
+                ->lockForUpdate()
+                ->first();
+            if (!$row || !$this->canMutateSchedule($row, $contextId, $allowGlobal)) {
+                return ['success' => false, 'message' => 'Schedule not found.'];
+            }
 
-        return $this->dispatchSchedule($row, true);
+            $this->recoverStaleRuns($this->now(), (int) $scheduleId);
+            $activeRun = Capsule::table(self::RUNS_TABLE)
+                ->where('schedule_id', '=', (int) $scheduleId)
+                ->whereIn('status', ['dispatching', 'queued', 'processing'])
+                ->orderBy('id', 'desc')
+                ->first();
+            if ($activeRun) {
+                return [
+                    'success' => false,
+                    'message' => 'This schedule already has a queued or running execution.',
+                    'runId' => (int) $activeRun->id,
+                ];
+            }
+
+            return $this->dispatchSchedule($row, true);
+        });
     }
 
     public function runDueSchedules($limit = 20)
@@ -196,6 +205,7 @@ class ScheduleService
         $this->ensureSchema();
         $this->syncDefinitions();
         $now = $this->now();
+        $this->recoverStaleRuns($now);
         $summary = ['checked' => 0, 'dispatched' => 0, 'failed' => 0, 'errors' => []];
 
         $rows = Capsule::table(self::TABLE)
@@ -208,6 +218,14 @@ class ScheduleService
 
         foreach ($rows as $row) {
             $summary['checked']++;
+            $activeRun = Capsule::table(self::RUNS_TABLE)
+                ->where('schedule_id', '=', (int) $row->id)
+                ->whereIn('status', ['dispatching', 'queued', 'processing'])
+                ->exists();
+            if ($activeRun) {
+                continue;
+            }
+
             $nextRun = $this->calculateNextRun($row->cron_expression, $row->timezone);
             if (!$nextRun) {
                 $summary['failed']++;
@@ -327,15 +345,19 @@ class ScheduleService
     public function markRunStarted($runId)
     {
         if (!$runId) {
-            return;
+            return true;
         }
         $run = Capsule::table(self::RUNS_TABLE)->where('id', '=', (int) $runId)->first();
         if (!$run) {
-            return;
+            return false;
+        }
+        if (in_array((string) $run->status, ['done', 'failed', 'paused'], true)) {
+            return false;
         }
         $now = $this->now();
-        Capsule::table(self::RUNS_TABLE)
+        $updated = Capsule::table(self::RUNS_TABLE)
             ->where('id', '=', (int) $runId)
+            ->whereIn('status', ['dispatching', 'queued', 'processing'])
             ->update([
                 'status' => 'processing',
                 'started_at' => $run->started_at ?: $now,
@@ -344,21 +366,25 @@ class ScheduleService
                 'error_message' => null,
                 'updated_at' => $now,
             ]);
-        $this->updateScheduleAfterRun($run->schedule_id, 'processing', null);
+        if ($updated) {
+            $this->updateScheduleAfterRun($run->schedule_id, 'processing', null);
+        }
+        return (bool) $updated;
     }
 
     public function markRunCompleted($runId, $result = [])
     {
         if (!$runId) {
-            return;
+            return true;
         }
         $run = Capsule::table(self::RUNS_TABLE)->where('id', '=', (int) $runId)->first();
         if (!$run) {
-            return;
+            return false;
         }
         $finishedAt = $this->now();
-        Capsule::table(self::RUNS_TABLE)
+        $updated = Capsule::table(self::RUNS_TABLE)
             ->where('id', '=', (int) $runId)
+            ->whereIn('status', ['dispatching', 'queued', 'processing'])
             ->update([
                 'status' => 'done',
                 'progress' => 100,
@@ -369,25 +395,29 @@ class ScheduleService
                 'error_message' => null,
                 'updated_at' => $finishedAt,
             ]);
-        $this->updateScheduleAfterRun($run->schedule_id, 'done', null);
+        if ($updated) {
+            $this->updateScheduleAfterRun($run->schedule_id, 'done', null);
+        }
+        return (bool) $updated;
     }
 
     public function markRunFailed($runId, $message, $details = [])
     {
         if (!$runId) {
-            return;
+            return true;
         }
         $run = Capsule::table(self::RUNS_TABLE)->where('id', '=', (int) $runId)->first();
         if (!$run) {
-            return;
+            return false;
         }
         $stoppedAt = $this->now();
         $runDetails = ['error' => (string) $message];
         if ($details !== [] && $details !== null) {
             $runDetails['result'] = $details;
         }
-        Capsule::table(self::RUNS_TABLE)
+        $updated = Capsule::table(self::RUNS_TABLE)
             ->where('id', '=', (int) $runId)
+            ->whereIn('status', ['dispatching', 'queued', 'processing'])
             ->update([
                 'status' => 'failed',
                 'stopped_at' => $stoppedAt,
@@ -396,7 +426,52 @@ class ScheduleService
                 'details' => $this->mergeRunDetails($run->details, $runDetails),
                 'updated_at' => $stoppedAt,
             ]);
-        $this->updateScheduleAfterRun($run->schedule_id, 'failed', (string) $message);
+        if ($updated) {
+            $this->updateScheduleAfterRun($run->schedule_id, 'failed', (string) $message);
+        }
+        return (bool) $updated;
+    }
+
+    /**
+     * Release schedule runs left active by a killed worker or failed dispatch.
+     * A late queue delivery is rejected by markRunStarted() once the run is
+     * marked failed, so recovery cannot create a second execution silently.
+     */
+    protected function recoverStaleRuns($now, $scheduleId = null)
+    {
+        $nowTimestamp = time();
+        $processingCutoff = gmdate('Y-m-d H:i:s', $nowTimestamp - self::STALE_PROCESSING_SECONDS);
+        $queuedCutoff = gmdate('Y-m-d H:i:s', $nowTimestamp - self::STALE_QUEUED_SECONDS);
+        $query = Capsule::table(self::RUNS_TABLE)
+            ->where(function ($builder) use ($processingCutoff, $queuedCutoff) {
+                $builder->where(function ($nested) use ($processingCutoff) {
+                    $nested->where('status', '=', 'processing')
+                        ->where('updated_at', '<', $processingCutoff);
+                })->orWhere(function ($nested) use ($queuedCutoff) {
+                    $nested->whereIn('status', ['dispatching', 'queued'])
+                        ->where('updated_at', '<', $queuedCutoff);
+                });
+            });
+        if ($scheduleId !== null) {
+            $query->where('schedule_id', '=', (int) $scheduleId);
+        }
+
+        foreach ($query->limit(50)->get() as $run) {
+            if ($run->queue_job_id) {
+                $queueJob = Capsule::table(JobQueueService::JOBS_TABLE)
+                    ->where('id', '=', (int) $run->queue_job_id)
+                    ->first();
+                if ($queueJob && $queueJob->reserved_at === null) {
+                    Capsule::table(JobQueueService::JOBS_TABLE)
+                        ->where('id', '=', (int) $run->queue_job_id)
+                        ->delete();
+                }
+            }
+            $this->markRunFailed(
+                (int) $run->id,
+                'Schedule execution became stale and was recovered automatically.'
+            );
+        }
     }
 
     protected function syncDefinitions()
