@@ -744,16 +744,16 @@ function createBackgroundJobs(config = {}) {
       } else if (parts[0] === "0" && /^\*\/\d+$/.test(parts[1]) && parts[2] === "*" && parts[3] === "*" && parts[4] === "*") {
         const hours = parts[1].slice(2);
         if (["1", "2", "6", "12"].includes(hours)) values.frequency = "hours-" + hours;
-      } else if (parts[0] === "0" && /^\d+$/.test(parts[1]) && parts[2] === "*" && parts[3] === "*" && parts[4] === "*") {
+      } else if (/^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1]) && parts[2] === "*" && parts[3] === "*" && parts[4] === "*") {
         values.frequency = "daily";
-        values.time = String(parts[1]).padStart(2, "0") + ":00";
-      } else if (parts[0] === "0" && /^\d+$/.test(parts[1]) && parts[2] === "*" && parts[3] === "*" && /^[0-7]$/.test(parts[4])) {
+        values.time = String(parts[1]).padStart(2, "0") + ":" + String(parts[0]).padStart(2, "0");
+      } else if (/^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1]) && parts[2] === "*" && parts[3] === "*" && /^[0-7]$/.test(parts[4])) {
         values.frequency = "weekly";
-        values.time = String(parts[1]).padStart(2, "0") + ":00";
+        values.time = String(parts[1]).padStart(2, "0") + ":" + String(parts[0]).padStart(2, "0");
         values.day = parts[4] === "7" ? "0" : parts[4];
-      } else if (parts[0] === "0" && /^\d+$/.test(parts[1]) && parts[2] === "1" && parts[3] === "*" && parts[4] === "*") {
+      } else if (/^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1]) && parts[2] === "1" && parts[3] === "*" && parts[4] === "*") {
         values.frequency = "monthly";
-        values.time = String(parts[1]).padStart(2, "0") + ":00";
+        values.time = String(parts[1]).padStart(2, "0") + ":" + String(parts[0]).padStart(2, "0");
       }
 
       return values;

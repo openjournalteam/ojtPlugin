@@ -996,8 +996,14 @@ class ScheduleService
             return 'Custom schedule';
         }
 
-        if ($parts[0] === '0' && preg_match('/^\d+$/', $parts[1]) && $parts[2] === '*' && $parts[3] === '*' && $parts[4] === '*') {
-            return 'Every day at ' . str_pad($parts[1], 2, '0', STR_PAD_LEFT) . ':00';
+        $time = function ($minute, $hour) {
+            return str_pad($hour, 2, '0', STR_PAD_LEFT) . ':'
+                . str_pad($minute, 2, '0', STR_PAD_LEFT);
+        };
+
+        if (preg_match('/^\d+$/', $parts[0]) && preg_match('/^\d+$/', $parts[1])
+            && $parts[2] === '*' && $parts[3] === '*' && $parts[4] === '*') {
+            return 'Every day at ' . $time($parts[0], $parts[1]);
         }
         if ($parts[0] === '0' && preg_match('/^\*\/\d+$/', $parts[1]) && $parts[2] === '*' && $parts[3] === '*' && $parts[4] === '*') {
             $hours = (int) substr($parts[1], 2);
@@ -1007,14 +1013,16 @@ class ScheduleService
             return 'Every ' . substr($parts[0], 2) . ' minutes';
         }
 
-        if ($parts[0] === '0' && preg_match('/^\d+$/', $parts[1]) && $parts[2] === '*' && $parts[3] === '*' && preg_match('/^[0-7]$/', $parts[4])) {
+        if (preg_match('/^\d+$/', $parts[0]) && preg_match('/^\d+$/', $parts[1])
+            && $parts[2] === '*' && $parts[3] === '*' && preg_match('/^[0-7]$/', $parts[4])) {
             $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             $day = $days[(int) $parts[4] === 7 ? 0 : (int) $parts[4]];
-            return 'Every ' . $day . ' at ' . str_pad($parts[1], 2, '0', STR_PAD_LEFT) . ':00';
+            return 'Every ' . $day . ' at ' . $time($parts[0], $parts[1]);
         }
 
-        if ($parts[0] === '0' && preg_match('/^\d+$/', $parts[1]) && $parts[2] === '1' && $parts[3] === '*' && $parts[4] === '*') {
-            return 'On the 1st of every month at ' . str_pad($parts[1], 2, '0', STR_PAD_LEFT) . ':00';
+        if (preg_match('/^\d+$/', $parts[0]) && preg_match('/^\d+$/', $parts[1])
+            && $parts[2] === '1' && $parts[3] === '*' && $parts[4] === '*') {
+            return 'On the 1st of every month at ' . $time($parts[0], $parts[1]);
         }
 
         return 'Custom schedule';

@@ -319,7 +319,7 @@
                               <span x-show="schedule.lastStatus" class="ojt-inline-flex ojt-items-center ojt-rounded-full ojt-px-2 ojt-py-0.5 ojt-text-[10px] ojt-font-semibold" :class="scheduleLastStatusClasses(schedule.lastStatus)" x-text="schedule.lastStatusLabel"></span>
                             </div>
                             <div class="ojt-mt-1 ojt-flex ojt-flex-wrap ojt-items-center ojt-gap-x-2 ojt-gap-y-1 ojt-text-xs ojt-text-gray-400">
-                              <span class="ojt-font-medium ojt-text-gray-600" x-text="schedule.human"></span><span>·</span><span>Next run: <strong class="ojt-font-semibold ojt-text-gray-600" x-text="schedule.next"></strong></span><span>·</span><span>Last run: <strong class="ojt-font-semibold ojt-text-gray-600" x-text="schedule.last"></strong></span>
+                              <span class="ojt-font-medium ojt-text-gray-600" x-text="schedule.human"></span><span class="ojt-text-gray-400" x-text="'(' + schedule.timezone + ')'" ></span><span>·</span><span>Next run: <strong class="ojt-font-semibold ojt-text-gray-600" x-text="schedule.next"></strong></span><span>·</span><span>Last run: <strong class="ojt-font-semibold ojt-text-gray-600" x-text="schedule.last"></strong></span>
                             </div>
                           </div>
                           <div class="ojt-flex ojt-items-center ojt-gap-3">
