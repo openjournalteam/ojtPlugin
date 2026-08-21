@@ -106,6 +106,22 @@ class OjtJobs
     }
 
     /**
+     * Dispatch a registered job by type. This is used by the generic schedule
+     * runner, which stores the job type rather than a plugin object.
+     */
+    public static function dispatchByType($jobType, array $payload = [], array $options = [])
+    {
+        foreach ((array) (self::$jobsByType[(string) $jobType] ?? []) as $job) {
+            if (method_exists($job, 'dispatch')) {
+                return $job->dispatch($payload, $options);
+            }
+        }
+
+        error_log('OjtJobs: no registered job handler for type "' . (string) $jobType . '".');
+        return null;
+    }
+
+    /**
      * WorkerBee process callback.
      */
     public static function handleProcessJob($hookName, $args)
@@ -114,6 +130,7 @@ class OjtJobs
         $payload = &$args[1];
         $handled = &$args[2];
         $result = &$args[3];
+        $queueJob = isset($args[4]) ? $args[4] : null;
         $data = isset($args[5]) && is_array($args[5]) ? $args[5] : [];
 
         if (empty(self::$jobsByType[$jobType])) {
@@ -124,8 +141,32 @@ class OjtJobs
             if (!method_exists($job, 'handle')) {
                 continue;
             }
-            $result = $job->handle(is_array($payload) ? $payload : [], $data);
-            $handled = true;
+            if (method_exists($job, 'setRuntimeJob')) {
+                $job->setRuntimeJob($queueJob);
+            }
+            try {
+                if (method_exists($job, 'markScheduledRunStarted')) {
+                    $runStarted = $job->markScheduledRunStarted(is_array($payload) ? $payload : []);
+                    if ($runStarted === false) {
+                        throw new Exception('Scheduled run is no longer active.');
+                    }
+                }
+                $result = $job->handle(is_array($payload) ? $payload : [], $data);
+                if (method_exists($job, 'markScheduledRunCompleted')
+                    && !(is_array($result) && !empty($result['scheduled_continuation']))) {
+                    $job->markScheduledRunCompleted(is_array($payload) ? $payload : [], $result);
+                }
+                $handled = true;
+            } catch (\Throwable $e) {
+                if (method_exists($job, 'markScheduledRunFailed')) {
+                    $job->markScheduledRunFailed(is_array($payload) ? $payload : [], $e->getMessage());
+                }
+                throw $e;
+            } finally {
+                if (method_exists($job, 'clearRuntimeJob')) {
+                    $job->clearRuntimeJob();
+                }
+            }
             return false;
         }
 
