@@ -253,7 +253,7 @@
                                       <svg class="ojt-h-3 ojt-w-3" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M15.5 9a5.5 5.5 0 1 0-1.3 4.2M15.5 5.5V9h-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                       Retry
                                     </button>
-                                    <button type="button" @click="openJobDetails(job)" class="ojt-inline-flex ojt-items-center ojt-gap-1 ojt-rounded-md ojt-border ojt-border-gray-200 ojt-bg-white ojt-px-2.5 ojt-py-1 ojt-text-xs ojt-font-medium ojt-text-gray-600 hover:ojt-border-primary-300 hover:ojt-bg-primary-50 hover:ojt-text-primary-600">
+                                    <button type="button" @click.stop.prevent="openJobDetails(job)" class="ojt-inline-flex ojt-items-center ojt-gap-1 ojt-rounded-md ojt-border ojt-border-gray-200 ojt-bg-white ojt-px-2.5 ojt-py-1 ojt-text-xs ojt-font-medium ojt-text-gray-600 hover:ojt-border-primary-300 hover:ojt-bg-primary-50 hover:ojt-text-primary-600">
                                       <svg class="ojt-h-3 ojt-w-3" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" /><path d="M10 9v4M10 6.5h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
                                       Details
                                     </button>
@@ -372,7 +372,7 @@
                     </div>
 
                     <template x-if="selectedJob">
-                      <div x-show="detailsOpen" x-cloak @keydown.escape.window="closeJobDetails()" @click="closeJobDetails()"
+                      <div x-show="detailsOpen" x-cloak @keydown.escape.window="closeJobDetails()" @click="if ($event.target === $event.currentTarget) closeJobDetails()"
                         x-transition:enter="ojt-transition ojt-duration-200 ojt-ease-out" x-transition:enter-start="ojt-opacity-0" x-transition:enter-end="ojt-opacity-100"
                         x-transition:leave="ojt-transition ojt-duration-150 ojt-ease-in" x-transition:leave-start="ojt-opacity-100" x-transition:leave-end="ojt-opacity-0"
                         class="ojt-fixed ojt-inset-0 ojt-z-50 ojt-flex ojt-items-center ojt-justify-center ojt-bg-black ojt-bg-opacity-50 ojt-p-4">
@@ -609,6 +609,7 @@
       },
       closeJobDetails() {
         this.detailsOpen = false;
+        this.selectedJob = null;
       },
       formatDetails(details) {
         try {

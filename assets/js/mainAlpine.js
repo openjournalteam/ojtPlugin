@@ -386,6 +386,7 @@ function createBackgroundJobs(config = {}) {
     },
     closeJobDetails() {
       this.detailsOpen = false;
+      this.selectedJob = null;
     },
     formatDetails(details) {
       try {
