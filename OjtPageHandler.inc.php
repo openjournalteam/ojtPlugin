@@ -316,7 +316,10 @@ class OjtPageHandler extends Handler
             return showJson(['error' => 1, 'msg' => $result['message'] ?? 'Unable to apply the schedule action.']);
         }
 
-        return showJson(['error' => 0, 'msg' => $result['message'] ?? 'Schedule action completed.']);
+        return showJson([
+            'error' => 0,
+            'msg' => $result['message'] ?? 'Schedule action completed.',
+        ]);
     }
 
     /**
