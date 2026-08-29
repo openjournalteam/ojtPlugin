@@ -1,3 +1,29 @@
+### 2.2.0.3 : 20 August 2026
+- Added an administrator Background Jobs panel for queue monitoring, progress
+  tracking, job details, pause/resume, stop, retry, and bulk controls
+- Added schedule management with cron/timezone configuration, enable/pause,
+  manual execution, execution history, retry handling, and stale-run recovery
+- Added shared OJT WorkerBee registration and scheduling hooks for OJT plugins
+- Improved queue reliability with job deduplication, continuation tracking,
+  stronger error handling, and an increased default worker timeout
+- Added database migration support for job tracking, schedules, and schedule
+  execution history
+
+### 2.2.0.2 : 20 August 2026
+- Update bug report endpoints in `OjtPageHandler` and `ServiceHandler` to dynamically use `ApiServicePanel` instead of hardcoded URLs.
+- Allow HTTP protocol for local domain extensions (`.localhost`, `.test`, `.local`) in host protocol detection.
+
+### 2.2.0.1 : 06 August 2026
+- Restricted OJT module deletion and plugin uninstall actions to site administrators
+- Hid module removal controls from journal managers
+- Fixed removal of modules containing read-only Git object files
+- Restricted replacement of existing plugins during installation to site administrators
+
+### 2.2.0.0 : 30 March 2026
+- Added jobs ecosystem for OJT plugins (register, dispatch, and process background jobs)
+- Optimized `OjtPlugin` by separating core logic into dedicated services
+- Improved worker and queue handling stability
+
 ### 2.1.3.2 : 12 Jan 2026
 - Add Feature force report to service panel for plugin registered
 

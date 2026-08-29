@@ -1,0 +1,8 @@
+<!DOCTYPE scheduled_tasks SYSTEM "../../../lib/pkp/dtd/scheduledTasks.dtd">
+
+<scheduled_tasks>
+    <task class="plugins.generic.ojtPlugin.src.Classes.ScheduleRunnerTask">
+        <descr>OJT scheduled job runner</descr>
+        <frequency minute="*" />
+    </task>
+</scheduled_tasks>

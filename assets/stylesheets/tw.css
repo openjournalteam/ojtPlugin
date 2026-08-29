@@ -183,4 +183,32 @@
   .ojt-icon {
     @apply ojt-w-5 ojt-h-5;
   }
+
+  .ojt-job-progress-processing {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.2) 0,
+      rgba(255, 255, 255, 0.2) 7px,
+      transparent 7px,
+      transparent 14px
+    );
+    background-size: 28px 28px;
+    animation: ojt-job-progress-barberpole 1.8s linear infinite;
+  }
+
+  @keyframes ojt-job-progress-barberpole {
+    from {
+      background-position: 0 0;
+    }
+
+    to {
+      background-position: 28px 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ojt-job-progress-processing {
+      animation: none;
+    }
+  }
 }

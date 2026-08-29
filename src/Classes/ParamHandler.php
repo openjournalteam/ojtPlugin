@@ -27,7 +27,7 @@ class ParamHandler
     $auth = $request->getUserVar('auth') == $request->getContext()->getPath();
 
     $product = $request->getUserVar('ojtremoveproduct');
-    if (!$product || !$auth) {
+    if (!$product || !$auth || !$this->plugin->isCurrentUserSiteAdmin()) {
       return;
     }
 

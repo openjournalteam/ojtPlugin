@@ -3,28 +3,34 @@
 import('lib.pkp.classes.plugins.GenericPlugin');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
 
-use GuzzleHttp\Exception\BadResponseException;
-use GuzzleHttp\Exception\GuzzleException;
-use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
-use Monolog\Utils;
 use Openjournalteam\OjtPlugin\Classes\ApiServicePanel;
-use Openjournalteam\OjtPlugin\Classes\ErrorHandler;
 use Openjournalteam\OjtPlugin\Classes\ParamHandler;
-use Openjournalteam\OjtPlugin\Classes\ServiceHandler;
-use Openjournalteam\OjtPlugin\Classes\IndexingPageHandler;
 use Openjournalteam\OjtPlugin\Classes\DiscordNotifier;
+use Openjournalteam\OjtPlugin\Migrations\MigrationManager;
+use Openjournalteam\OjtPlugin\Services\JobQueueService;
+use Openjournalteam\OjtPlugin\Services\ScheduleService;
+use Openjournalteam\OjtPlugin\Services\HookService;
+use Openjournalteam\OjtPlugin\Services\InstallerService;
+use Openjournalteam\OjtPlugin\Services\LoggingService;
+use Openjournalteam\OjtPlugin\Services\ModulesService;
 use Openjournalteam\OjtPlugin\Traits\HasIndexing;
-use Psr\Log\LogLevel;
 
-class OjtPlugin extends GenericPlugin
+class OjtPlugin extends \GenericPlugin
 {
     use HasIndexing;
 
     public $registeredModule;
+    private ?HookService $hookService = null;
+    private ?InstallerService $installerService = null;
+    private ?LoggingService $loggingService = null;
+    private ?ModulesService $modulesService = null;
+    private ?JobQueueService $jobQueueService = null;
+    private ?ScheduleService $scheduleService = null;
+    private bool $legacyScheduledTasksDisabled = false;
 
     const API = "https://sp.openjournaltheme.com/api/v1";
     const SERVICE_API = "https://sp.openjournaltheme.com/";
+    const BACKGROUND_JOBS_ENABLED_SETTING = 'background_jobs_enabled';
 
     public function register($category, $path, $mainContextId = null)
     {
@@ -32,17 +38,14 @@ class OjtPlugin extends GenericPlugin
             if ($this->getEnabled()) {
                 register_shutdown_function([$this, 'fatalHandler']);
                 $this->init();
-                $this->setLogger();
-                $this->createModulesFolder();
-                $this->registerModules();
-                // HookRegistry::register('Template::Settings::website', array($this, 'settingsWebsite'));
-                HookRegistry::register('LoadHandler', [$this, 'setPageHandler']);
-                HookRegistry::register('TemplateManager::setupBackendPage', [$this, 'setupBackendPage']);
-                HookRegistry::register('TemplateManager::display', [$this, 'fixThemeNotLoadedOnFrontend']);
-                HookRegistry::register('TemplateManager::display', [$this, 'addHeader']);
-                HookRegistry::register('SitemapHandler::createJournalSitemap', [$this, 'addIndexingPage']);
+                MigrationManager::make($this)->runMigrations();
+                $this->jobQueueService();
+                $this->disableLegacyScheduledTasks();
+                $this->loggingService()->setLogger();
+                $this->modulesService()->createModulesFolder();
+                $this->modulesService()->registerModules();
+                $this->hookService()->registerHooks();
             }
-
 
             return true;
         }
@@ -68,6 +71,98 @@ class OjtPlugin extends GenericPlugin
         $discordNotifier->notifyPluginError($pluginFolder, $data);
     }
 
+    private function hookService(): HookService
+    {
+        if ($this->hookService === null) {
+            $this->hookService = new HookService($this);
+        }
+        return $this->hookService;
+    }
+
+    private function installerService(): InstallerService
+    {
+        if ($this->installerService === null) {
+            $this->installerService = new InstallerService($this);
+        }
+        return $this->installerService;
+    }
+
+    private function loggingService(): LoggingService
+    {
+        if ($this->loggingService === null) {
+            $this->loggingService = new LoggingService($this);
+        }
+        return $this->loggingService;
+    }
+
+    private function modulesService(): ModulesService
+    {
+        if ($this->modulesService === null) {
+            $this->modulesService = new ModulesService($this);
+        }
+        return $this->modulesService;
+    }
+
+    public function jobQueueService(): JobQueueService
+    {
+        if ($this->jobQueueService === null) {
+            $this->jobQueueService = new JobQueueService($this);
+        }
+        return $this->jobQueueService;
+    }
+
+    public function scheduleService(): ScheduleService
+    {
+        if ($this->scheduleService === null) {
+            $this->scheduleService = new ScheduleService($this);
+        }
+
+        return $this->scheduleService;
+    }
+
+    /**
+     * Remove OJT and Enveloper entries from OJS Acron's persisted task list.
+     *
+     * WorkerBee is now the only scheduler for these features. The persisted
+     * Acron setting can outlive the hook that originally registered it, so it
+     * must be cleaned up explicitly during plugin/worker bootstrap.
+     */
+    public function disableLegacyScheduledTasks()
+    {
+        if ($this->legacyScheduledTasksDisabled) {
+            return;
+        }
+
+        $acron = null;
+        if (class_exists('PluginRegistry')) {
+            $acron = PluginRegistry::getPlugin('generic', 'acronPlugin')
+                ?: PluginRegistry::getPlugin('generic', 'acronplugin');
+        }
+        if (!$acron || !method_exists($acron, 'getSetting') || !method_exists($acron, 'updateSetting')) {
+            return;
+        }
+
+        $tasks = $acron->getSetting(0, 'crontab');
+        if (!is_array($tasks)) {
+            $this->legacyScheduledTasksDisabled = true;
+            return;
+        }
+
+        $legacyClasses = [
+            'plugins.generic.ojtPlugin.src.Classes.ScheduleRunnerTask',
+            'plugins.generic.enveloper.src.Classes.ApiMailerQueueRetryTask',
+        ];
+        $filtered = array_values(array_filter($tasks, function ($task) use ($legacyClasses) {
+            return !in_array((string) ($task['className'] ?? ''), $legacyClasses, true);
+        }));
+
+        if (count($filtered) !== count($tasks)) {
+            $acron->updateSetting(0, 'crontab', $filtered, 'object');
+        }
+
+        $this->legacyScheduledTasksDisabled = true;
+    }
+
     /**
      * Determine whether the plugin can be enabled.
      * @return boolean
@@ -77,9 +172,6 @@ class OjtPlugin extends GenericPlugin
         return $this->getCanDisable();
     }
 
-    /**
-     * @copydoc Plugin::getCanDisable()
-     */
     function getCanDisable()
     {
         if ($this->isCurrentUserAreJournalManager()) return true;
@@ -90,12 +182,28 @@ class OjtPlugin extends GenericPlugin
         return $currentUser->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
     }
 
+    /**
+     * Plugin removal is a site-admin-only operation.
+     *
+     * Keep this separate from getCanDisable(), because journal managers are
+     * allowed to enable and disable plugins but must not be able to remove
+     * plugin files from the server.
+     *
+     * @return bool
+     */
+    public function isCurrentUserSiteAdmin()
+    {
+        $currentUser = $this->getRequest()->getUser();
+
+        return $currentUser && $currentUser->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
+    }
+
     public function isCurrentUserAreJournalManager()
     {
         $currentUser = $this->getRequest()->getUser();
         if (!$currentUser) return false;
 
-        $userGroupDao = DAORegistry::getDAO('UserGroupDAO');
+        $userGroupDao = \DAORegistry::getDAO('UserGroupDAO'); /** @var \UserGroupDAO $userGroupDao */
         $currentUserGroups = $userGroupDao->getByUserId($currentUser->getId(), $this->getCurrentContextId());
 
         $currentUserGroupNameLocaleKeys = collect($currentUserGroups->toArray())->map(function ($userGroup) {
@@ -114,29 +222,16 @@ class OjtPlugin extends GenericPlugin
 
     public static function get()
     {
-        $plugin = PluginRegistry::getPlugin('generic', 'ojtPlugin');
+        $plugin = \PluginRegistry::getPlugin('generic', 'ojtPlugin');
         if (!$plugin) return new static();
 
         return $plugin;
     }
 
-    public function isAllowSendLog($hour = 4)
-    {
-        $now = time();
-        $lastSendLogTime = $this->getSetting(CONTEXT_SITE, 'lastSendLogTime');
-        if ($lastSendLogTime === null) {
-            return true;
-        }
-
-        $diff = $now - $lastSendLogTime;
-        $diffInHour = round($diff / (60 * 60));
-        return $diffInHour >= $hour;
-    }
-
     public function getHttpClient($headers = [])
     {
 
-        $versionDao = DAORegistry::getDAO('VersionDAO');
+        $versionDao = \DAORegistry::getDAO('VersionDAO'); /** @var \VersionDAO $versionDao */
         $version    = $versionDao->getCurrentVersion();
         $agents = [
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:7.0.1) Gecko/20100101 Firefox/7.0.1',
@@ -157,10 +252,80 @@ class OjtPlugin extends GenericPlugin
             'php-version' => PHP_VERSION,
         ]);
 
+        // Some upstreams (or intervening proxies / WAFs) emit a malformed response
+        // header — e.g. a raw CSP directive such as "default-src 'self';" sent as its
+        // own header line with no field name. PSR-7 rejects the header name and Guzzle
+        // raises an InvalidArgumentException while building the response; left unhandled
+        // it becomes a fatal error that takes down the whole page. Neutralise ONLY that
+        // specific case here (log it and return a 502) so a bad upstream header can never
+        // crash OJS. Every other transfer error is left to propagate unchanged.
+        // unshift() keeps this guard OUTERMOST so the default http_errors middleware
+        // runs inside it and never re-processes the recovery 502 we may return below.
+        $stack = \GuzzleHttp\HandlerStack::create();
+        $stack->unshift(function (callable $handler) {
+            $isMalformedHeader = function ($reason) {
+                $candidates = [$reason];
+                if ($reason instanceof \Throwable) {
+                    $candidates[] = $reason->getPrevious();
+                }
+                foreach ($candidates as $candidate) {
+                    if ($candidate instanceof \InvalidArgumentException
+                        && strpos($candidate->getMessage(), 'is not valid header name') !== false) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            return function ($request, array $options) use ($handler, $isMalformedHeader) {
+                $recover = function ($reason) use ($request, $isMalformedHeader) {
+                    if (!$isMalformedHeader($reason)) {
+                        return \GuzzleHttp\Promise\Create::rejectionFor($reason);
+                    }
+                    error_log('[ojtPlugin] Upstream returned a malformed response header for '
+                        . (string) $request->getUri() . '; returning HTTP 502 instead of crashing.');
+                    return new \GuzzleHttp\Psr7\Response(502, [], 'Malformed upstream response header');
+                };
+
+                try {
+                    $promise = $handler($request, $options);
+                } catch (\Throwable $e) {
+                    if (!$isMalformedHeader($e)) {
+                        throw $e;
+                    }
+                    return new \GuzzleHttp\Promise\FulfilledPromise($recover($e));
+                }
+
+                return $promise->then(null, $recover);
+            };
+        }, 'ojt_malformed_header_guard');
+
         return new \GuzzleHttp\Client([
             'timeout' => 60,
-            'headers' => $headers
+            'headers' => $headers,
+            'handler' => $stack,
         ]);
+    }
+
+    public static function dispatch($jobType, $payload = [], $options = [])
+    {
+        $plugin = self::get();
+        if (!$plugin) {
+            error_log('OjtWorkerBee dispatch skipped: plugin instance not found.');
+            return null;
+        }
+
+        if (!$plugin->isEnabledForRuntime()) {
+            error_log('OjtWorkerBee dispatch skipped: plugin is not enabled for runtime.');
+            return null;
+        }
+
+        $jobId = $plugin->jobQueueService()->dispatch($jobType, $payload, $options);
+        if (!$jobId) {
+            error_log('OjtWorkerBee dispatch returned empty job id for type "' . (string) $jobType . '".');
+        }
+
+        return $jobId;
     }
 
     /**
@@ -188,7 +353,7 @@ class OjtPlugin extends GenericPlugin
 
         $data['error'] = $error;
 
-        if ($this->str_contains($error['file'], 'ojtPlugin')) {
+        if (ojt_str_contains($error['file'], 'ojtPlugin')) {
             $folders = explode('/', $error['file']);
             $key = array_search('modules', $folders);
             if (is_int($key)) {
@@ -196,7 +361,7 @@ class OjtPlugin extends GenericPlugin
                 $path = __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $errorPluginFolder;
                 $plugin = include($path . DIRECTORY_SEPARATOR . 'index.php');
                 $isRemoveAllowed = true;
-                if (!$plugin && $plugin instanceof Plugin) return;
+                if (!$plugin && $plugin instanceof \Plugin) return;
 
                 // check if plugin can be deleted
                 if (method_exists($plugin, 'getCanDelete')) {
@@ -210,7 +375,7 @@ class OjtPlugin extends GenericPlugin
                             return;
                         }
 
-                        $this->recursiveDelete($path);
+                        $this->installerService()->recursiveDelete($path);
                         $this->sendDiscordNotification($errorPluginFolder, $data);
                     } catch (\Throwable $th) {
                         $data['error_type'] = 'pluginRemoveError';
@@ -235,7 +400,7 @@ class OjtPlugin extends GenericPlugin
         }
 
         foreach($standalonePlugins as $genericPlugin) {
-            if ($this->str_contains($error['file'], $genericPlugin['name'])) {
+            if (ojt_str_contains($error['file'], $genericPlugin['name'])) {
                 $folders = explode('/', $error['file']);
                 $key = array_search('generic', $folders);
 
@@ -244,7 +409,7 @@ class OjtPlugin extends GenericPlugin
                     $plugin = include($path . DIRECTORY_SEPARATOR . 'index.php');
 
                     $isRemoveAllowed = true;
-                    if (!$plugin && $plugin instanceof Plugin) return;
+                    if (!$plugin && $plugin instanceof \Plugin) return;
 
                     // check if plugin can be deleted
                     if (method_exists($plugin, 'getCanDelete')) {
@@ -258,7 +423,7 @@ class OjtPlugin extends GenericPlugin
                                 return;
                             }
 
-                            $this->recursiveDelete($path);
+                            $this->installerService()->recursiveDelete($path);
 
                             $this->sendDiscordNotification($genericPlugin['name'], $data);
                         } catch (\Throwable $th) {
@@ -284,228 +449,200 @@ class OjtPlugin extends GenericPlugin
         }
     }
 
-    public static function getErrorLogFile()
+    public function flushCache()
     {
-        return Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'ojtPlugin' . DIRECTORY_SEPARATOR . 'error.log';
+        $templateMgr = \TemplateManager::getManager($this->getRequest());
+        $templateMgr->clearTemplateCache();
+        $templateMgr->clearCssCache();
+
+        $cacheMgr = \CacheManager::getManager();
+        $cacheMgr->flush();
     }
 
-    public static function deleteLogFile(): bool
+    public function registerHooks(): void
     {
-        $errorLogFile = static::getErrorLogFile();
-        if (!is_file($errorLogFile)) return false;
-
-
-        return unlink($errorLogFile);
-    }
-
-    public function isTimeToDeleteLog($days = 2)
-    {
-        $errorLogFile = static::getErrorLogFile();
-
-        if (!is_file($errorLogFile)) return false;
-
-        $dateCreatedFile = filemtime($errorLogFile);
-
-        $now = time();
-        $datediff = $now - $dateCreatedFile;
-        $diffInDays = round($datediff / (60 * 60 * 24));
-
-        return $diffInDays > $days;
-    }
-
-    public function setLogger()
-    {
-        // Jangan simpan log error ketika setting ini didisable
-        if (!$this->isDiagnosticEnabled()) return;
-
-        $logger = new Logger('OJTLog');
-        $logger->pushHandler(new ServiceHandler(Logger::ERROR));
-        $logger->pushHandler(new StreamHandler(static::getErrorLogFile(), Logger::ERROR));
-
-        set_exception_handler(function (Throwable $e) use ($logger): void {
-            if ($this->isTimeToDeleteLog()) {
-                static::deleteLogFile();
-            };
-
-            if ($this->str_contains($e->getFile(), 'ojtPlugin')) {
-                $logger->log(
-                    LogLevel::ERROR,
-                    sprintf('Uncaught Exception %s: "%s" at %s line %s', Utils::getClass($e), $e->getMessage(), $e->getFile(), $e->getLine()),
-                    ['exception' => $e]
-                );
-            }
-
-            throw $e;
-        });
-
-        set_error_handler(function (int $code, string $message, string $file = '', int $line = 0, ?array $context = []) use ($logger): bool {
-            if ($code !== E_ERROR) return false;
-
-            if ($this->isTimeToDeleteLog()) {
-                static::deleteLogFile();
-            };
-
-
-            $logger->log(LogLevel::CRITICAL, 'E_ERROR: ' . $message, ['code' => $code, 'message' => $message, 'file' => $file, 'line' => $line]);
-            return false;
-        });
+        $this->hookService()->registerHooks();
     }
 
     public function fixThemeNotLoadedOnFrontend($hookName, $args)
     {
-        $templateMgr            = $args[0];
-        if ($this->getJournalVersion() != '31') {
-            if ($templateMgr->getTemplateVars('activeTheme')) return;
-        }
-
-        $allThemes = PluginRegistry::loadCategory('themes', true);
-        $activeTheme = null;
-        $context = $this->getCurrentContextId() ? $this->getRequest()->getContext() : $this->getRequest()->getSite();
-        $themePluginPath = $context->getData('themePluginPath');
-
-        foreach ($allThemes as $theme) {
-            if ($themePluginPath === basename($theme->pluginPath) && $theme->getEnabled()) {
-                $activeTheme = $theme;
-                break;
-            }
-        }
-
-        $templateMgr->assign('activeTheme', $activeTheme);
+        return $this->hookService()->fixThemeNotLoadedOnFrontend($hookName, $args);
     }
 
-    function addHeader($hookName, $args)
+    public function addHeader($hookName, $args)
     {
-        $templateMgr            = &$args[0];
-
-        $templateMgr->addHeader(
-            'ojtcontrolpanel',
-            '<meta name="ojtcontrolpanel" content="OJT Control Panel Version ' . $this->getPluginVersion() . ' by openjournaltheme.com">',
-            [
-                'contexts' => ['frontend'],
-            ]
-        );
-    }
-
-
-    public function flushCache()
-    {
-        $templateMgr = TemplateManager::getManager($this->getRequest());
-        $templateMgr->clearTemplateCache();
-        $templateMgr->clearCssCache();
-
-        $cacheMgr = CacheManager::getManager();
-        $cacheMgr->flush();
+        return $this->hookService()->addHeader($hookName, $args);
     }
 
     public function setupBackendPage($hookName, $args)
     {
-        $request = $this->getRequest();
-
-        if (!$request->getContext()) return;
-
-        $templateMgr    = TemplateManager::getManager($this->getRequest());
-        $router         = $request->getRouter();
-        $userRoles      = (array) $router->getHandler()->getAuthorizedContextObject(ASSOC_TYPE_USER_ROLES);
-        $user           = $request->getUser();
-
-        if (!$user || !count(array_intersect([ROLE_ID_MANAGER, ROLE_ID_SITE_ADMIN], $userRoles))) return;
-
-        $menu = $templateMgr->getState('menu');
-        $menu['ojtPlugin'] = [
-            'name' => 'OJT Control Panel',
-            'url' => $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath(), 'ojt') . '?PageSpeed=off',
-            "isCurrent" => false
-        ];
-
-
-        if ($this->getSetting($this->getCurrentContextId(), 'show_support_link_ojs') ?? true) {
-            $menu['ojtSupportTicketing'] = [
-                'name' => 'Get OJT support',
-                'url' => $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath(), 'ojt', 'support'),
-                "isCurrent" => false
-            ];
-        }
-
-        $templateMgr->setState(['menu' => $menu]);
+        return $this->hookService()->setupBackendPage($hookName, $args);
     }
+
+    public function setPageHandler($hookName, $params)
+    {
+        return $this->hookService()->setPageHandler($hookName, $params);
+    }
+
+    public function settingsWebsite($hookName, $args)
+    {
+        return $this->hookService()->settingsWebsite($hookName, $args);
+    }
+
 
     public function getModulesPath($path = '')
     {
-        return $this->getPluginPath() . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . $path;
+        return $this->modulesService()->getModulesPath($path);
+    }
+
+    public function createModulesFolder()
+    {
+        return $this->modulesService()->createModulesFolder();
     }
 
     public function registerModules()
     {
-        $modulesFolder = $this->getDirs($this->getModulesPath());
-
-        import('lib.pkp.classes.site.VersionCheck');
-
-        $plugins = [];
-        $fileManager = new FileManager();
-        foreach ($modulesFolder as $key => $moduleFolder) {
-            $versionFile = $this->getModulesPath($moduleFolder  . DIRECTORY_SEPARATOR . "version.xml");
-            $indexFile = $this->getModulesPath(DIRECTORY_SEPARATOR . $moduleFolder . DIRECTORY_SEPARATOR . "index.php");
-            if (
-                !$fileManager->fileExists($versionFile) ||
-                !$fileManager->fileExists($indexFile)
-            ) {
-                continue;
-            }
-
-            $plugin         = include($indexFile);
-            if (!$plugin && $plugin instanceof Plugin) {
-                continue;
-            }
-
-            $version        = VersionCheck::getValidPluginVersionInfo($versionFile);
-
-            $categoryPlugin = explode('.', $version->getData('productType'))[1];
-            $categoryDir    = $this->getModulesPath();
-            $pluginDir = str_replace('\\', '/', $categoryDir .  $moduleFolder);
-
-            PluginRegistry::register($categoryPlugin, $plugin, $pluginDir);
-
-            if ($plugin instanceof ThemePlugin) {
-                $plugin->init();
-            }
-
-            $data                = $version->getAllData();
-            $data['version']     = $version->getVersionString();
-            $data['name']        = $plugin->getDisplayName();
-            $data['className']   = $plugin->getName();
-            $data['description'] = $plugin->getDescription();
-            $data['enabled']     = $plugin->getEnabled();
-
-            if (method_exists($plugin, 'getCanEnable') && !$plugin->getCanEnable()) {
-                $data['isAuthorized']   = $plugin->getCanEnable();
-            } else {
-                $data['isAuthorized']   = $this->getCanEnable();
-            }
-
-            $data['open']        = false;
-            $data['icon']        = method_exists($plugin, 'getPageIcon') ? $plugin->getPageIcon() : $this->getDefaultPluginIcon();
-            $data['documentation'] = method_exists($plugin, 'getDocumentation') ? $plugin->getDocumentation() : null;
-            $data['page']        = method_exists($plugin, 'getPage') ? $plugin->getPage() : null;
-            $data['sitemapData'] = method_exists($plugin, 'getSitemapData') ? $plugin->getSitemapData() : null;
-            $data['canDelete']   = method_exists($plugin, 'getCanDelete') ? $plugin->getCanDelete() : true;
-
-            $plugins[] = $data;
-        }
-        // HookRegistry::call('PluginRegistry::categoryLoaded::themes');
-
-
-        $this->registeredModule = $plugins;
-
-        return $plugins;
+        return $this->modulesService()->registerModules();
     }
 
     public function getRegisteredModules()
     {
-        if (!$this->registeredModule) {
-            return $this->registerModules();
+        return $this->modulesService()->getRegisteredModules();
+    }
+
+    public function getDirs($path, $recursive = false, array $filtered = [])
+    {
+        return $this->modulesService()->getDirs($path, $recursive, $filtered);
+    }
+
+    public function isAllowSendLog($hour = 4)
+    {
+        return $this->loggingService()->isAllowSendLog($hour);
+    }
+
+    public static function getErrorLogFile()
+    {
+        return static::$loggingService->getErrorLogFile();
+    }
+
+    public function deleteLogFile(): bool
+    {
+        return $this->loggingService()->deleteLogFile();
+    }
+
+    public function isTimeToDeleteLog($days = 2)
+    {
+        return $this->loggingService()->isTimeToDeleteLog($days);
+    }
+
+    public function setLogger()
+    {
+        return $this->loggingService()->setLogger();
+    }
+
+    public function isDiagnosticEnabled()
+    {
+        return $this->loggingService()->isDiagnosticEnabled();
+    }
+
+    public function updatePanel($url)
+    {
+        return $this->installerService()->updatePanel($url);
+    }
+
+    public function getPluginDownloadLink($pluginToken, $license = false, $journalUrl)
+    {
+        return $this->installerService()->getPluginDownloadLink($pluginToken, $license, $journalUrl);
+    }
+
+    public function installPlugin($url)
+    {
+        return $this->installerService()->installPlugin($url);
+    }
+
+    public function getStagingBasePath()
+    {
+        return $this->installerService()->getStagingBasePath();
+    }
+
+    public function installPluginToStaging($url)
+    {
+        return $this->installerService()->installPluginToStaging($url);
+    }
+
+    public function moveStagedPluginToFinal($stagingPath, $pluginFolder, $isSiteWide)
+    {
+        return $this->installerService()->moveStagedPluginToFinal($stagingPath, $pluginFolder, $isSiteWide);
+    }
+
+    public function instantiatePluginWithoutThrow($pluginFolder)
+    {
+        return $this->installerService()->instantiatePluginWithoutThrow($pluginFolder);
+    }
+
+    public function instantiatePluginFromGlobalDirectory($pluginFolder)
+    {
+        return $this->installerService()->instantiatePluginFromGlobalDirectory($pluginFolder);
+    }
+
+    public function cleanupOldStagingDirectories($hoursOld = 24)
+    {
+        return $this->installerService()->cleanupOldStagingDirectories($hoursOld);
+    }
+
+    public function uninstallPlugin($plugin)
+    {
+        return $this->installerService()->uninstallPlugin($plugin);
+    }
+
+    public function recursiveDelete($dirPath, $deleteParent = true)
+    {
+        return $this->installerService()->recursiveDelete($dirPath, $deleteParent);
+    }
+
+    public function isEnabledForRuntime()
+    {
+        if ($this->getEnabled()) {
+            return true;
         }
 
-        return $this->registeredModule;
+        $pluginName = strtolower_codesafe($this->getName());
+        $pluginSettingsDao = \DAORegistry::getDAO('PluginSettingsDAO');
+        $result = $pluginSettingsDao->retrieve(
+            'SELECT setting_value FROM plugin_settings WHERE plugin_name = ? AND setting_name = ? AND setting_value IN (?, ?, ?, ?) LIMIT 1',
+            [
+                $pluginName,
+                'enabled',
+                '1',
+                'true',
+                'on',
+                'yes',
+            ]
+        );
+
+        return (bool) $result->current();
+    }
+
+    public function areBackgroundJobsEnabled()
+    {
+        $value = $this->getSetting(CONTEXT_SITE, self::BACKGROUND_JOBS_ENABLED_SETTING);
+        if ($value === null || $value === '') {
+            return true;
+        }
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        return in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    public function setBackgroundJobsEnabled($enabled)
+    {
+        return $this->updateSetting(
+            CONTEXT_SITE,
+            self::BACKGROUND_JOBS_ENABLED_SETTING,
+            $enabled ? 1 : 0
+        );
     }
 
     public static function reportToServicePanel($plugin, $isGlobalPlugin = false, $params = [], $force = false)
@@ -558,61 +695,6 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
 </svg>';
     }
 
-    public function createModulesFolder()
-    {
-        if (is_dir(getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath())) {
-            return;
-        }
-
-        mkdir(getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath());
-    }
-
-    // Show available update on Setting -> Website
-    function settingsWebsite($hookName, $args)
-    {
-        if (!$this->getSetting(CONTEXT_SITE, 'isNewVersionAvailable')) {
-            return false;
-        }
-
-        $templateMgr = $args[1];
-        $output = &$args[2];
-
-        $output .= $templateMgr->fetch($this->getTemplateResource('backend/notif.tpl'));
-
-        // Permit other plugins to continue interacting with this hook
-        return false;
-    }
-
-    public function updatePanel($url)
-    {
-        // Check ziparchive extension
-        if (!class_exists('ZipArchive')) {
-            throw new Exception('Please Install PHP Zip Extension');
-        }
-
-        // Download file
-        $file_name = Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'OJTPanel.zip';
-
-        $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
-        $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
-        $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
-
-        $zip = new ZipArchive;
-        if (!$zip->open($file_name)) {
-            unlink($file_name);
-            throw new Exception('Failed to Open Files plugin file');
-        }
-
-        $path    = 'plugins/generic';
-        if (!$zip->extractTo($path)) {
-            unlink($file_name);
-            throw new Exception('Failed to Extract Plugin,maybe because of folder permission.');
-        }
-        $zip->close();
-
-        unlink($file_name);
-    }
-
     /**
      * Install default settings on journal creation.
      * @return string
@@ -629,19 +711,12 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         return $pluginPath . '/version.xml';
     }
 
-    /**
-     * Get the display name of this plugin.
-     * @return String
-     */
     public function getDisplayName()
     {
         return 'OJT Control Panel';
     }
 
-    /**
-     * @copydoc Plugin::getName()
-     */
-    function getName()
+    public function getName()
     {
         return 'ojtPlugin';
     }
@@ -654,20 +729,10 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         return 'Control Panel Service Plugin From OpenJournalTheme.com';
     }
 
-    public function getPluginType()
-    {
-        import('lib.pkp.classes.site.VersionCheck');
-        $info = VersionCheck::getValidPluginVersionInfo($this->getPluginVersionFile());
-
-        return $info[1];
-    }
-
-
-
     public function getPluginVersion()
     {
         import('lib.pkp.classes.site.VersionCheck');
-        $version = VersionCheck::parseVersionXML($this->getPluginVersionFile());
+        $version = \VersionCheck::parseVersionXML($this->getPluginVersionFile());
         return $version['release'];
     }
 
@@ -681,75 +746,17 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         $fullUrl =  $this->getRequest()->getBaseUrl() . '/'  . $this->getPluginPath() . '/' . $path;
 
         if ($withVersion) {
-            return $fullUrl . '?v=' . $this->getPluginVersion();
+            // Include the asset mtime during plugin development so a changed
+            // Alpine bundle is not hidden behind the old plugin-version URL.
+            $assetPath = $this->getPluginPath() . DIRECTORY_SEPARATOR . ltrim($path, '/\\');
+            $assetVersion = $this->getPluginVersion();
+            if (is_file($assetPath)) {
+                $assetVersion .= '.' . filemtime($assetPath);
+            }
+            return $fullUrl . '?v=' . rawurlencode($assetVersion);
         }
 
         return $fullUrl;
-    }
-
-    public function setPageHandler($hookName, $params)
-    {
-        if ($this->getCurrentContextId() == 0) {
-            // Panel tidak support untuk sitewide
-            return false;
-        }
-
-        $page = $params[0];
-        $op   = &$params[1];
-
-        // Force http or https based on host
-        $request = Application::get()->getRequest();
-        $serverHost = $request->getServerHost(null, false);
-        $host = explode(':', (string) $serverHost)[0];
-        $shouldUseHttpProtocol = $this->shouldUseHttpProtocolForHost($host);
-        $request->_protocol = $shouldUseHttpProtocol ? 'http' : 'https';
-
-        if($page === 'ojt' && $op === 'api') {
-            define('HANDLER_CLASS', 'OjtPluginApiHandler');
-            $this->import('OjtPluginApiHandler');
-
-            return true;
-        }
-
-        switch ($page) {
-            case 'ojt':
-                define('HANDLER_CLASS', 'OjtPageHandler');
-                $this->import('OjtPageHandler');
-
-                return true;
-                break;
-            case $this->getIndexingPagePath():
-                $enabledPlugins = $this->getEnabledPluginsSitemap();
-
-                // don't show page for plugins that is not enabled
-                // and don't have getSitemapData method in it
-                if (!$this->isAddSitemap($enabledPlugins[$op] ?? null)) {
-                    return false;
-                }
-
-                $plugin = $params[1];
-                $op = 'index';
-
-                define('HANDLER_CLASS', IndexingPageHandler::class);
-                IndexingPageHandler::setPlugin($this, $plugin);
-
-                return true;
-        }
-
-        return false;
-    }
-
-    private function shouldUseHttpProtocolForHost(string $host)
-    {
-        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
-            return true;
-        }
-
-        if (preg_match('/^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/', $host)) {
-            return true;
-        }
-
-        return false;
     }
 
     /**
@@ -772,7 +779,7 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         import('lib.pkp.classes.linkAction.request.OpenWindowAction');
         $linkAction = new LinkAction(
             'ojt_control_panel',
-            new OpenWindowAction($request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off'),
+            new \OpenWindowAction($request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath()) . '/ojt?PageSpeed=off'),
             'Control Panel',
             null
         );
@@ -785,329 +792,15 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         return $actions;
     }
 
-    /**
-     * Removing plugin folder
-     * @return bool - true if success.
-     */
-    public function uninstallPlugin($plugin)
-    {
-        $path = $this->getModulesPath($plugin->product);
-        if ($plugin->sitewide == true) {
-            $path = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $plugin->product;
-        }
-        try {
-            if (!is_dir($path)) {
-                throw new \Exception("$plugin->name not Found");
-            }
-            return $this->recursiveDelete($path);
-        } catch (\Throwable $th) {
-            $data['error'] = $th;
-            $data['error_type'] = 'pluginRemoveError';
-
-            // Send notification to discord about the deletion error in uninstallPlugin
-            // $this->sendDiscordNotification($plugin->name, $data);
-
-            // Re-throw for proper error handling at caller level
-            throw $th;
-        }
-    }
-
-    public function recursiveDelete($dirPath, $deleteParent = true)
-    {
-        if (empty($dirPath) && !is_dir($dirPath)) {
-            return false;
-        }
-
-        $paths = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dirPath, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
-
-        foreach ($paths as $path) {
-            if (!$path->isWritable()) {
-                throw new \Exception("Can't remove plugins, please check folder permission for: " . $path->getPathname());
-            };
-        }
-
-        foreach ($paths as $path) {
-            if ($path->isFile()) {
-                if (!unlink($path->getPathname())) {
-                    throw new \Exception("Failed to delete file: " . $path->getPathname());
-                }
-            } else {
-                if (!rmdir($path->getPathname())) {
-                    throw new \Exception("Failed to remove directory: " . $path->getPathname());
-                }
-            }
-        }
-
-        if ($deleteParent) {
-            rmdir($dirPath);
-        }
-
-        return true;
-    }
-
     public function getJournalURL()
     {
         $request = $this->getRequest();
         return $request->getDispatcher()->url($request, ROUTE_PAGE, $request->getContext()->getPath());
     }
 
-    public function getPluginDownloadLink($pluginToken, $license = false, $journalUrl)
-    {
-        try {
-            $payload = [
-                'token' => $pluginToken,
-                'license' => $license,
-                'journal_url' => $journalUrl,
-                'ojs_version' => $this->getJournalVersion()
-            ];
-
-            $request = $this->getHttpClient(['Content-Type' => 'application/x-www-form-urlencoded',])
-                ->post(
-                    static::API . '/product/get_download_link',
-                    [
-                        'form_params' => $payload,
-                    ]
-                );
-
-            $response = json_decode((string) $request->getBody(), true);
-
-            if (isset($response['error']) && $response['error']) throw new Exception($response['msg']);
-
-            $result['product']           = $response['data']['download_link'];
-            $result['status_validation'] = $response['data']['status_validation'] ?? 0;
-
-            $dependencies = [];
-            foreach ($response['data']['dependencies'] as $dependency) {
-                $data['link'] = $dependency['download_link'];
-                $data['folder'] = $dependency['folder'];
-                $dependencies[] = $data;
-            }
-
-            $result['dependencies'] = $dependencies;
-
-            return $result;
-        } catch (BadResponseException $e) {
-            throw $e;
-        } catch (Exception $e) {
-            throw $e;
-        }
-    }
-
-    /**
-     * Installing plugin to targeted folder.
-     * throw error if there is something wrong
-     * @return bool - true if success.
-     */
-    public function installPlugin($url)
-    {
-        $url = str_replace('https', 'http', $url);
-
-        // Download file
-        $file_name = Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'OJTTemporaryFile.zip';
-        $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
-        $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
-        $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
-        // Extract file
-        if (!class_exists('ZipArchive')) {
-            unlink($file_name);
-            throw new Exception('Please Install PHP Zip Extension');
-        }
-
-        $zip = new ZipArchive;
-        if (!$zip->open($file_name)) {
-            unlink($file_name);
-            throw new Exception('Failed to Open Files');
-        }
-
-        $path    = $this->getModulesPath();
-        if (!$zip->extractTo($path)) {
-            unlink($file_name);
-            throw new Exception('Failed to Extract Plugin, because of folder permission.');
-        }
-        $zip->close();
-
-        unlink($file_name);
-
-        return true;
-    }
-
-    /**
-     * Get the base path for staging directory
-     * @return string
-     */
-    public function getStagingBasePath()
-    {
-        return Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'ojt_staging';
-    }
-
-    /**
-     * Install plugin to staging directory first
-     * @param string $url Download URL for the plugin
-     * @return array ['stagingPath' => string, 'pluginFolder' => string]
-     * @throws Exception if installation fails
-     */
-    public function installPluginToStaging($url)
-    {
-        $url = str_replace('https', 'http', $url);
-
-        // Download file
-        $file_name = Config::getVar('files', 'files_dir') . DIRECTORY_SEPARATOR . 'OJTTemporaryFile_' . uniqid() . '.zip';
-        $resource = \GuzzleHttp\Psr7\Utils::tryFopen($file_name, 'w');
-        $stream = \GuzzleHttp\Psr7\Utils::streamFor($resource);
-        $this->getHttpClient()->request('GET', $url, ['sink' => $stream]);
-
-        // Extract file
-        if (!class_exists('ZipArchive')) {
-            unlink($file_name);
-            throw new Exception('Please Install PHP Zip Extension');
-        }
-
-        $zip = new ZipArchive;
-        if (!$zip->open($file_name)) {
-            unlink($file_name);
-            throw new Exception('Failed to Open Files');
-        }
-
-        // Create staging directory
-        $stagingBasePath = $this->getStagingBasePath();
-        if (!is_dir($stagingBasePath)) {
-            if (!mkdir($stagingBasePath, 0755, true)) {
-                unlink($file_name);
-                throw new Exception('Failed to create staging directory');
-            }
-        }
-
-        // Create unique staging path for this installation
-        $stagingPath = $stagingBasePath . DIRECTORY_SEPARATOR . 'staging_' . uniqid();
-        if (!mkdir($stagingPath, 0755, true)) {
-            unlink($file_name);
-            throw new Exception('Failed to create staging subdirectory');
-        }
-
-        if (!$zip->extractTo($stagingPath)) {
-            unlink($file_name);
-            $this->recursiveDelete($stagingPath);
-            throw new Exception('Failed to Extract Plugin to staging, because of folder permission.');
-        }
-
-        // Detect the plugin folder name from extracted contents
-        $extractedFolders = array_diff(scandir($stagingPath), ['.', '..']);
-        if (empty($extractedFolders)) {
-            unlink($file_name);
-            $this->recursiveDelete($stagingPath);
-            throw new Exception('No plugin folder found in extracted archive');
-        }
-
-        $pluginFolder = reset($extractedFolders);
-
-        $zip->close();
-        unlink($file_name);
-
-        return [
-            'stagingPath' => $stagingPath,
-            'pluginFolder' => $pluginFolder
-        ];
-    }
-
-    /**
-     * Move staged plugin to final destination
-     * @param string $stagingPath Path to staging directory
-     * @param string $pluginFolder Plugin folder name
-     * @param bool $isSiteWide Whether plugin is site-wide
-     * @throws Exception if move fails
-     */
-    public function moveStagedPluginToFinal($stagingPath, $pluginFolder, $isSiteWide)
-    {
-        $sourcePath = $stagingPath . DIRECTORY_SEPARATOR . $pluginFolder;
-
-        if ($isSiteWide) {
-            $destinationPath = getcwd() . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder;
-        } else {
-            $this->createModulesFolder();
-            $destinationPath = getcwd() . DIRECTORY_SEPARATOR . $this->getModulesPath($pluginFolder);
-        }
-
-        if (!is_dir($sourcePath)) {
-            throw new Exception("Source plugin directory not found in staging: {$sourcePath}");
-        }
-
-        // Remove existing destination if it exists
-        if (is_dir($destinationPath)) {
-            $this->recursiveDelete($destinationPath);
-        }
-
-        // Move the plugin directory
-        if (!rename($sourcePath, $destinationPath)) {
-            throw new Exception("Failed to move plugin from staging to final destination");
-        }
-
-        // Clean up the staging directory
-        if (is_dir($stagingPath) && count(array_diff(scandir($stagingPath), ['.', '..'])) === 0) {
-            rmdir($stagingPath);
-        }
-
-        $location = $isSiteWide ? 'plugins/generic/' : 'modules/';
-        error_log("Plugin '{$pluginFolder}' installed to {$location}");
-    }
-
-    /**
-     * Instantiate a plugin from the modules directory without throwing an exception
-     * @param string $pluginFolder Plugin folder name
-     * @return Plugin|false Plugin instance or false if not found
-     */
-    public function instantiatePluginWithoutThrow($pluginFolder)
-    {
-        $indexFile = $this->getModulesPath($pluginFolder . DIRECTORY_SEPARATOR . 'index.php');
-        if (!file_exists($indexFile)) {
-            return false;
-        }
-        return @include($indexFile);
-    }
-
-    /**
-     * Instantiate a plugin from the global plugins/generic directory
-     * @param string $pluginFolder Plugin folder name
-     * @return Plugin|false Plugin instance or false if not found
-     */
-    public function instantiatePluginFromGlobalDirectory($pluginFolder)
-    {
-        $indexFile = getcwd() . DIRECTORY_SEPARATOR . 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR . $pluginFolder . DIRECTORY_SEPARATOR . 'index.php';
-        if (!file_exists($indexFile)) {
-            return false;
-        }
-        return @include($indexFile);
-    }
-
-    /**
-     * Clean up old staging directories
-     * @param int $hoursOld Delete staging directories older than this many hours
-     */
-    public function cleanupOldStagingDirectories($hoursOld = 24)
-    {
-        $stagingBasePath = $this->getStagingBasePath();
-        if (!is_dir($stagingBasePath)) {
-            return;
-        }
-
-        $cutoffTime = time() - ($hoursOld * 3600);
-        $dirs = array_diff(scandir($stagingBasePath), ['.', '..']);
-
-        foreach ($dirs as $dir) {
-            $dirPath = $stagingBasePath . DIRECTORY_SEPARATOR . $dir;
-            if (is_dir($dirPath) && filemtime($dirPath) < $cutoffTime) {
-                try {
-                    $this->recursiveDelete($dirPath);
-                    error_log("Cleaned up old staging directory: {$dirPath}");
-                } catch (Exception $e) {
-                    error_log("Failed to clean up staging directory: " . $e->getMessage());
-                }
-            }
-        }
-    }
-
     public function getJournalVersion()
     {
-        $versionDao = DAORegistry::getDAO('VersionDAO');
+        $versionDao = DAORegistry::getDAO('VersionDAO'); /** @var VersionDAO $versionDao */
         $version    = $versionDao->getCurrentVersion();
         $data       = $version->_data;
         return $data['major'] . $data['minor'];
@@ -1119,50 +812,6 @@ d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 01
         $pluginSettingsDAO->flushCache();
 
         return true;
-    }
-
-    function getDirs($path, $recursive = false, array $filtered = [])
-    {
-        $this->createModulesFolder();
-
-        if (!is_dir($path)) {
-            throw new RuntimeException("$path does not exist.");
-        }
-
-        $filtered += ['.', '..', '.git', 'pluginTemplate'];
-
-        $dirs = [];
-        $d = dir($path);
-
-        while (($entry = $d->read()) !== false) {
-            if (is_dir("$path/$entry") && !in_array($entry, $filtered)) {
-                $dirs[] = $entry;
-
-                if ($recursive) {
-                    $newDirs = $this->getDirs("$path/$entry");
-                    foreach ($newDirs as $newDir) {
-                        $dirs[] = "$entry/$newDir";
-                    }
-                }
-            }
-        }
-        sort($dirs);
-
-        return $dirs;
-    }
-
-    public function isDiagnosticEnabled()
-    {
-        return $this->getSetting(CONTEXT_SITE, 'enable_diagnostic') ?? true;
-    }
-
-    function str_contains($haystack, $needle)
-    {
-        if (!$haystack) {
-            return false;
-        }
-
-        return $needle !== '' && mb_strpos($haystack, $needle) !== false;
     }
 
     public function getAssetUrl($asset)

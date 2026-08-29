@@ -1,6 +1,7 @@
 <?php
 
 use GuzzleHttp\Exception\BadResponseException;
+use Openjournalteam\OjtPlugin\Classes\ApiServicePanel;
 
 import('classes.handler.Handler');
 import('plugins.generic.ojtPlugin.helpers.OJTHelper');
@@ -18,10 +19,14 @@ class OjtPageHandler extends Handler
         parent::__construct();
 
         $this->addRoleAssignment(
-            [ROLE_ID_SITE_ADMIN, ROLE_ID_MANAGER],
-            ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'getExclusivePlugins', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
+            ROLE_ID_SITE_ADMIN,
+            ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'getJobs', 'jobAction', 'getSchedules', 'getScheduleHistory', 'scheduleAction', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'getExclusivePlugins', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
         );
 
+        $this->addRoleAssignment(
+            ROLE_ID_MANAGER,
+            ['index', 'getInstalledPlugin', 'updatePanel', 'settings', 'saveSettings', 'downloadLog', 'reportBug', 'submitBug', 'checkUpdate', 'getPluginGalleryList', 'getExclusivePlugins', 'save', 'installPlugin', 'uninstallPlugin', 'checkPluginInstalled', 'toggleInstalledPlugin', 'resetSetting', 'support'],
+        );
         $this->ojtPlugin = OjtPlugin::get();
 
         $this->contextId = $this->ojtPlugin->getCurrentContextId();
@@ -151,6 +156,9 @@ class OjtPageHandler extends Handler
         $templateMgr->assign('settings', [
             'enable_diagnostic' => $this->ojtPlugin->isDiagnosticEnabled(),
             'show_support_link_ojs' => $this->ojtPlugin->getSetting($this->contextId, 'show_support_link_ojs') ?? true,
+            'background_jobs_enabled' => $this->ojtPlugin->areBackgroundJobsEnabled(),
+            'can_manage_background_jobs' => $this->canManageBackgroundJobs($request),
+            'csrfToken' => $request->getSession()->getCSRFToken(),
         ]);
 
 
@@ -158,6 +166,228 @@ class OjtPageHandler extends Handler
         $json['html'] = $templateMgr->fetch($this->ojtPlugin->getTemplateResource('settings.tpl'));
         $json['js']   = [];
         return showJson($json);
+    }
+
+    /**
+     * Background Jobs is an administrator-level feature.
+     */
+    protected function canManageBackgroundJobs($request)
+    {
+        return $this->isSiteAdmin($request);
+    }
+
+    protected function isSiteAdmin($request)
+    {
+        $user = $request->getUser();
+        return $user && $user->hasRole([ROLE_ID_SITE_ADMIN], CONTEXT_SITE);
+    }
+
+    /**
+     * Return the current journal's Background Jobs data.
+     */
+    public function getJobs($args, $request)
+    {
+        if (!$this->canManageBackgroundJobs($request)) {
+            http_response_code(403);
+            return showJson(['error' => 1, 'msg' => 'You are not authorized to access Background Jobs.']);
+        }
+
+        try {
+            $service = $this->ojtPlugin->jobQueueService();
+            $result = $service->listJobs([
+                'page' => $request->getUserVar('page') ?: 1,
+                'pageSize' => $request->getUserVar('pageSize') ?: 10,
+                'filter' => $request->getUserVar('filter') ?: 'all',
+                'query' => $request->getUserVar('query') ?: '',
+                'dateRange' => $request->getUserVar('dateRange') ?: 'all',
+                'queue' => $request->getUserVar('queue') ?: 'default',
+                'contextId' => $this->contextId,
+            ]);
+
+            return showJson([
+                'error' => 0,
+                'data' => $result,
+                'backgroundJobsEnabled' => $this->ojtPlugin->areBackgroundJobsEnabled(),
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            return showJson([
+                'error' => 1,
+                'msg' => 'Unable to load background jobs.',
+            ]);
+        }
+    }
+
+    public function getSchedules($args, $request)
+    {
+        if (!$this->canManageBackgroundJobs($request)) {
+            http_response_code(403);
+            return showJson(['error' => 1, 'msg' => 'You are not authorized to access schedules.']);
+        }
+
+        try {
+            return showJson([
+                'error' => 0,
+                'data' => $this->ojtPlugin->scheduleService()->listSchedules($this->contextId),
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            return showJson(['error' => 1, 'msg' => 'Unable to load schedules.']);
+        }
+    }
+
+    public function getScheduleHistory($args, $request)
+    {
+        if (!$this->canManageBackgroundJobs($request)) {
+            http_response_code(403);
+            return showJson(['error' => 1, 'msg' => 'You are not authorized to access schedule history.']);
+        }
+
+        try {
+            $result = $this->ojtPlugin->scheduleService()->history(
+                (int) $request->getUserVar('scheduleId'),
+                $this->contextId,
+                (int) ($request->getUserVar('page') ?: 1),
+                (int) ($request->getUserVar('pageSize') ?: 20)
+            );
+            if (empty($result['success'])) {
+                http_response_code(404);
+                return showJson(['error' => 1, 'msg' => $result['message'] ?? 'Schedule not found.']);
+            }
+            return showJson(['error' => 0, 'data' => $result]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            return showJson(['error' => 1, 'msg' => 'Unable to load schedule history.']);
+        }
+    }
+
+    public function scheduleAction($args, $request)
+    {
+        if (!$this->canManageBackgroundJobs($request)) {
+            http_response_code(403);
+            return showJson(['error' => 1, 'msg' => 'You are not authorized to manage schedules.']);
+        }
+
+        if (!$request->isPost()) {
+            http_response_code(405);
+            return showJson(['error' => 1, 'msg' => 'This endpoint only accepts POST requests.']);
+        }
+
+        $csrfToken = (string) $request->getUserVar('csrfToken');
+        $sessionToken = (string) $request->getSession()->getCSRFToken();
+        if ($csrfToken === '' || $sessionToken === '' || !hash_equals($sessionToken, $csrfToken)) {
+            http_response_code(403);
+            return showJson(['error' => 1, 'msg' => 'Invalid security token.']);
+        }
+
+        $action = (string) $request->getUserVar('action');
+        $scheduleId = (int) $request->getUserVar('scheduleId');
+        $service = $this->ojtPlugin->scheduleService();
+
+        try {
+            switch ($action) {
+                case 'toggle':
+                    $enabled = filter_var($request->getUserVar('enabled'), FILTER_VALIDATE_BOOLEAN);
+                    $result = $service->toggle($scheduleId, $enabled, $this->contextId, $this->isSiteAdmin($request));
+                    break;
+                case 'update':
+                    $result = $service->update(
+                        $scheduleId,
+                        $request->getUserVar('cron'),
+                        $request->getUserVar('timezone'),
+                        $this->contextId,
+                        $this->isSiteAdmin($request)
+                    );
+                    break;
+                case 'run_now':
+                    $result = $service->runNow($scheduleId, $this->contextId, $this->isSiteAdmin($request));
+                    break;
+                default:
+                    $result = ['success' => false, 'message' => 'Unknown schedule action.'];
+                    break;
+            }
+        } catch (Throwable $e) {
+            http_response_code(500);
+            return showJson(['error' => 1, 'msg' => 'Unable to apply the schedule action.']);
+        }
+
+        if (empty($result['success'])) {
+            http_response_code(422);
+            return showJson(['error' => 1, 'msg' => $result['message'] ?? 'Unable to apply the schedule action.']);
+        }
+
+        return showJson(['error' => 0, 'msg' => $result['message'] ?? 'Schedule action completed.']);
+    }
+
+    /**
+     * Apply a confirmed queue action.
+     */
+    public function jobAction($args, $request)
+    {
+        if (!$this->canManageBackgroundJobs($request)) {
+            http_response_code(403);
+            return showJson(['error' => 1, 'msg' => 'You are not authorized to manage Background Jobs.']);
+        }
+
+        if (!$request->isPost()) {
+            http_response_code(405);
+            return showJson(['error' => 1, 'msg' => 'This endpoint only accepts POST requests.']);
+        }
+
+        $csrfToken = (string) $request->getUserVar('csrfToken');
+        $sessionToken = (string) $request->getSession()->getCSRFToken();
+        if ($csrfToken === '' || $sessionToken === '' || !hash_equals($sessionToken, $csrfToken)) {
+            http_response_code(403);
+            return showJson(['error' => 1, 'msg' => 'Invalid security token.']);
+        }
+
+        $action = (string) $request->getUserVar('action');
+        $jobId = (int) $request->getUserVar('jobId');
+        $service = $this->ojtPlugin->jobQueueService();
+
+        try {
+            switch ($action) {
+                case 'toggle_enabled':
+                    $enabled = filter_var($request->getUserVar('enabled'), FILTER_VALIDATE_BOOLEAN);
+                    $this->ojtPlugin->setBackgroundJobsEnabled($enabled);
+                    $result = [
+                        'success' => true,
+                        'message' => $enabled ? 'Background jobs enabled.' : 'Background jobs disabled.',
+                    ];
+                    break;
+                case 'pause':
+                    $result = $service->pause($jobId, $this->contextId);
+                    break;
+                case 'resume':
+                    $result = $service->resume($jobId, $this->contextId);
+                    break;
+                case 'stop':
+                    $result = $service->stop($jobId, $this->contextId);
+                    break;
+                case 'retry':
+                    $result = $service->retry($jobId, $this->contextId);
+                    break;
+                case 'stop_all':
+                    $result = $service->stopAll($this->contextId, 'default');
+                    break;
+                default:
+                    $result = ['success' => false, 'message' => 'Unknown job action.'];
+                    break;
+            }
+        } catch (Throwable $e) {
+            http_response_code(500);
+            return showJson(['error' => 1, 'msg' => 'Unable to apply the job action.']);
+        }
+
+        if (empty($result['success'])) {
+            http_response_code(422);
+            return showJson(['error' => 1, 'msg' => $result['message'] ?? 'Unable to apply the job action.']);
+        }
+
+        return showJson([
+            'error' => 0,
+            'msg' => $result['message'] ?? 'Job action completed.',
+        ]);
     }
 
     public function saveSettings($args, $request)
@@ -172,6 +402,11 @@ class OjtPageHandler extends Handler
 
     public function downloadLog($args, $request)
     {
+        if (!$this->canManageBackgroundJobs($request)) {
+            http_response_code(403);
+            return showJson(['error' => 1, 'msg' => 'You are not authorized to download the OJT log.']);
+        }
+
         $file = $this->ojtPlugin->getErrorLogFile();
 
         $fileManager = new FileManager();
@@ -193,7 +428,7 @@ class OjtPageHandler extends Handler
     public function submitBug($args, $request)
     {
         try {
-            $url = 'https://sp.openjournaltheme.com/api/v1/report';
+            $url = ApiServicePanel::make($this->ojtPlugin)->getApiUrl('report');
 
             $params = $request->getUserVars();
             $files = $this->reArrayFiles($_FILES['pictures']);
@@ -312,7 +547,7 @@ class OjtPageHandler extends Handler
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url, $params);
 
-            $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO');
+            $pluginSettingsDao = DAORegistry::getDAO('PluginSettingsDAO'); /** @var \PluginSettingsDAO $pluginSettingsDao */
             $ojtplugin = $this->ojtPlugin;
             $pluginGenericPath = 'plugins' . DIRECTORY_SEPARATOR . 'generic' . DIRECTORY_SEPARATOR;
             $plugins = array_map(function ($plugin) use ($ojtplugin, $pluginSettingsDao, $pluginGenericPath) {
@@ -419,7 +654,7 @@ class OjtPageHandler extends Handler
         $pluginClassName = $request->getUserVar('className');
         $isEnabled       = ($request->getUserVar('enabled') == 'true') ? true : false;
 
-        $targetPlugin = PluginRegistry::getPlugin($pluginType, $pluginClassName);
+        $targetPlugin = PluginRegistry::getPlugin($pluginType, $pluginClassName); /** @var \LazyLoadPlugin $targetPlugin */
 
         if (!$targetPlugin && !is_object($targetPlugin)) {
             $json['error'] = 1;
