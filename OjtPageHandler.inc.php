@@ -501,7 +501,7 @@ class OjtPageHandler extends Handler
 
     public function checkUpdate($args, $request)
     {
-        $url = 'https://sp.openjournaltheme.com/api/v1/product/control-panel';
+        $url = 'http://sp-staging.ojthost.xyz/api/v1/product/control-panel';
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url);
             $json = json_decode((string) $response->getBody(), true);
