@@ -19,7 +19,7 @@ class SubscriptionService
 
   protected $serviceApiUrl;
 
-  protected $productionServiceApiUrl = 'http://sp-staging.ojthost.xyz/';
+  protected $productionServiceApiUrl = 'https://sp-staging.ojthost.xyz/';
   protected $localServiceApiUrl = 'http://127.0.0.1:8001/';
 
   public function __construct($plugin, $mode = null)

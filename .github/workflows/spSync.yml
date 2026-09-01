@@ -48,7 +48,7 @@ jobs:
       - name: Construct URL
         id: construct_url
         run: |
-          url="http://sp-staging.ojthost.xyz/api/v1/product/update-version"
+          url="https://sp-staging.ojthost.xyz/api/v1/product/update-version"
           echo "url=$url" >> $GITHUB_OUTPUT
 
       - name: Upload to SP with zip file

@@ -28,8 +28,8 @@ class OjtPlugin extends \GenericPlugin
     private ?ScheduleService $scheduleService = null;
     private bool $legacyScheduledTasksDisabled = false;
 
-    const API = "http://sp-staging.ojthost.xyz/api/v1";
-    const SERVICE_API = "http://sp-staging.ojthost.xyz/";
+    const API = "https://sp-staging.ojthost.xyz/api/v1";
+    const SERVICE_API = "https://sp-staging.ojthost.xyz/";
     const BACKGROUND_JOBS_ENABLED_SETTING = 'background_jobs_enabled';
 
     public function register($category, $path, $mainContextId = null)
