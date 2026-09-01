@@ -1,3 +1,6 @@
+### 3.1.1.12 : 1 Sep 2026
+- Fix site-wide plugin license lookup and storage during gallery listing and installation/update by consistently using the site context.
+
 ### 3.1.1.10 : 20 Aug 2026
 - Update bug report endpoints in `OjtPageHandler` and `ServiceHandler` to dynamically use `ApiServicePanel` instead of hardcoded URLs.
 - Allow HTTP protocol for local domain extensions (`.localhost`, `.test`, `.local`) in host protocol detection.

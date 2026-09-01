@@ -333,7 +333,8 @@ class OjtPageHandler extends Handler
                 }
 
                 $plugin['update'] = false;
-                $plugin['license'] = $targetPlugin?->getSetting($this->contextId, 'license') ?? null;
+                $licenseContextId = $isSiteWide ? Application::CONTEXT_SITE : $this->contextId;
+                $plugin['license'] = $targetPlugin?->getSetting($licenseContextId, 'license') ?? null;
 
                 if ($targetPlugin) {
                     if ($isSiteWide) {
@@ -473,8 +474,14 @@ class OjtPageHandler extends Handler
             // $ojtPlugin->cleanupOldStagingDirectories(24);
             
             $pluginInstance = $ojtPlugin->instatiantePluginWithoutThrow($pluginFolder);
+            $isExistingPluginSiteWide = false;
+            if (!$pluginInstance) {
+                $pluginInstance = $ojtPlugin->instantiatePluginFromGlobalDirectory($pluginFolder);
+                $isExistingPluginSiteWide = $pluginInstance !== null;
+            }
             if ($update && $pluginInstance) {
-                $license = $pluginInstance?->getSetting($this->contextId, 'license');
+                $licenseContextId = $isExistingPluginSiteWide ? Application::CONTEXT_SITE : $this->contextId;
+                $license = $pluginInstance->getSetting($licenseContextId, 'license');
             }
 
             $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginToInstall->token, $license);
@@ -537,7 +544,8 @@ class OjtPageHandler extends Handler
 
             if ($pluginInstance instanceof Plugin) {
                 if ($license && !$update) {
-                    $pluginInstance->updateSetting($this->contextId, 'license', $license);
+                    $licenseContextId = $isSiteWidePlugin ? Application::CONTEXT_SITE : $this->contextId;
+                    $pluginInstance->updateSetting($licenseContextId, 'license', $license);
                 }
                 Hook::call('OJT::pluginInstalled', array($pluginInstance));
             }
