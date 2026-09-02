@@ -1,3 +1,6 @@
+### 2.2.0.5 : 02 September 2026
+- Fixed the OJT Control Panel installed-plugin list so site administrators can see and use the plugin delete action.
+
 ### 2.2.0.4 : 02 September 2026
 - Fixed site-wide plugin license lookup and storage during gallery listing, installation, and updates.
 
