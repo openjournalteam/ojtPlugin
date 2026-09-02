@@ -562,7 +562,11 @@ class OjtPageHandler extends Handler
                 }
 
                 $plugin['update'] = false;
-                $plugin['license'] = $pluginSettingsDao->getSetting($this->ojtPlugin->getCurrentContextId(), $plugin['class'], 'license') ?? null;
+                $licenseContextId = $isSiteWide ? CONTEXT_SITE : $ojtplugin->getCurrentContextId();
+                $plugin['license'] = $pluginSettingsDao->getSetting($licenseContextId, $plugin['class'], 'license') ?? null;
+                if (!$plugin['license']) {
+                    $plugin['license'] = $pluginSettingsDao->getSetting($licenseContextId, $plugin['class'], 'licenseMain') ?? null;
+                }
 
                 if ($targetPlugin) {
                     import('lib.pkp.classes.site.VersionCheck');
@@ -780,16 +784,27 @@ class OjtPageHandler extends Handler
             
             // Check if plugin already exists (for update scenarios)
             $pluginInstance = $ojtPlugin->instantiatePluginWithoutThrow($pluginFolder);
+            $isExistingPluginSiteWide = false;
             if (!$pluginInstance) {
                 $pluginInstance = $ojtPlugin->instantiatePluginFromGlobalDirectory($pluginFolder);
+                $isExistingPluginSiteWide = (bool) $pluginInstance;
             }
             
             if ($update && $pluginInstance) {
                 // Try newer 'license' setting first, then fall back to 'licenseMain' for backward compatibility
-                $license = $pluginInstance->getSetting($this->contextId, 'license');
+                $licenseContextId = $isExistingPluginSiteWide ? CONTEXT_SITE : $this->contextId;
+                $license = $pluginInstance->getSetting($licenseContextId, 'license');
 
                 if(!$license) {
-                    $license = $pluginInstance->getSetting($this->contextId, 'licenseMain');
+                    $license = $pluginInstance->getSetting($licenseContextId, 'licenseMain');
+                }
+
+                // Keep compatibility with licenses saved by older releases in the journal context.
+                if (!$license && $isExistingPluginSiteWide && $licenseContextId !== $this->contextId) {
+                    $license = $pluginInstance->getSetting($this->contextId, 'license');
+                    if (!$license) {
+                        $license = $pluginInstance->getSetting($this->contextId, 'licenseMain');
+                    }
                 }
             }
 
@@ -862,7 +877,9 @@ class OjtPageHandler extends Handler
 
             // Apply license setting (backward compatible with licenseMain)
             if ($pluginInstance instanceof Plugin && $license && !$update) {
-                $pluginInstance->updateSetting($this->contextId, 'licenseMain', $license);
+                $licenseContextId = $isSiteWidePlugin ? CONTEXT_SITE : $this->contextId;
+                $pluginInstance->updateSetting($licenseContextId, 'license', $license);
+                $pluginInstance->updateSetting($licenseContextId, 'licenseMain', $license);
             }
             
             // Clean up staging base path if empty

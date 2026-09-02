@@ -48,7 +48,20 @@ trait PluginUpdater
                 'msg' => "Failed to fetch plugin's data"
             ]);
         }
-        $currentLicense = $plugin->getSetting($plugin->getCurrentContextId(), 'license') ?? false;
+        $isSiteWidePlugin = method_exists($plugin, 'isSitePlugin') && $plugin->isSitePlugin();
+        $licenseContextId = $isSiteWidePlugin ? CONTEXT_SITE : $plugin->getCurrentContextId();
+        $currentLicense = $plugin->getSetting($licenseContextId, 'license') ?? false;
+        if (!$currentLicense) {
+            $currentLicense = $plugin->getSetting($licenseContextId, 'licenseMain') ?? false;
+        }
+
+        // Keep compatibility with licenses saved by older releases in the journal context.
+        if (!$currentLicense && $isSiteWidePlugin && $licenseContextId !== $plugin->getCurrentContextId()) {
+            $currentLicense = $plugin->getSetting($plugin->getCurrentContextId(), 'license') ?? false;
+            if (!$currentLicense) {
+                $currentLicense = $plugin->getSetting($plugin->getCurrentContextId(), 'licenseMain') ?? false;
+            }
+        }
         $downloadLink = $ojtPlugin->getPluginDownloadLink($pluginDetail['token'], $currentLicense, $this->getBaseUrl());
 
         if (!$downloadLink) {
