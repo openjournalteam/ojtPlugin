@@ -119,6 +119,7 @@ class OjtPageHandler extends Handler
 
         $templateMgr->assign('ojtPlugin', $ojtPlugin);
         $templateMgr->assign('journal', $this->contextId ? $request->getContext() : $request->getSite());
+        $templateMgr->assign('canDeletePlugins', $plugin->isCurrentUserSiteAdmin());
         $templateMgr->assign('pluginGalleryHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugingallery.tpl')));
         $templateMgr->assign('pluginInstalledHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('plugininstalled.tpl')));
         $templateMgr->assign('pluginExclusiveHtml', $templateMgr->fetch($this->ojtPlugin->getTemplateResource('pluginexclusive.tpl')));
