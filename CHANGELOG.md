@@ -1,3 +1,6 @@
+### 2.2.0.4 : 02 September 2026
+- Fixed site-wide plugin license lookup and storage during gallery listing, installation, and updates.
+
 ### 2.2.0.3 : 20 August 2026
 - Added an administrator Background Jobs panel for queue monitoring, progress
   tracking, job details, pause/resume, stop, retry, and bulk controls
