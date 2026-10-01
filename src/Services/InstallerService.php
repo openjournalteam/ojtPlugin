@@ -231,28 +231,158 @@ class InstallerService
             $destinationPath = getcwd() . DIRECTORY_SEPARATOR . $this->plugin->getModulesPath($pluginFolder);
         }
 
-        if (!is_dir($sourcePath)) {
+        if (is_link($sourcePath) || !is_dir($sourcePath)) {
             throw new Exception("Source plugin directory not found in staging: {$sourcePath}");
         }
 
-        // Remove existing destination if it exists
-        if (is_dir($destinationPath)) {
+        if (!is_file($sourcePath . DIRECTORY_SEPARATOR . 'index.php')) {
+            throw new Exception("Invalid plugin structure: missing index.php in {$sourcePath}");
+        }
+
+        $destinationParent = dirname($destinationPath);
+        if (!is_dir($destinationParent) || !is_writable($destinationParent)) {
+            throw new Exception("Plugin destination is not writable: {$destinationParent}");
+        }
+
+        $destinationExists = file_exists($destinationPath) || is_link($destinationPath);
+        if ($destinationExists) {
             if (!$this->plugin->isCurrentUserSiteAdmin()) {
                 throw new Exception('Only site administrators can replace an installed plugin');
             }
-            $this->recursiveDelete($destinationPath);
+            if (!is_dir($destinationPath) || is_link($destinationPath)) {
+                throw new Exception("Plugin destination is not a regular directory: {$destinationPath}");
+            }
         }
 
-        // Move the plugin directory
-        if (!rename($sourcePath, $destinationPath)) {
-            throw new Exception("Failed to move plugin from staging to final destination");
+        // rename() is atomic and cheap when both paths are on the same filesystem.
+        if (!$destinationExists && @rename($sourcePath, $destinationPath)) {
+            $this->cleanupStagingAfterInstall($sourcePath, $stagingPath);
+            $this->logPluginInstalled($pluginFolder, $isSiteWide);
+            return;
         }
 
-        // Clean up the staging directory
+        // Copy beside the destination so the final rename stays on one filesystem.
+        $temporaryPath = $destinationParent . DIRECTORY_SEPARATOR . '.' . $pluginFolder . '.ojt-' . bin2hex(random_bytes(8));
+        $backupPath = null;
+        $sourceMovedToTemporary = false;
+        $destinationMovedToBackup = false;
+
+        try {
+            $sourceMovedToTemporary = @rename($sourcePath, $temporaryPath);
+            if (!$sourceMovedToTemporary) {
+                $this->copyPluginDirectory($sourcePath, $temporaryPath, new \FileManager());
+            }
+
+            if (!is_file($temporaryPath . DIRECTORY_SEPARATOR . 'index.php')) {
+                throw new Exception('Copied plugin is incomplete: index.php is missing');
+            }
+
+            if ($destinationExists) {
+                $backupPath = $destinationParent . DIRECTORY_SEPARATOR . '.' . $pluginFolder . '.backup-' . bin2hex(random_bytes(8));
+                if (!@rename($destinationPath, $backupPath)) {
+                    throw new Exception("Failed to preserve the installed plugin at {$destinationPath}");
+                }
+                $destinationMovedToBackup = true;
+            }
+
+            if (!@rename($temporaryPath, $destinationPath)) {
+                if ($destinationMovedToBackup && !@rename($backupPath, $destinationPath)) {
+                    throw new Exception("Failed to install plugin; the previous version is preserved at {$backupPath}");
+                }
+                $destinationMovedToBackup = false;
+                throw new Exception("Failed to place copied plugin at {$destinationPath}");
+            }
+            $destinationMovedToBackup = false;
+
+            if ($backupPath !== null) {
+                try {
+                    $this->recursiveDelete($backupPath);
+                } catch (\Throwable $e) {
+                    error_log("Plugin installed, but could not remove previous version at {$backupPath}: " . $e->getMessage());
+                }
+            }
+        } catch (\Throwable $e) {
+            if (is_dir($temporaryPath)) {
+                if ($sourceMovedToTemporary) {
+                    if (!@rename($temporaryPath, $sourcePath)) {
+                        error_log("Could not restore staged plugin from {$temporaryPath} to {$sourcePath}");
+                    }
+                } else {
+                    try {
+                        $this->recursiveDelete($temporaryPath);
+                    } catch (\Throwable $cleanupError) {
+                        error_log("Could not remove incomplete plugin copy at {$temporaryPath}: " . $cleanupError->getMessage());
+                    }
+                }
+            }
+            throw $e;
+        }
+
+        $this->cleanupStagingAfterInstall($sourcePath, $stagingPath);
+        $this->logPluginInstalled($pluginFolder, $isSiteWide);
+    }
+
+    private function copyPluginDirectory($sourcePath, $destinationPath, $fileManager)
+    {
+        if (is_link($sourcePath) || !is_dir($sourcePath)) {
+            throw new Exception("Invalid plugin directory while copying: {$sourcePath}");
+        }
+
+        if (!@mkdir($destinationPath, 0755)) {
+            throw new Exception("Could not create temporary plugin directory on destination filesystem: {$destinationPath}");
+        }
+
+        $entries = @scandir($sourcePath);
+        if ($entries === false) {
+            throw new Exception("Could not read staged plugin directory: {$sourcePath}");
+        }
+
+        foreach ($entries as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+
+            $source = $sourcePath . DIRECTORY_SEPARATOR . $entry;
+            $destination = $destinationPath . DIRECTORY_SEPARATOR . $entry;
+
+            if (is_link($source)) {
+                throw new Exception("Plugin archive contains an unsupported symbolic link: {$source}");
+            }
+
+            if (is_dir($source)) {
+                $this->copyPluginDirectory($source, $destination, $fileManager);
+                continue;
+            }
+
+            if (!is_file($source) || !@$fileManager->copyFile($source, $destination)) {
+                throw new Exception("Could not copy plugin file to destination (check free space and permissions): {$source}");
+            }
+
+            $sourceSize = @filesize($source);
+            $destinationSize = @filesize($destination);
+            if ($sourceSize === false || $destinationSize !== $sourceSize) {
+                throw new Exception("Copied plugin file is incomplete: {$destination}");
+            }
+        }
+    }
+
+    private function cleanupStagingAfterInstall($sourcePath, $stagingPath)
+    {
+        if (is_dir($sourcePath)) {
+            try {
+                $this->recursiveDelete($sourcePath);
+            } catch (\Throwable $e) {
+                error_log("Plugin installed, but could not remove staging source at {$sourcePath}: " . $e->getMessage());
+            }
+        }
+
         if (is_dir($stagingPath) && count(array_diff(scandir($stagingPath), ['.', '..'])) === 0) {
-            rmdir($stagingPath);
+            @rmdir($stagingPath);
         }
+    }
 
+    private function logPluginInstalled($pluginFolder, $isSiteWide)
+    {
         $location = $isSiteWide ? 'plugins/generic/' : 'modules/';
         error_log("Plugin '{$pluginFolder}' installed to {$location}");
     }

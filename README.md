@@ -21,6 +21,56 @@ It provides:
 - Provides plugin install/update plumbing for OJT marketplace flow
 - Provides sitemap integration endpoint for module plugins via `getSitemapData()`
 
+## Plugin installation across disks and Docker mounts
+
+The marketplace installer extracts downloads under OJS `files_dir/ojt_staging`,
+then installs the plugin under the OJS code tree (`plugins/generic/` or
+`ojtPlugin/modules/`). These paths may be on different filesystems.
+
+On a normal OJS host, moving `files_dir` to a newly added disk does not add space
+to the filesystem containing the OJS plugin directory. In Docker, `files_dir`,
+the application image, and a bind or named volume for plugins may also be
+separate mounts. In either case, `rename()` of a directory across mount/device
+boundaries fails with `Invalid cross-device link` (`EXDEV`). PHP `copy()` copies
+files, not directories.
+
+For an empty destination, the installer first tries `rename()`. When the paths
+cross filesystems (or an installed plugin is being replaced), it prepares the
+new tree in a temporary directory beside the destination; cross-filesystem
+copies use OJS `FileManager::copyFile()` and verify each file before swapping
+directories. During an update, the old plugin stays in place until the new tree
+is ready. Failed copies leave the staged source available for diagnosis; remove
+retained `ojt_staging/staging_*` directories manually after resolving the
+failure.
+
+When copying is needed, the destination filesystem needs room for the new
+plugin tree; an update may temporarily need room for both the old and new
+trees. A larger `files_dir` alone cannot fix a full plugin/code filesystem.
+Ensure the PHP service user can write to the destination and its parent
+directories.
+
+Check both sides on a non-Docker OJS host:
+
+```sh
+findmnt -T /path/to/ojs/files
+findmnt -T /path/to/ojs/plugins/generic
+df -h /path/to/ojs/files /path/to/ojs/plugins/generic
+df -i /path/to/ojs/files /path/to/ojs/plugins/generic
+```
+
+For Docker, inspect the container's mount layout and the paths as seen inside
+the container:
+
+```sh
+docker inspect <ojs-container> --format '{{range .Mounts}}{{println .Type .Source "->" .Destination}}{{end}}'
+docker exec <ojs-container> sh -lc 'df -h /var/www/files /var/www/html/plugins/generic; df -i /var/www/files /var/www/html/plugins/generic; stat -c "%d %n" /var/www/files /var/www/html/plugins/generic'
+```
+
+If the destination is full or read-only, mount the plugin tree on writable
+persistent storage with adequate capacity before retrying. For an OJS/OAF
+switching deployment, both runtimes must use the same complete `plugins` tree;
+mounting only selected plugin folders can leave the two runtimes inconsistent.
+
 ## Background Jobs and Schedules
 
 OJT has two related but separate concepts:

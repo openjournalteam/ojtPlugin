@@ -893,9 +893,9 @@ class OjtPageHandler extends Handler
             $json['msg']    = !$update ? 'Plugin Installed' : 'Plugin Updated';
             return showJson($json);
         } catch (Exception $e) {
-            // Clean up staging directory on failure
+            // Keep staged files so a failed cross-filesystem copy can be retried or diagnosed.
             if (isset($stagingInfo) && isset($stagingInfo['stagingPath']) && is_dir($stagingInfo['stagingPath'])) {
-                $ojtPlugin->recursiveDelete($stagingInfo['stagingPath']);
+                error_log("Plugin installation failed; staging retained at {$stagingInfo['stagingPath']}: " . $e->getMessage());
             }
             
             // Clean up staging base path if empty

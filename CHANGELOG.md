@@ -1,3 +1,8 @@
+### 2.2.0.6 : 01 October 2026
+- Fixed plugin installation across filesystems and Docker mounts with a verified copy fallback.
+- Preserve the installed plugin and staging files when an install or update fails.
+- Document storage, mount, and permission checks for standard OJS and Docker deployments.
+
 ### 2.2.0.5 : 02 September 2026
 - Fixed the OJT Control Panel installed-plugin list so site administrators can see and use the plugin delete action.
 
