@@ -1,7 +1,9 @@
-### 2.2.0.7 : 01 October 2026
+### 2.2.0.7 : 08 October 2026
 - Fixed plugin installation across filesystems and Docker mounts with a verified copy fallback.
 - Preserve the installed plugin and staging files when an install or update fails.
 - Document storage, mount, and permission checks for standard OJS and Docker deployments.
+- Align the queue wait tracking migration name with release 2.2.0.7; retain
+  the existing column check so databases already migrated are handled safely.
 
 ### 2.2.0.6 : 08 October 2026
 - Format WorkerBee CLI output to fit the terminal width with status symbols,

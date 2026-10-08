@@ -6,7 +6,7 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 
-class v2_2_0_6 extends Migration
+class v2_2_0_7 extends Migration
 {
     public function up()
     {
