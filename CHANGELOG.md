@@ -1,7 +1,21 @@
-### 2.2.0.6 : 01 October 2026
+### 2.2.0.7 : 01 October 2026
 - Fixed plugin installation across filesystems and Docker mounts with a verified copy fallback.
 - Preserve the installed plugin and staging files when an install or update fails.
 - Document storage, mount, and permission checks for standard OJS and Docker deployments.
+
+### 2.2.0.6 : 08 October 2026
+- Format WorkerBee CLI output to fit the terminal width with status symbols,
+  Jobs Tracker IDs, dotted spacing, and measured execution times.
+- Add `--verbose` for heartbeat and job details, and `--json` for structured
+  monitoring logs; keep queue lag warnings and errors visible by default.
+- Track queue wait time and report ready-job backlog without counting
+  intentional retry delays; add the queue wait tracking migration.
+- Release `dedupeActiveOnly` keys after completion or failure and recover
+  queued tracking records whose backend jobs are missing, allowing pending
+  Enveloper mail to be dispatched again.
+- Preserve tracking keys when a backend job has been created but tracking
+  binding fails, and skip dispatch when a deduplication key cannot be acquired.
+- Document CLI output, tracker IDs, and worker logging options.
 
 ### 2.2.0.5 : 02 September 2026
 - Fixed the OJT Control Panel installed-plugin list so site administrators can see and use the plugin delete action.

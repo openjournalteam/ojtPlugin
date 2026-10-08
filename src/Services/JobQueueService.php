@@ -84,23 +84,30 @@ class JobQueueService
         if (is_array($tracking) && !empty($tracking['duplicate'])) {
             return $tracking['job_id'] ?: 'deduplicated';
         }
+        if ($dedupeKey !== '' && !is_array($tracking)) {
+            error_log('OjtWorkerBee dispatch skipped: unable to acquire deduplication key.');
+            return null;
+        }
         try {
             if ($delaySeconds > 0) {
                 $jobId = Queue::later($delaySeconds, $job, $data, $queueName, self::CONNECTION);
-                $this->persistContextId($jobId, $contextId);
-                $this->bindTrackingToken($trackingToken, $jobId);
-                return $jobId;
+            } else {
+                $jobId = Queue::push($job, $data, $queueName, self::CONNECTION);
             }
-
-            $jobId = Queue::push($job, $data, $queueName, self::CONNECTION);
-            $this->persistContextId($jobId, $contextId);
-            $this->bindTrackingToken($trackingToken, $jobId);
-            return $jobId;
         } catch (Throwable $e) {
             $this->deleteTrackingToken($trackingToken);
             error_log('OjtWorkerBee dispatch failed: ' . $e->getMessage());
             return null;
         }
+        try {
+            $this->persistContextId($jobId, $contextId);
+            $this->bindTrackingToken($trackingToken, $jobId);
+        } catch (Throwable $e) {
+            // The backend job already exists. Preserve its token/dedupe lock;
+            // the worker can still find tracking by token and complete it.
+            error_log('OjtWorkerBee tracking bind failed for job ' . (int) $jobId . ': ' . $e->getMessage());
+        }
+        return $jobId;
     }
 
     public function isEnabledForRuntime()
@@ -525,8 +532,28 @@ class JobQueueService
     }
 
     /**
-     * Mark a worker job as processing.
+     * Inspect ready jobs without counting intentional retry delays.
      */
+    public function queueLagSnapshot($queueName = 'default')
+    {
+        $now = time();
+        $query = Capsule::table(self::JOBS_TABLE)
+            ->whereIn('queue', array_filter(explode(',', (string) $queueName)))
+            ->where('available_at', '<=', $now)
+            ->where(function ($query) use ($now) {
+                $query->whereNull('reserved_at')
+                    ->orWhere('reserved_at', '<=', $now - self::QUEUE_RETRY_AFTER_SECONDS);
+            });
+        $oldest = (clone $query)->orderBy('available_at')->first();
+        return [
+            'queue' => (string) $queueName,
+            'ready_count' => (int) (clone $query)->count(),
+            'oldest_worker_job_id' => $oldest ? (int) $oldest->id : null,
+            'oldest_due_wait_seconds' => $oldest ? max(0, $now - (int) $oldest->available_at) : null,
+        ];
+    }
+
+    /** Mark processing and return the initial wait after the job became due. */
     public function markProcessing($queueJobId, $attempts = null, $trackingToken = null)
     {
         $run = $this->findRunByQueueId($queueJobId, $trackingToken);
@@ -537,12 +564,17 @@ class JobQueueService
         $values = [
             'status' => 'processing',
             'started_at' => $run->started_at ?: $this->now(),
+            // available_at is a Unix timestamp, independent of PHP/DB time zones.
+            'queue_wait_seconds' => $run->queue_wait_seconds !== null
+                ? (int) $run->queue_wait_seconds
+                : ($run->available_at ? max(0, time() - (int) $run->available_at) : null),
             'updated_at' => $this->now(),
         ];
         if ($attempts !== null) {
             $values['attempts'] = max(0, (int) $attempts);
         }
         Capsule::table(self::JOB_RUNS_TABLE)->where('id', '=', (int) $run->id)->update($values);
+        return $values['queue_wait_seconds'];
     }
 
     /**
@@ -568,6 +600,10 @@ class JobQueueService
             'duration_seconds' => $this->durationSeconds($run->started_at, $finishedAt),
             'updated_at' => $finishedAt,
         ];
+        $details = $this->decodeJobDetails($run->details);
+        if (!empty($details['options']['dedupeActiveOnly'])) {
+            $values['dedupe_key'] = null;
+        }
         if ($attempts !== null) {
             $values['attempts'] = max(0, (int) $attempts);
         }
@@ -592,6 +628,10 @@ class JobQueueService
             'error_message' => $this->safeErrorMessage($message ?: ($stopped ? 'Stopped by user.' : 'Job failed.')),
             'updated_at' => $stoppedAt,
         ];
+        $details = $this->decodeJobDetails($run->details);
+        if (!empty($details['options']['dedupeActiveOnly'])) {
+            $values['dedupe_key'] = null;
+        }
         if ($failedJobId !== null) {
             $values['failed_job_id'] = (int) $failedJobId;
         }
@@ -634,6 +674,36 @@ class JobQueueService
 
         try {
             $this->ensureRuntimeTables();
+            if ($dedupeKey && !empty($options['dedupeActiveOnly'])) {
+                // A bound tracking row can outlive a removed backend job.
+                // Do not return that missing ID as a successful recovery.
+                // Unbound rows are left alone: another dispatcher may still
+                // be inserting/binding its job under this unique key.
+                $existing = Capsule::table(self::JOB_RUNS_TABLE)
+                    ->where('dedupe_key', '=', $dedupeKey)
+                    ->where('status', '=', 'queued')
+                    ->whereNotNull('queue_job_id')
+                    ->first();
+                if ($existing && !$this->findQueueJob($existing->queue_job_id)) {
+                    Capsule::table(self::JOB_RUNS_TABLE)
+                        ->where('id', '=', (int) $existing->id)
+                        ->where('dedupe_key', '=', $dedupeKey)
+                        ->where('queue_job_id', '=', (int) $existing->queue_job_id)
+                        ->where('status', '=', 'queued')
+                        ->update([
+                            'dedupe_key' => null,
+                            'status' => 'failed',
+                            'error_message' => 'Backend job is missing; released tracking key for recovery.',
+                            'finished_at' => $this->now(),
+                            'updated_at' => $this->now(),
+                        ]);
+                }
+                // Also release terminal records written by an older worker.
+                Capsule::table(self::JOB_RUNS_TABLE)
+                    ->where('dedupe_key', '=', $dedupeKey)
+                    ->whereIn('status', ['done', 'failed'])
+                    ->update(['dedupe_key' => null]);
+            }
             $now = $this->now();
             Capsule::table(self::JOB_RUNS_TABLE)->insert([
                 'queue_job_id' => $jobId ? (int) $jobId : null,
@@ -705,6 +775,13 @@ class JobQueueService
         return $query->first();
     }
 
+    /** Return the Job ID shown in Jobs Tracker, rather than the backend queue ID. */
+    public function getTrackerJobId($queueJobId, $trackingToken = null)
+    {
+        $run = $this->findRunByQueueId($queueJobId, $trackingToken);
+        return $run ? (int) $run->id : null;
+    }
+
     protected function findRunByQueueId($queueJobId, $trackingToken = null)
     {
         if ($queueJobId) {
@@ -769,6 +846,7 @@ class JobQueueService
             'finished' => $this->formatTime($row->finished_at),
             'stopped' => $this->formatTime($row->stopped_at),
             'duration' => $this->formatDuration($row->duration_seconds),
+            'queueWaitSeconds' => isset($row->queue_wait_seconds) ? (int) $row->queue_wait_seconds : null,
             'attempts' => (int) $row->attempts,
             'maxAttempts' => $row->max_attempts !== null ? (int) $row->max_attempts : null,
             'cancelRequested' => $row->cancel_requested_at !== null,

@@ -200,6 +200,25 @@ Useful flags:
 - `--tries=3`
 - `--timeout=60`
 - `--memory=128`
+- `--verbose` (show routine heartbeats, queue, attempt, and wait time)
+- `--json` (retain full structured logs for monitoring)
+
+By default, CLI output fits the current terminal width and shows `▶ RUNNING`,
+`✓ DONE`, and `✗ FAIL` statuses. `ID:` is the same Job ID displayed in Jobs
+Tracker; `Q:` is a queue ID fallback when no tracker record exists. Job names
+are shortened to leave room for the ID and execution time. Verbose mode also
+shows the backend queue ID. Routine heartbeats are
+hidden; queue lag warnings and errors remain visible. Statuses use colors
+in an interactive terminal (set `NO_COLOR` to disable colors).
+
+```text
+[09:18:41] ▶ RUNNING ID:42 enveloper.sendQueuedMail....................... 0ms
+[09:18:42] ✓ DONE    ID:42 enveloper.sendQueuedMail.................... 1091ms
+```
+
+The dotted filler expands to the terminal width, keeping the duration at the
+right edge. `RUNNING` initially shows `0ms`; `DONE` shows the measured execution
+time. Timestamps use `HH:mm:ss` (shortened on very narrow terminals).
 
 The OJT Background Jobs switch is independent from the OJS scheduler switch:
 
