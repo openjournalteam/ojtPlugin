@@ -1,3 +1,6 @@
+### 2.2.0.8 : 13 October 2026
+- Skip re-instantiating replaced plugins during gallery updates to prevent duplicate class declarations in the same PHP request.
+
 ### 2.2.0.7 : 08 October 2026
 - Fixed plugin installation across filesystems and Docker mounts with a verified copy fallback.
 - Preserve the installed plugin and staging files when an install or update fails.

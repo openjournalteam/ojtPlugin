@@ -867,13 +867,16 @@ class OjtPageHandler extends Handler
                 $isSiteWidePlugin
             );
             
-            // Re-instantiate plugin from the correct final location (namespace now matches path)
-            if ($isSiteWidePlugin) {
-                $pluginInstance = $ojtPlugin->instantiatePluginFromGlobalDirectory($pluginFolder);
-            } else {
-                // For non-site-wide plugins, run simulateRegisterModules for error handling
-                $this->simulateRegisterModules($pluginToInstall);
-                $pluginInstance = $ojtPlugin->instantiatePluginWithoutThrow($pluginFolder);
+            // Updated plugin classes are already loaded in this request. Let OJS load
+            // the replaced files on the next request instead of declaring the class twice.
+            if (!$update) {
+                if ($isSiteWidePlugin) {
+                    $pluginInstance = $ojtPlugin->instantiatePluginFromGlobalDirectory($pluginFolder);
+                } else {
+                    // Validate new module installs before reporting success.
+                    $this->simulateRegisterModules($pluginToInstall);
+                    $pluginInstance = $ojtPlugin->instantiatePluginWithoutThrow($pluginFolder);
+                }
             }
 
             // Apply license setting (backward compatible with licenseMain)
