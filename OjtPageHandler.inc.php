@@ -502,7 +502,7 @@ class OjtPageHandler extends Handler
 
     public function checkUpdate($args, $request)
     {
-        $url = 'https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v1/ojtplugin/check_update';
+        $url = 'https://sp-staging.ojthost.xyz/api/v1/product/control-panel';
         try {
             $response = $this->ojtPlugin->getHttpClient()->get($url);
             $json = json_decode((string) $response->getBody(), true);

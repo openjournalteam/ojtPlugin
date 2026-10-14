@@ -28,15 +28,15 @@ class OjtPlugin extends \GenericPlugin
     private ?ScheduleService $scheduleService = null;
     private bool $legacyScheduledTasksDisabled = false;
 
-    const API = "https://openjournaltheme.com/index.php/wp-json/openjournalvalidation/v3";
-    const SERVICE_API = "https://sp.openjournaltheme.com/";
+    const API = "https://sp-staging.ojthost.xyz/api/v1";
+    const SERVICE_API = "https://sp-staging.ojthost.xyz/";
     const BACKGROUND_JOBS_ENABLED_SETTING = 'background_jobs_enabled';
 
     public function register($category, $path, $mainContextId = null)
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
-                register_shutdown_function([$this, 'fatalHandler']);
+                // register_shutdown_function([$this, 'fatalHandler']);
                 $this->init();
                 MigrationManager::make($this)->runMigrations();
                 $this->jobQueueService();
@@ -670,7 +670,7 @@ class OjtPlugin extends \GenericPlugin
         if ($isGlobalPlugin) {
             $headers['Client-Url'] = $plugin->getRequest()->getBaseUrl();
         } else {
-            $headers ['Client-Url'] = $ojtPlugin->getJournalURL();
+            $headers['Client-Url'] = $ojtPlugin->getJournalURL();
         }
 
         try {
